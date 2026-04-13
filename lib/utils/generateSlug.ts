@@ -1,12 +1,24 @@
 import { db } from "@/lib/db";
-import { generateSlug as createSlug } from "./slug";
+import { generateSlug } from "./slug";
 
-export async function generateUniqueSlug(base: string) {
-  let baseSlug = createSlug(base);
+type ModelType = "blog" | "category" | "product" | "market" | "subCategory" ;
+
+export async function generateUniqueSlug(
+  base: string,
+  model: ModelType
+) {
+  const baseSlug = generateSlug(base);
   let slug = baseSlug;
   let count = 1;
 
-  while (await db.blog.findUnique({ where: { slug } })) {
+  // dynamic model access
+  const modelRef = db[model];
+
+  if (!modelRef) {
+    throw new Error(`Invalid model: ${model}`);
+  }
+
+  while (await modelRef.findUnique({ where: { slug } })) {
     slug = `${baseSlug}-${count++}`;
   }
 

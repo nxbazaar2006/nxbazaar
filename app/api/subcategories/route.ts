@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { subCategorySchema } from "@/lib/validators/subcategory.schema";
-import { generateSlug } from "@/lib/utils/Slug";
+import { generateSlug } from "@/lib/utils/slug";
 
 /* ================= TYPES ================= */
 
