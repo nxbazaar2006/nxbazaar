@@ -13,15 +13,12 @@ import {
   HeartHandshake,
   LayoutGrid,
   LayoutList,
-  MonitorPlay,
-  ScanSearch,
+  LogOut,
   Store,
   Truck,
-  User,
   UserSquare2,
   Users2,
   Warehouse,
-  LogOut,
 } from "lucide-react";
 
 import {
@@ -31,12 +28,26 @@ import {
 } from "@/components/ui/collapsible";
 
 import { usePathname, useRouter } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 
 type Props = {
   showSidebar: boolean;
   setShowSidebar: (value: boolean) => void;
   setSidebarExpanded: (value: boolean) => void;
+};
+
+type NavItem = {
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+type SidebarItemProps = {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  active: boolean;
+  expanded: boolean;
 };
 
 export default function Sidebar({
@@ -49,17 +60,20 @@ export default function Sidebar({
 
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session } = useSession();
 
   const isExpanded = hovered;
 
-  const catalogueLinks = [
+  const catalogueLinks: NavItem[] = [
     { title: "Products", icon: Boxes, href: "/dashboard/products" },
     { title: "Categories", icon: LayoutList, href: "/dashboard/categories" },
-    { title: "SubCategories", icon: LayoutList, href: "/dashboard/subcategories" },
+    {
+      title: "SubCategories",
+      icon: LayoutList,
+      href: "/dashboard/subcategories",
+    },
   ];
 
-  let sidebarLinks: NavItem[] = [
+  const sidebarLinks: NavItem[] = [
     { title: "Customers", icon: Users2, href: "/dashboard/customers" },
     { title: "Markets", icon: Warehouse, href: "/dashboard/markets" },
     { title: "Sellers", icon: UserSquare2, href: "/dashboard/sellers" },
@@ -106,16 +120,10 @@ export default function Sidebar({
           fixed top-14 left-0 z-40
           h-[calc(100vh-3rem)]
 
-          backdrop-blur-2xl bg-white/5
-          border border-white/10
-          shadow-[0_10px_40px_rgba(0,0,0,0.4)]
-
-          rounded-2xl
           overflow-y-auto no-scrollbar
         `}
       >
         <div className="p-2 space-y-2">
-
           {/* DASHBOARD */}
           <SidebarItem
             href="/dashboard"
@@ -139,9 +147,9 @@ export default function Sidebar({
             </CollapsibleTrigger>
 
             <CollapsibleContent className="pl-4 space-y-1">
-              {catalogueLinks.map((item, i) => (
+              {catalogueLinks.map((item) => (
                 <SidebarItem
-                  key={i}
+                  key={item.href}
                   href={item.href}
                   icon={item.icon}
                   label={item.title}
@@ -153,9 +161,9 @@ export default function Sidebar({
           </Collapsible>
 
           {/* MAIN */}
-          {sidebarLinks.map((item, i) => (
+          {sidebarLinks.map((item) => (
             <SidebarItem
-              key={i}
+              key={item.href}
               href={item.href}
               icon={item.icon}
               label={item.title}
@@ -180,7 +188,7 @@ export default function Sidebar({
   );
 }
 
-function SidebarItem({ href, icon: Icon, label, active, expanded }) {
+function SidebarItem({ href, icon: Icon, label, active, expanded }: SidebarItemProps) {
   return (
     <Link href={href}>
       <motion.div
