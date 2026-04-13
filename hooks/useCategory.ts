@@ -1,102 +1,40 @@
 "use client";
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import api from "@/lib/axios";
 import {
   createCategory,
-  updateCategory,
   deleteCategory,
-  getCategories,
+  updateCategory,
 } from "@/actions/category";
+import type { Category, CategoryFormData } from "@/types/category";
+import type { ActionResponse } from "@/types/action-response";
 
-import type { Category } from "@prisma/client";
-import { toast } from "sonner";
+const CATEGORIES_QUERY_KEY = ["categories"] as const;
 
-/* =========================
-TYPES
-========================= */
-
-export interface CategoryFormData {
-  title: string;
-  imageUrl?: string;
-  description?: string;
-  isActive?: boolean;
+async function fetchCategories(locale?: string): Promise<Category[]> {
+  const query = locale ? `?locale=${locale}` : "";
+  const { data } = await api.get<Category[]>(`/categories${query}`);
+  return data;
 }
-
-interface ActionResponse<T = null> {
-  success: boolean;
-  message: string;
-  data?: T;
-}
-
-/* =========================
-CREATE CATEGORY
-========================= */
 
 export function useCreateCategory() {
   const queryClient = useQueryClient();
 
-  return useMutation<
-    ActionResponse<Category>,
-    Error,
-    CategoryFormData
-  >({
+  return useMutation<ActionResponse<Category>, Error, CategoryFormData>({
     mutationFn: createCategory,
-
-    /* 🔥 Optimistic UI */
-    onMutate: async (newCategory) => {
-      await queryClient.cancelQueries({ queryKey: ["categories"] });
-
-      const previous = queryClient.getQueryData<Category[]>(["categories"]);
-
-      if (previous) {
-        queryClient.setQueryData<Category[]>(["categories"], [
-          {
-            id: "temp-id",
-            title: newCategory.title,
-            slug: "temp-slug",
-            imageUrl: newCategory.imageUrl ?? null,
-            description: newCategory.description ?? null,
-            isActive: newCategory.isActive ?? true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          } as Category,
-          ...previous,
-        ]);
+    onSuccess: (response) => {
+      if (!response.success) {
+        toast.error(response.message);
+        return;
       }
 
-      return { previous };
-    },
-
-    onError: (error, _, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["categories"], context.previous);
-      }
-
-      toast.error("Create failed ❌");
-      console.error("CREATE ERROR:", error);
-    },
-
-    onSuccess: (res) => {
-      if (res.success) {
-        toast.success(res.message);
-      } else {
-        toast.error(res.message);
-      }
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success(response.message);
+      queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
     },
   });
 }
-
-/* =========================
-UPDATE CATEGORY
-========================= */
 
 type UpdateCategoryVariables = {
   id: string;
@@ -106,118 +44,42 @@ type UpdateCategoryVariables = {
 export function useUpdateCategory() {
   const queryClient = useQueryClient();
 
-  return useMutation<
-    ActionResponse<Category>,
-    Error,
-    UpdateCategoryVariables
-  >({
+  return useMutation<ActionResponse<Category>, Error, UpdateCategoryVariables>({
     mutationFn: ({ id, data }) => updateCategory(id, data),
-
-    onMutate: async ({ id, data }) => {
-      await queryClient.cancelQueries({ queryKey: ["categories"] });
-
-      const previous = queryClient.getQueryData<Category[]>(["categories"]);
-
-      if (previous) {
-        queryClient.setQueryData<Category[]>(
-          ["categories"],
-          previous.map((cat) =>
-            cat.id === id ? { ...cat, ...data } : cat
-          )
-        );
+    onSuccess: (response) => {
+      if (!response.success) {
+        toast.error(response.message);
+        return;
       }
 
-      return { previous };
-    },
-
-    onError: (error, _, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["categories"], context.previous);
-      }
-
-      toast.error("Update failed ❌");
-      console.error("UPDATE ERROR:", error);
-    },
-
-    onSuccess: (res) => {
-      if (res.success) {
-        toast.success(res.message);
-      } else {
-        toast.error(res.message);
-      }
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success(response.message);
+      queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
     },
   });
 }
-
-/* =========================
-DELETE CATEGORY
-========================= */
 
 export function useDeleteCategory() {
   const queryClient = useQueryClient();
 
-  return useMutation<
-    ActionResponse,
-    Error,
-    string
-  >({
+  return useMutation<ActionResponse, Error, string>({
     mutationFn: deleteCategory,
-
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ["categories"] });
-
-      const previous = queryClient.getQueryData<Category[]>(["categories"]);
-
-      if (previous) {
-        queryClient.setQueryData<Category[]>(
-          ["categories"],
-          previous.filter((cat) => cat.id !== id)
-        );
+    onSuccess: (response) => {
+      if (!response.success) {
+        toast.error(response.message);
+        return;
       }
 
-      return { previous };
-    },
-
-    onError: (error, _, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["categories"], context.previous);
-      }
-
-      toast.error("Delete failed ❌");
-      console.error("DELETE ERROR:", error);
-    },
-
-    onSuccess: (res) => {
-      if (res.success) {
-        toast.success(res.message);
-      } else {
-        toast.error(res.message);
-      }
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success(response.message);
+      queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
     },
   });
 }
 
-/* =========================
-FETCH CATEGORIES
-========================= */
-
-export function useCategories(initialData?: Category[]) {
+export function useCategories(locale?: string, initialData?: Category[]) {
   return useQuery<Category[]>({
-    queryKey: ["categories"],
-    queryFn: getCategories,
-
+    queryKey: [...CATEGORIES_QUERY_KEY, locale],
+    queryFn: () => fetchCategories(locale),
     initialData,
-
-    staleTime: 1000 * 60 * 5, // 5 min
-    refetchOnWindowFocus: false,
-    retry: 1,
+    staleTime: 1000 * 60 * 5,
   });
 }

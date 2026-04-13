@@ -1,39 +1,17 @@
 import { getCategories } from "@/actions/category";
 import NewMarketForm from "@/components/backoffice/NewMarketForm";
+import type { Category } from "@/types/category";
 
 export default async function NewMarket() {
-  /* ================================
-     FETCH CATEGORIES
-  ================================ */
   const categoriesResponse = await getCategories();
+  const categoriesData = Array.isArray(categoriesResponse)
+    ? (categoriesResponse as Category[])
+    : [];
 
-  /* ================================
-     HANDLE ERROR
-  ================================ */
-  if (!categoriesResponse.success) {
-    return (
-      <div className="p-6 text-sm text-red-500">
-        Failed to load categories
-      </div>
-    );
-  }
-
-  const categoriesData = categoriesResponse.data ?? [];
-
-  /* ================================
-     MAP OPTIONS
-  ================================ */
   const categories = categoriesData.map((category) => ({
     label: category.title,
     value: category.id,
   }));
 
-  /* ================================
-     RENDER FORM
-  ================================ */
-  return (
-    <NewMarketForm
-      categories={categories}
-    />
-  );
+  return <NewMarketForm categories={categories} />;
 }

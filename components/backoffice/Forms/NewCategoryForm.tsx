@@ -19,7 +19,7 @@ import {
 
 import { categorySchema } from "@/lib/validators/category.schema";
 import { Category } from "@/types/category";
-import { slugify } from "@/lib/utils/slug";
+import { generateSlug } from "@/lib/utils/Slug";
 
 // ✅ ENTERPRISE LOCALES
 const LOCALES = ["en", "hi", "mr"] as const;
@@ -101,7 +101,7 @@ export default function NewCategoryForm({ updateData }: Props) {
       const payload = {
         ...data,
         imageUrl,
-        slug: slugify(enTitle), // ✅ IMPORTANT FIX
+        slug: generateSlug(enTitle),
       };
 
       const res = id
@@ -181,7 +181,7 @@ export default function NewCategoryForm({ updateData }: Props) {
             <div className="text-sm text-gray-500">
               Slug Preview:
               <span className="ml-2 px-2 py-1 bg-gray-200 dark:bg-zinc-800 rounded font-mono">
-                /category/{slugify(current?.title || "")}
+                /category/{generateSlug(current?.title || "")}
               </span>
             </div>
           </div>

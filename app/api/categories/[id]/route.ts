@@ -1,173 +1,144 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { categorySchema } from "@/lib/validators/category.schema";
-import { generateUniqueSlug } from "@/lib/utils/slug";
-import { Language } from "@prisma/client";
+import type { Category } from "@/types/category";
 
 interface RouteContext {
-  params: {
+  params: Promise<{
     id: string;
+  }>;
+}
+
+type DbCategory = Prisma.CategoryGetPayload<{
+  include: {
+    translations: true;
+    products: {
+      select: {
+        id: true;
+      };
+    };
+  };
+}>;
+
+const toLocaleCode = (value: string) => value.toLowerCase() as Category["translations"][number]["locale"];
+
+function mapCategoryRecord(category: DbCategory): Category {
+  const translation =
+    category.translations.find((item) => item.locale === "EN") ??
+    category.translations[0];
+
+  return {
+    id: category.id,
+    slug: category.slug,
+    imageUrl: category.imageUrl,
+    isActive: category.isActive,
+    title: translation?.title ?? category.slug,
+    description: translation?.description ?? null,
+    translations: category.translations.map((item) => ({
+      id: item.id,
+      locale: toLocaleCode(item.locale),
+      title: item.title,
+      description: item.description,
+    })),
+    products: category.products,
+    createdAt: category.createdAt.toISOString(),
+    updatedAt: category.updatedAt.toISOString(),
   };
 }
 
-/* =========================
-   GET CATEGORY BY ID
-========================= */
-export async function GET(
-  req: NextRequest,
-  { params }: RouteContext
-) {
-  try {
-    const { id } = params;
+function createSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
 
+export async function GET(req: NextRequest, context: RouteContext) {
+  try {
+    const { id } = await context.params;
     const { searchParams } = new URL(req.url);
-    const locale = searchParams.get("locale") as Language | null;
+    const rawLocale = searchParams.get("locale");
+    const locale = rawLocale ? rawLocale.toUpperCase() : null;
 
     const category = await db.category.findUnique({
       where: { id },
       include: {
-        products: true,
-        translations: locale
-          ? { where: { locale } }
-          : true,
+        products: { select: { id: true } },
+        translations: locale ? { where: { locale: locale as Prisma.$Enums.Language } } : true,
       },
     });
 
     if (!category) {
-      return NextResponse.json(
-        { message: "Category not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, message: "Category not found" }, { status: 404 });
     }
 
-    return NextResponse.json(category);
-  } catch (error: unknown) {
-    console.error("GET CATEGORY ERROR:", error);
-
+    return NextResponse.json(mapCategoryRecord(category));
+  } catch {
     return NextResponse.json(
-      { message: "Failed to fetch category" },
+      { success: false, message: "Failed to fetch category" },
       { status: 500 }
     );
   }
 }
 
-/* =========================
-   DELETE CATEGORY (SOFT DELETE)
-========================= */
-export async function DELETE(
-  _req: NextRequest,
-  { params }: RouteContext
-) {
+export async function DELETE(_req: NextRequest, context: RouteContext) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
+    await db.category.delete({ where: { id } });
 
-    const category = await db.category.findUnique({
-      where: { id },
-    });
-
-    if (!category) {
-      return NextResponse.json(
-        { message: "Category not found" },
-        { status: 404 }
-      );
-    }
-
-    const deleted = await db.category.update({
-      where: { id },
-      data: {
-        deletedAt: new Date(),
-      },
-    });
-
-    return NextResponse.json(deleted);
-  } catch (error: unknown) {
-    console.error("DELETE CATEGORY ERROR:", error);
-
+    return NextResponse.json({ success: true, message: "Category deleted" });
+  } catch {
     return NextResponse.json(
-      { message: "Failed to delete category" },
+      { success: false, message: "Failed to delete category" },
       { status: 500 }
     );
   }
 }
 
-/* =========================
-   UPDATE CATEGORY (ENTERPRISE)
-========================= */
-export async function PUT(
-  req: NextRequest,
-  { params }: RouteContext
-) {
+export async function PUT(req: NextRequest, context: RouteContext) {
   try {
-    const { id } = params;
-
+    const { id } = await context.params;
     const body: unknown = await req.json();
-
     const parsed = categorySchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.flatten() },
+        { success: false, message: parsed.error.issues[0]?.message ?? "Invalid payload" },
         { status: 400 }
       );
     }
 
-    const { imageUrl, isActive, translations } = parsed.data;
-
-    const oldTranslations = await db.categoryTranslation.findMany({
-      where: { categoryId: id },
-    });
-
-    const formattedTranslations = await Promise.all(
-      translations.map(async (t) => {
-        const existing = oldTranslations.find(
-          (ot) => ot.locale === t.locale
-        );
-
-        // ✅ keep slug if title same
-        if (existing && existing.title === t.title) {
-          return {
-            ...t,
-            slug: existing.slug,
-          };
-        }
-
-        const slug = await generateUniqueSlug(
-          t.title,
-          t.locale as Language,
+    const slug =
+      parsed.data.slug ??
+      createSlug(
+        parsed.data.translations.find((item) => item.locale === "EN")?.title ??
+          parsed.data.translations[0]?.title ??
           "category"
-        );
-
-        return {
-          ...t,
-          slug,
-        };
-      })
-    );
-
-    await db.categoryTranslation.deleteMany({
-      where: { categoryId: id },
-    });
+      );
 
     const updated = await db.category.update({
       where: { id },
       data: {
-        imageUrl,
-        isActive,
+        slug,
+        imageUrl: parsed.data.imageUrl,
+        isActive: parsed.data.isActive,
         translations: {
-          create: formattedTranslations,
+          deleteMany: {},
+          create: parsed.data.translations,
         },
       },
       include: {
         translations: true,
+        products: { select: { id: true } },
       },
     });
 
-    return NextResponse.json(updated);
-  } catch (error: unknown) {
-    console.error("UPDATE CATEGORY ERROR:", error);
-
+    return NextResponse.json({ success: true, data: mapCategoryRecord(updated) });
+  } catch {
     return NextResponse.json(
-      { message: "Failed to update category" },
+      { success: false, message: "Failed to update category" },
       { status: 500 }
     );
   }

@@ -1,125 +1,56 @@
-import { z } from "zod";
 import { Language } from "@prisma/client";
+import { z } from "zod";
 
-/* ================================
-   HELPERS
-================================ */
+const emptyToUndefined = (value: unknown) => {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? undefined : trimmed;
+};
 
-const optionalString = () =>
-  z
-    .string()
-    .trim()
-    .transform((val) => (val === "" ? undefined : val))
-    .optional();
-
-const requiredString = (field: string, min = 2) =>
-  z.string().trim().min(min, `${field} must be at least ${min} characters`);
-
-const generateSlug = (title: string) =>
-  title
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
-
-/* ================================
-   TRANSLATION SCHEMA
-================================ */
+const localeSchema = z.preprocess((value) => {
+  if (typeof value !== "string") return value;
+  return value.toUpperCase();
+}, z.nativeEnum(Language));
 
 export const categoryTranslationSchema = z.object({
-  locale: z.nativeEnum(Language), // ✅ DB synced enum
-
-  title: requiredString("Title", 2),
-
-  description: optionalString(),
+  locale: localeSchema,
+  title: z.string().trim().min(2, "Title must be at least 2 characters"),
+  description: z.preprocess(
+    emptyToUndefined,
+    z.string().trim().min(2).optional()
+  ),
 });
 
-/* ================================
-   BASE CATEGORY SCHEMA
-================================ */
-
-const baseCategorySchema = z.object({
-  id: z.string().optional(),
-
-  title: requiredString("Title", 2),
-
-  slug: optionalString(), // auto generate होगा
-
-  imageUrl: optionalString(),
-
-  description: optionalString(),
-
+export const categorySchema = z.object({
+  slug: z.preprocess(
+    emptyToUndefined,
+    z.string().trim().min(2).optional()
+  ),
+  imageUrl: z.preprocess(
+    emptyToUndefined,
+    z.string().trim().url("Image URL must be a valid URL").optional()
+  ),
   isActive: z.boolean().default(true),
-
-  position: z.number().default(0),
-
   translations: z
     .array(categoryTranslationSchema)
-    .optional()
+    .min(1, "At least one translation is required")
     .superRefine((translations, ctx) => {
-      if (!translations) return;
-
-      const locales = translations.map((t) => t.locale);
+      const locales = translations.map((item) => item.locale);
       const unique = new Set(locales);
 
       if (locales.length !== unique.size) {
         ctx.addIssue({
           code: "custom",
-          message: "Duplicate locales not allowed",
+          message: "Duplicate locales are not allowed",
+          path: ["translations"],
         });
       }
     }),
 });
 
-/* ================================
-   MAIN SCHEMA (API)
-================================ */
-
-export const categorySchema = baseCategorySchema.transform((data) => ({
-  ...data,
-  slug: data.slug || generateSlug(data.title),
-}));
-
-/* ================================
-   FORM SCHEMA (FRONTEND)
-================================ */
-
-export const categoryFormSchema = baseCategorySchema.omit({
-  slug: true,
-});
-
-/* ================================
-   UPDATE SCHEMA
-================================ */
-
 export const updateCategorySchema = categorySchema.extend({
-  id: z.string().min(1, "Category ID required"),
+  id: z.string().uuid("Category ID must be a valid UUID"),
 });
-
-/* ================================
-   TYPES
-================================ */
 
 export type CategoryInput = z.infer<typeof categorySchema>;
-export type CategoryFormValues = z.infer<typeof categoryFormSchema>;
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
-
-/* ================================
-   VALIDATION HELPER 🔥
-================================ */
-
-export const validateCategory = (data: unknown) => {
-  const result = categorySchema.safeParse(data);
-
-  if (!result.success) {
-    return {
-      success: false,
-      errors: result.error.format(),
-    };
-  }
-
-  return {
-    success: true,
-    data: result.data,
-  };
-};

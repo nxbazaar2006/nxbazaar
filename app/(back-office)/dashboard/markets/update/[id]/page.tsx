@@ -1,6 +1,7 @@
 import { getCategories } from "@/actions/category";
 import { getMarketById } from "@/actions/market";
 import NewMarketForm from "@/components/backoffice/NewMarketForm";
+import type { Category } from "@/types/category";
 
 type Props = {
   params: Promise<{
@@ -11,23 +12,14 @@ type Props = {
 export default async function EditMarketPage({
   params,
 }: Props) {
-  /* ================================
-     GET PARAMS
-  ================================ */
   const { id } = await params;
 
-  /* ================================
-     FETCH DATA
-  ================================ */
   const [marketResponse, categoriesResponse] =
     await Promise.all([
       getMarketById(id),
       getCategories(),
     ]);
 
-  /* ================================
-     HANDLE MARKET NOT FOUND
-  ================================ */
   if (!marketResponse.success || !marketResponse.data) {
     return (
       <div className="p-6 text-sm text-red-500">
@@ -36,23 +28,11 @@ export default async function EditMarketPage({
     );
   }
 
-  /* ================================
-     HANDLE CATEGORY FETCH FAILURE
-  ================================ */
-  if (!categoriesResponse.success) {
-    return (
-      <div className="p-6 text-sm text-red-500">
-        Failed to load categories
-      </div>
-    );
-  }
+  const categoriesData = Array.isArray(categoriesResponse)
+    ? (categoriesResponse as Category[])
+    : [];
 
   const market = marketResponse.data;
-  const categoriesData = categoriesResponse.data ?? [];
-
-  /* ================================
-     PREPARE FORM DATA
-  ================================ */
   const marketWithCategoryIds = {
     ...market,
     categoryIds:
@@ -60,17 +40,11 @@ export default async function EditMarketPage({
       [],
   };
 
-  /* ================================
-     CATEGORY OPTIONS
-  ================================ */
   const categories = categoriesData.map((category) => ({
     label: category.title,
     value: category.id,
   }));
 
-  /* ================================
-     RENDER FORM
-  ================================ */
   return (
     <NewMarketForm
       market={marketWithCategoryIds}

@@ -1,99 +1,116 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { categorySchema } from "@/lib/validators/category.schema";
-import { generateUniqueSlug } from "@/lib/utils/slug";
-import { Language } from "@prisma/client";
+import type { Category } from "@/types/category";
 
-/* =========================
-   CREATE CATEGORY (ENTERPRISE)
-========================= */
+type DbCategory = Prisma.CategoryGetPayload<{
+  include: {
+    translations: true;
+    products: {
+      select: {
+        id: true;
+      };
+    };
+  };
+}>;
+
+const toLocaleCode = (value: string) => value.toLowerCase() as Category["translations"][number]["locale"];
+
+function mapCategoryRecord(category: DbCategory): Category {
+  const translation =
+    category.translations.find((item) => item.locale === "EN") ??
+    category.translations[0];
+
+  return {
+    id: category.id,
+    slug: category.slug,
+    imageUrl: category.imageUrl,
+    isActive: category.isActive,
+    title: translation?.title ?? category.slug,
+    description: translation?.description ?? null,
+    translations: category.translations.map((item) => ({
+      id: item.id,
+      locale: toLocaleCode(item.locale),
+      title: item.title,
+      description: item.description,
+    })),
+    products: category.products,
+    createdAt: category.createdAt.toISOString(),
+    updatedAt: category.updatedAt.toISOString(),
+  };
+}
+
+function createSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body: unknown = await request.json();
-
     const parsed = categorySchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.flatten() },
+        { success: false, message: parsed.error.issues[0]?.message ?? "Invalid payload" },
         { status: 400 }
       );
     }
 
-    const { imageUrl, isActive, translations } = parsed.data;
-
-    // 🔥 generate slug per translation (type-safe)
-    const formattedTranslations = await Promise.all(
-      translations.map(async (t) => {
-        const slug = await generateUniqueSlug(
-          t.title,
-          t.locale as Language,
+    const slug =
+      parsed.data.slug ??
+      createSlug(
+        parsed.data.translations.find((item) => item.locale === "EN")?.title ??
+          parsed.data.translations[0]?.title ??
           "category"
-        );
+      );
 
-        return {
-          locale: t.locale,
-          title: t.title,
-          description: t.description,
-          slug,
-        };
-      })
-    );
-
-    const category = await db.category.create({
+    const created = await db.category.create({
       data: {
-        imageUrl,
-        isActive,
+        slug,
+        imageUrl: parsed.data.imageUrl,
+        isActive: parsed.data.isActive,
         translations: {
-          create: formattedTranslations,
+          create: parsed.data.translations,
         },
       },
       include: {
         translations: true,
+        products: { select: { id: true } },
       },
     });
 
-    return NextResponse.json(category, { status: 201 });
-  } catch (error: unknown) {
-    console.error("CREATE CATEGORY ERROR:", error);
-
+    return NextResponse.json({ success: true, data: mapCategoryRecord(created) }, { status: 201 });
+  } catch {
     return NextResponse.json(
-      { message: "Failed to create category" },
+      { success: false, message: "Failed to create category" },
       { status: 500 }
     );
   }
 }
 
-/* =========================
-   GET CATEGORY (LOCALE SUPPORT)
-========================= */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const locale = searchParams.get("locale") as Language | null;
+    const rawLocale = searchParams.get("locale");
+    const locale = rawLocale ? rawLocale.toUpperCase() : null;
 
     const categories = await db.category.findMany({
-      where: {
-        deletedAt: null, // ✅ soft delete safe
-      },
       orderBy: { createdAt: "desc" },
-
       include: {
-        products: true,
-        translations: locale
-          ? {
-              where: { locale },
-            }
-          : true,
+        products: { select: { id: true } },
+        translations: locale ? { where: { locale: locale as Prisma.$Enums.Language } } : true,
       },
     });
 
-    return NextResponse.json(categories);
-  } catch (error: unknown) {
-    console.error("GET CATEGORY ERROR:", error);
-
+    return NextResponse.json(categories.map(mapCategoryRecord));
+  } catch {
     return NextResponse.json(
-      { message: "Failed to fetch categories" },
+      { success: false, message: "Failed to fetch categories" },
       { status: 500 }
     );
   }
