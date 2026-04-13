@@ -104,13 +104,8 @@ export default function Sidebar({
         className={`
           ${showSidebar ? "block" : "hidden"} sm:block
           fixed top-14 left-0 z-40
-          h-[calc(100vh-3rem)]
-
-          backdrop-blur-2xl bg-white/5
-          border border-white/10
-          shadow-[0_10px_40px_rgba(0,0,0,0.4)]
-
-          rounded-2xl
+          h-[calc(100vh-3rem)] 
+          
           overflow-y-auto no-scrollbar
         `}
       >

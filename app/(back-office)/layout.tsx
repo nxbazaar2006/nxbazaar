@@ -13,18 +13,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
 
   return (
-  <div className="flex min-h-screen relative text-gray-900 ">
+  <div className="flex min-h-screen relative text-black dark:text-white">
 
   {/* 🟣 COLOR OVERLAY (DASHBOARD ONLY) */}
   <div className="
     absolute inset-0 -z-10
-    bg-gradient-to-br 
-    from-blue-800/80
-    via-purple-800/80 
-    to-indigo-800/80 
-    dark:from-blue-900/20 
-    dark:via-purple-900/20 
-    dark:to-green-900/20
+   
+    
   " />
 
       {/* GLOBAL */}
@@ -32,7 +27,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <CommandMenu />
 
    
-      
+     
     
 
       {/* SIDEBAR */}
@@ -50,7 +45,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <main
           className={`
-            pt-24 pr-2 pb-2 flex-1
+            pt-24 pr-1 pb-2 flex-1
             transition-all duration-300
             ${sidebarExpanded ? "lg:pl-55" : "pl-20"}
           `}
