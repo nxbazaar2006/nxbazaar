@@ -1,17 +1,17 @@
 "use server";
 
-import { Prisma, Category } from "@prisma/client";
-import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-
-/* ==============================
-TYPES
-============================== */
-
-interface CategoryFormData {
-  title: string;
-  imageUrl?: string;
-}
+import { db } from "@/lib/db";
+import {
+  categorySchema,
+  type CategoryInput,
+} from "@/lib/validators/category.schema";
+import type {
+  Category,
+  CategoryFormData,
+  CategoryTranslation,
+} from "@/types/category";
 
 interface ActionResponse<T = null> {
   success: boolean;
@@ -19,205 +19,199 @@ interface ActionResponse<T = null> {
   data?: T;
 }
 
-/* ==============================
-UTIL: SLUG GENERATOR (ENTERPRISE)
-============================== */
+type DbCategory = Prisma.CategoryGetPayload<{
+  include: {
+    translations: true;
+    products: {
+      select: {
+        id: true;
+      };
+    };
+  };
+}>;
 
-async function generateUniqueSlug(base: string): Promise<string> {
-  const slugBase = base
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-");
+const toLocaleCode = (value: string): CategoryTranslation["locale"] =>
+  value.toLowerCase() as CategoryTranslation["locale"];
 
-  let slug = slugBase;
-  let count = 1;
+function mapCategoryRecord(category: DbCategory): Category {
+  const defaultTranslation =
+    category.translations.find((item) => item.locale === "EN") ??
+    category.translations[0];
 
-  while (true) {
-    const existing = await db.category.findUnique({
-      where: { slug },
-    });
-
-    if (!existing) break;
-
-    slug = `${slugBase}-${count++}`;
-  }
-
-  return slug;
+  return {
+    id: category.id,
+    slug: category.slug,
+    imageUrl: category.imageUrl,
+    isActive: category.isActive,
+    title: defaultTranslation?.title ?? category.slug,
+    description: defaultTranslation?.description ?? null,
+    translations: category.translations.map((translation) => ({
+      id: translation.id,
+      locale: toLocaleCode(translation.locale),
+      title: translation.title,
+      description: translation.description,
+    })),
+    products: category.products,
+    createdAt: category.createdAt.toISOString(),
+    updatedAt: category.updatedAt.toISOString(),
+  };
 }
 
-/* ==============================
-CREATE CATEGORY
-============================== */
+async function buildSlug(input: CategoryInput): Promise<string> {
+  if (input.slug) return input.slug;
+
+  const englishTitle =
+    input.translations.find((item) => item.locale === "EN")?.title ??
+    input.translations[0]?.title;
+
+  return (englishTitle ?? "category")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
 
 export async function createCategory(
   data: CategoryFormData
 ): Promise<ActionResponse<Category>> {
-  try {
-    if (!data.title || data.title.length < 2) {
-      return {
-        success: false,
-        message: "Title is required ❌",
-      };
-    }
+  const parsed = categorySchema.safeParse(data);
 
-    const slug = await generateUniqueSlug(data.title);
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid category payload",
+    };
+  }
+
+  try {
+    const slug = await buildSlug(parsed.data);
 
     const category = await db.category.create({
-      data: { ...data, slug },
+      data: {
+        slug,
+        imageUrl: parsed.data.imageUrl,
+        isActive: parsed.data.isActive,
+        translations: {
+          create: parsed.data.translations,
+        },
+      },
+      include: {
+        translations: true,
+        products: { select: { id: true } },
+      },
     });
 
     revalidatePath("/dashboard/categories");
-
     return {
       success: true,
-      message: "Category created successfully ✅",
-      data: category,
+      message: "Category created successfully",
+      data: mapCategoryRecord(category),
     };
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
-      return {
-        success: false,
-        message: "Category already exists ❌",
-      };
+      return { success: false, message: "Category slug already exists" };
     }
 
-    console.error("CREATE CATEGORY ERROR:", error);
-
-    return {
-      success: false,
-      message: "Failed to create category ❌",
-    };
+    return { success: false, message: "Failed to create category" };
   }
 }
 
-/* ==============================
-GET ALL CATEGORIES
-============================== */
-
-export async function getCategories(): Promise<Category[]> {
-  try {
-    return await db.category.findMany({
-      include: {
-        products: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  } catch (error) {
-    console.error("GET CATEGORIES ERROR:", error);
-    return [];
+export async function getCategories(endpoint?: string): Promise<Category[] | Category | null> {
+  if (endpoint?.startsWith("/filter/")) {
+    const slug = endpoint.replace("/filter/", "");
+    return getCategoryBySlug(slug);
   }
+
+  const categories = await db.category.findMany({
+    include: {
+      translations: true,
+      products: { select: { id: true } },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return categories.map(mapCategoryRecord);
 }
 
-/* ==============================
-GET CATEGORY BY SLUG
-============================== */
+export async function getCategoryBySlug(slug: string): Promise<Category | null> {
+  const category = await db.category.findUnique({
+    where: { slug },
+    include: {
+      translations: true,
+      products: { select: { id: true } },
+    },
+  });
 
-export async function getCategoryBySlug(
-  slug: string
-): Promise<Category | null> {
-  try {
-    return await db.category.findUnique({
-      where: { slug },
-      include: {
-        products: true,
-      },
-    });
-  } catch (error) {
-    console.error("GET CATEGORY BY SLUG ERROR:", error);
-    return null;
-  }
+  return category ? mapCategoryRecord(category) : null;
 }
 
-/* ==============================
-GET CATEGORY BY ID
-============================== */
+export async function getCategoryById(id: string): Promise<Category | null> {
+  const category = await db.category.findUnique({
+    where: { id },
+    include: {
+      translations: true,
+      products: { select: { id: true } },
+    },
+  });
 
-export async function getCategoryById(
-  id: string
-): Promise<Category | null> {
-  try {
-    return await db.category.findUnique({
-      where: { id },
-      include: {
-        products: true,
-      },
-    });
-  } catch (error) {
-    console.error("GET CATEGORY BY ID ERROR:", error);
-    return null;
-  }
+  return category ? mapCategoryRecord(category) : null;
 }
-
-/* ==============================
-UPDATE CATEGORY
-============================== */
 
 export async function updateCategory(
   id: string,
   data: CategoryFormData
 ): Promise<ActionResponse<Category>> {
+  const parsed = categorySchema.safeParse(data);
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid category payload",
+    };
+  }
+
   try {
-    if (!data.title || data.title.length < 2) {
-      return {
-        success: false,
-        message: "Title is required ❌",
-      };
-    }
+    const slug = await buildSlug(parsed.data);
 
-    const slug = await generateUniqueSlug(data.title);
-
-    const category = await db.category.update({
+    const updated = await db.category.update({
       where: { id },
-      data: { ...data, slug },
+      data: {
+        slug,
+        imageUrl: parsed.data.imageUrl,
+        isActive: parsed.data.isActive,
+        translations: {
+          deleteMany: {},
+          create: parsed.data.translations,
+        },
+      },
+      include: {
+        translations: true,
+        products: { select: { id: true } },
+      },
     });
 
     revalidatePath("/dashboard/categories");
-
     return {
       success: true,
-      message: "Category updated successfully ✏️",
-      data: category,
+      message: "Category updated successfully",
+      data: mapCategoryRecord(updated),
     };
-  } catch (error) {
-    console.error("UPDATE CATEGORY ERROR:", error);
-
-    return {
-      success: false,
-      message: "Failed to update category ❌",
-    };
+  } catch {
+    return { success: false, message: "Failed to update category" };
   }
 }
 
-/* ==============================
-DELETE CATEGORY
-============================== */
-
-export async function deleteCategory(
-  id: string
-): Promise<ActionResponse> {
+export async function deleteCategory(id: string): Promise<ActionResponse> {
   try {
-    await db.category.delete({
-      where: { id },
-    });
-
+    await db.category.delete({ where: { id } });
     revalidatePath("/dashboard/categories");
-
-    return {
-      success: true,
-      message: "Category deleted successfully 🗑️",
-    };
-  } catch (error) {
-    console.error("DELETE CATEGORY ERROR:", error);
-
-    return {
-      success: false,
-      message: "Failed to delete category ❌",
-    };
+    return { success: true, message: "Category deleted successfully" };
+  } catch {
+    return { success: false, message: "Failed to delete category" };
   }
 }
