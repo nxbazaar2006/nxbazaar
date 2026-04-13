@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import {db} from "@/lib/db";
+import { db } from "@/lib/db";
+import { categorySchema } from "@/lib/validators/category.schema";
+import { generateUniqueSlug } from "@/lib/utils/slug";
+import { Language } from "@prisma/client";
 
 interface RouteContext {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  };
 }
 
 /* =========================
@@ -15,11 +18,19 @@ export async function GET(
   { params }: RouteContext
 ) {
   try {
-    const { id } = await params; // ✅ unwrap
+    const { id } = params;
+
+    const { searchParams } = new URL(req.url);
+    const locale = searchParams.get("locale") as Language | null;
 
     const category = await db.category.findUnique({
       where: { id },
-      include: { products: true },
+      include: {
+        products: true,
+        translations: locale
+          ? { where: { locale } }
+          : true,
+      },
     });
 
     if (!category) {
@@ -30,87 +41,133 @@ export async function GET(
     }
 
     return NextResponse.json(category);
-
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("GET CATEGORY ERROR:", error);
+
     return NextResponse.json(
-      { message: "Failed to Fetch Category" },
+      { message: "Failed to fetch category" },
       { status: 500 }
     );
   }
 }
 
 /* =========================
-   DELETE CATEGORY
+   DELETE CATEGORY (SOFT DELETE)
 ========================= */
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: RouteContext
 ) {
   try {
-    const { id } = await params; // ✅ unwrap
+    const { id } = params;
 
-    const existingCategory = await db.category.findUnique({
+    const category = await db.category.findUnique({
       where: { id },
     });
 
-    if (!existingCategory) {
+    if (!category) {
       return NextResponse.json(
-        { message: "Category Not Found" },
+        { message: "Category not found" },
         { status: 404 }
       );
     }
 
-    const deletedCategory = await db.category.delete({
+    const deleted = await db.category.update({
       where: { id },
+      data: {
+        deletedAt: new Date(),
+      },
     });
 
-    return NextResponse.json(deletedCategory);
-
-  } catch (error) {
+    return NextResponse.json(deleted);
+  } catch (error: unknown) {
     console.error("DELETE CATEGORY ERROR:", error);
+
     return NextResponse.json(
-      { message: "Failed to Delete Category" },
+      { message: "Failed to delete category" },
       { status: 500 }
     );
   }
 }
 
 /* =========================
-   UPDATE CATEGORY
+   UPDATE CATEGORY (ENTERPRISE)
 ========================= */
 export async function PUT(
   req: NextRequest,
   { params }: RouteContext
 ) {
   try {
-    const { id } = await params; // ✅ unwrap
+    const { id } = params;
 
-    const { title, slug, imageUrl, description, isActive } =
-      await req.json();
+    const body: unknown = await req.json();
 
-    const existingCategory = await db.category.findUnique({
-      where: { id },
-    });
+    const parsed = categorySchema.safeParse(body);
 
-    if (!existingCategory) {
+    if (!parsed.success) {
       return NextResponse.json(
-        { message: "Category Not Found" },
-        { status: 404 }
+        { error: parsed.error.flatten() },
+        { status: 400 }
       );
     }
 
-    const updatedCategory = await db.category.update({
-      where: { id },
-      data: { title, slug, imageUrl, description, isActive },
+    const { imageUrl, isActive, translations } = parsed.data;
+
+    const oldTranslations = await db.categoryTranslation.findMany({
+      where: { categoryId: id },
     });
 
-    return NextResponse.json(updatedCategory);
+    const formattedTranslations = await Promise.all(
+      translations.map(async (t) => {
+        const existing = oldTranslations.find(
+          (ot) => ot.locale === t.locale
+        );
 
-  } catch (error) {
+        // ✅ keep slug if title same
+        if (existing && existing.title === t.title) {
+          return {
+            ...t,
+            slug: existing.slug,
+          };
+        }
+
+        const slug = await generateUniqueSlug(
+          t.title,
+          t.locale as Language,
+          "category"
+        );
+
+        return {
+          ...t,
+          slug,
+        };
+      })
+    );
+
+    await db.categoryTranslation.deleteMany({
+      where: { categoryId: id },
+    });
+
+    const updated = await db.category.update({
+      where: { id },
+      data: {
+        imageUrl,
+        isActive,
+        translations: {
+          create: formattedTranslations,
+        },
+      },
+      include: {
+        translations: true,
+      },
+    });
+
+    return NextResponse.json(updated);
+  } catch (error: unknown) {
     console.error("UPDATE CATEGORY ERROR:", error);
+
     return NextResponse.json(
-      { message: "Failed to Update Category" },
+      { message: "Failed to update category" },
       { status: 500 }
     );
   }

@@ -1,3 +1,5 @@
+import SmallCard from "./SmallCard";
+import { ShoppingBag } from "lucide-react";
 import { Order } from "@/types/dashboard";
 
 interface Props {
@@ -5,12 +7,17 @@ interface Props {
 }
 
 export default function SmallCards({ orders }: Props) {
-
-  const count = orders.length;
+  const totalOrders = orders.length;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div className="p-6 border rounded-xl">Total Orders: {count}</div>
+      
+      <SmallCard
+        title="Total Orders"
+        value={totalOrders}
+        icon={<ShoppingBag className="w-5 h-5 text-green-500" />}
+      />
+
     </div>
   );
 }

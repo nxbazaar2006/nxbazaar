@@ -1,25 +1,87 @@
-import { z } from "zod"
-
-export const subCategorySchema = z.object({
-  title: z.string().min(2, "Title is required"),
-  imageUrl: z.string().min(1, "Image is required"),
-  description: z.string().min(5, "Description is required"),
-  isActive: z.boolean(),
-  categoryId: z.string().min(1, "Category is required"),
-  hsnCodeId: z.string().optional().or(z.literal("")),
-})
-
-export type SubCategoryInput = z.infer<typeof subCategorySchema>
-
-
 import { z } from "zod";
 
+/* ================================
+   CONSTANTS / ENUMS
+================================ */
+
+export const LOCALES = ["EN", "HI", "MR"] as const;
+
+export const localeEnum = z.enum(LOCALES);
+
+/* ================================
+   HELPERS
+================================ */
+
+// Empty string → undefined (form handling के लिए बहुत जरूरी)
+const optionalString = () =>
+  z
+    .string()
+    .trim()
+    .transform((val) => (val === "" ? undefined : val))
+    .optional();
+
+const requiredString = (field: string, min = 2) =>
+  z
+    .string()
+    .trim()
+    .min(min, `${field} must be at least ${min} characters`);
+
+/* ================================
+   TRANSLATION SCHEMA
+================================ */
+
 export const subCategoryTranslationSchema = z.object({
-  locale: z.string().min(2, "Locale required"),
-  title: z.string().min(2, "Title required"),
-  description: z.string().optional(),
-  subCategoryId: z.string().min(1, "SubCategory required"),
+  locale: localeEnum,
+
+  title: requiredString("Title", 2),
+
+  description: optionalString(),
 });
 
-export type SubCategoryTranslationInput =
-  z.infer<typeof subCategoryTranslationSchema>;
+/* ================================
+   MAIN SUBCATEGORY SCHEMA
+================================ */
+
+export const subCategorySchema = z.object({
+  id: z.string().uuid().optional(),
+
+  slug: optionalString(), // auto-generate backend पे होगा
+
+  imageUrl: optionalString(),
+
+  isActive: z.boolean().default(true),
+
+  categoryId: requiredString("Category", 1),
+
+  hsnCodeId: optionalString().nullable(),
+
+  // SEO Fields
+  metaTitle: optionalString(),
+  metaDescription: optionalString(),
+
+  translations: z
+    .array(subCategoryTranslationSchema)
+    .min(1, "At least one translation required")
+    .superRefine((translations, ctx) => {
+      const locales = translations.map((t) => t.locale);
+
+      const uniqueLocales = new Set(locales);
+
+      if (locales.length !== uniqueLocales.size) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Duplicate locales are not allowed",
+        });
+      }
+    }),
+});
+
+/* ================================
+   TYPES
+================================ */
+
+export type SubCategoryInput = z.infer<typeof subCategorySchema>;
+
+export type SubCategoryTranslationInput = z.infer<
+  typeof subCategoryTranslationSchema
+>;

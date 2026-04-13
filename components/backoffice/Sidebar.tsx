@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import React, { useState } from "react";
-import logo from "../../public/limiLogo.webp";
+import Link from "next/link";
+import { motion } from "framer-motion";
 
 import {
   Boxes,
@@ -14,14 +13,15 @@ import {
   HeartHandshake,
   LayoutGrid,
   LayoutList,
-  LogOut,
   MonitorPlay,
   ScanSearch,
-  Slack,
+  Store,
   Truck,
+  User,
   UserSquare2,
   Users2,
   Warehouse,
+  LogOut,
 } from "lucide-react";
 
 import {
@@ -32,191 +32,176 @@ import {
 
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { motion } from "framer-motion";
 
-/* ---------------- TYPES ---------------- */
-
-type SidebarProps = {
+type Props = {
   showSidebar: boolean;
   setShowSidebar: (value: boolean) => void;
+  setSidebarExpanded: (value: boolean) => void;
 };
-
-type NavItem = {
-  title: string;
-  href: string;
-  icon: React.ElementType;
-};
-
-/* ---------------- COMPONENT ---------------- */
 
 export default function Sidebar({
   showSidebar,
   setShowSidebar,
-}: SidebarProps) {
+  setSidebarExpanded,
+}: Props) {
   const [openMenu, setOpenMenu] = useState(true);
-  const [expanded, setExpanded] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
-  const router = useRouter();
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
 
-  const { status } = useSession();
-  if (status === "loading") return null;
+  const isExpanded = hovered;
 
-  /* ---------------- LINKS ---------------- */
+  const catalogueLinks = [
+    { title: "Products", icon: Boxes, href: "/dashboard/products" },
+    { title: "Categories", icon: LayoutList, href: "/dashboard/categories" },
+    { title: "SubCategories", icon: LayoutList, href: "/dashboard/subcategories" },
+  ];
 
-  const sidebarLinks: NavItem[] = [
+  let sidebarLinks: NavItem[] = [
     { title: "Customers", icon: Users2, href: "/dashboard/customers" },
     { title: "Markets", icon: Warehouse, href: "/dashboard/markets" },
     { title: "Sellers", icon: UserSquare2, href: "/dashboard/sellers" },
     { title: "Orders", icon: Truck, href: "/dashboard/orders" },
     { title: "Sales", icon: Truck, href: "/dashboard/sales" },
     { title: "Wallet", icon: CircleDollarSign, href: "/dashboard/wallet" },
-    { title: "Support", icon: HeartHandshake, href: "/dashboard/seller-support" },
+    {
+      title: "Sellers Support",
+      icon: HeartHandshake,
+      href: "/dashboard/seller-support",
+    },
     { title: "Settings", icon: LayoutGrid, href: "/dashboard/settings" },
-    { title: "Store", icon: ExternalLink, href: "/" },
+    { title: "Online Store", icon: ExternalLink, href: "/" },
   ];
-
-  const catalogueLinks: NavItem[] = [
-    { title: "Products", icon: Boxes, href: "/dashboard/products" },
-    { title: "Categories", icon: LayoutList, href: "/dashboard/categories" },
-    { title: "Sub-Categories", icon: LayoutList, href: "/dashboard/subcategories" },
-    { title: "Coupons", icon: ScanSearch, href: "/dashboard/coupons" },
-    { title: "Banners", icon: MonitorPlay, href: "/dashboard/banners" },
-  ];
-
-  /* ---------------- LOGOUT ---------------- */
 
   async function handleLogout() {
     await signOut({ redirect: false });
     router.push("/");
   }
 
-  /* ---------------- UI ---------------- */
-
   return (
-    <motion.aside
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
-      animate={{ width: expanded ? 240 : 80 }}
-      transition={{ duration: 0.3 }}
-      className={`
-        ${showSidebar ? "block" : "hidden"} sm:block
-        fixed left-1 top-20 z-40
-        h-[calc(100vh-2rem)]
-        rounded-2xl p-[1px]
-        bg-gradient-to-b from-purple-500/30 to-pink-500/20
-      `}
-    >
-      {/* Glass */}
-      <div className="
-        h-full rounded-2xl
-        backdrop-blur-2xl
-        bg-white/5 border border-white/10
-        shadow-[0_20px_60px_rgba(255,115,0,0.3)]
-        flex flex-col overflow-hidden
-      ">
-
-        {/* LOGO */}
-        <div className="p-4 flex justify-center">
-          <Image src={logo} alt="logo" className="w-10" />
-        </div>
-
-        {/* DASHBOARD */}
-        <NavItemUI
-          expanded={expanded}
-          href="/dashboard"
-          icon={LayoutGrid}
-          label="Dashboard"
-          active={pathname === "/dashboard"}
+    <>
+      {/* MOBILE OVERLAY */}
+      {showSidebar && (
+        <div
+          onClick={() => setShowSidebar(false)}
+          className="fixed inset-0 bg-black/50 z-30 sm:hidden"
         />
+      )}
 
-        {/* CATALOGUE */}
-        <Collapsible open={openMenu} onOpenChange={setOpenMenu}>
-          <CollapsibleTrigger className="px-2">
-            <div className="flex items-center justify-between p-3 hover:bg-white/5 rounded-xl">
-              <div className="flex items-center gap-3">
-                <Slack />
-                {expanded && <span>Catalogue</span>}
+      <motion.aside
+        onMouseEnter={() => {
+          setHovered(true);
+          setSidebarExpanded(true);
+        }}
+        onMouseLeave={() => {
+          setHovered(false);
+          setSidebarExpanded(false);
+        }}
+        animate={{ width: isExpanded ? 200 : 65 }}
+        transition={{ duration: 0.25, ease: "easeInOut" }}
+        className={`
+          ${showSidebar ? "block" : "hidden"} sm:block
+          fixed top-14 left-0 z-40
+          h-[calc(100vh-3rem)]
+
+          backdrop-blur-2xl bg-white/5
+          border border-white/10
+          shadow-[0_10px_40px_rgba(0,0,0,0.4)]
+
+          rounded-2xl
+          overflow-y-auto no-scrollbar
+        `}
+      >
+        <div className="p-2 space-y-2">
+
+          {/* DASHBOARD */}
+          <SidebarItem
+            href="/dashboard"
+            icon={LayoutGrid}
+            label="Dashboard"
+            active={pathname === "/dashboard"}
+            expanded={isExpanded}
+          />
+
+          {/* CATALOGUE */}
+          <Collapsible open={openMenu} onOpenChange={setOpenMenu}>
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer hover:bg-white/10">
+                <div className="flex items-center gap-2">
+                  <Store className="w-4 h-4" />
+                  {isExpanded && <span>Catalogue</span>}
+                </div>
+                {isExpanded &&
+                  (openMenu ? <ChevronDown /> : <ChevronRight />)}
               </div>
-              {expanded && (openMenu ? <ChevronDown /> : <ChevronRight />)}
-            </div>
-          </CollapsibleTrigger>
+            </CollapsibleTrigger>
 
-          <CollapsibleContent className="pl-4 space-y-1">
-            {catalogueLinks.map((item, i) => (
-              <NavItemUI
-                key={i}
-                expanded={expanded}
-                href={item.href}
-                icon={item.icon}
-                label={item.title}
-                active={pathname === item.href}
-                small
-              />
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
+            <CollapsibleContent className="pl-4 space-y-1">
+              {catalogueLinks.map((item, i) => (
+                <SidebarItem
+                  key={i}
+                  href={item.href}
+                  icon={item.icon}
+                  label={item.title}
+                  active={pathname === item.href}
+                  expanded={isExpanded}
+                />
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
 
-        {/* LINKS */}
-        <div className="mt-2 space-y-1 flex-1">
+          {/* MAIN */}
           {sidebarLinks.map((item, i) => (
-            <NavItemUI
+            <SidebarItem
               key={i}
-              expanded={expanded}
               href={item.href}
               icon={item.icon}
               label={item.title}
               active={pathname === item.href}
+              expanded={isExpanded}
             />
           ))}
-        </div>
 
-        {/* LOGOUT */}
-        <div className="p-3">
-          <button
-            onClick={handleLogout}
-            className="
-              w-full flex items-center gap-3 p-3 rounded-xl
-              hover:bg-red-500/20 transition
-            "
-          >
-            <LogOut />
-            {expanded && <span>Logout</span>}
+          {/* LOGOUT */}
+          <button onClick={handleLogout}>
+            <SidebarItem
+              href="#"
+              icon={LogOut}
+              label="Logout"
+              active={false}
+              expanded={isExpanded}
+            />
           </button>
         </div>
-      </div>
-    </motion.aside>
+      </motion.aside>
+    </>
   );
 }
 
-/* ---------------- NAV ITEM ---------------- */
-
-function NavItemUI({
-  href,
-  icon: Icon,
-  label,
-  active,
-  expanded,
-  small,
-}: any) {
+function SidebarItem({ href, icon: Icon, label, active, expanded }) {
   return (
     <Link href={href}>
-      <div
-        title={!expanded ? label : ""}
+      <motion.div
+        whileHover={{ scale: 1.04 }}
         className={`
-          flex items-center gap-3
-          ${small ? "px-3 py-3 text-sm" : "px-4 py-4"}
-          rounded-xl transition-all duration-300
+          flex items-center
+          ${expanded ? "gap-2 px-2" : "justify-center"}
+          py-2 rounded-lg
 
-          ${active
-            ? "bg-orange-500/20 text-orange-400 shadow-[0_0_20px_rgba(255,115,0,0.5)]"
-            : "hover:bg-white/5 hover:scale-[1.03]"
+          transition-all duration-200
+
+          ${
+            active
+              ? "bg-white/10 border-l-2 border-white text-white"
+              : "text-white/60 hover:text-white hover:bg-white/10"
           }
         `}
       >
-        <Icon className="w-5 h-5" />
+        <Icon className="w-4 h-4" />
         {expanded && <span>{label}</span>}
-      </div>
+      </motion.div>
     </Link>
   );
 }

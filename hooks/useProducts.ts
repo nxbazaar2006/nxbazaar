@@ -6,10 +6,12 @@ import {
   ProductRequest,
   CreateProductInput,
   UpdateProductInput,
+  Product,
 } from "@/types/product";
-import { ProductSchema } from "@/lib/validators/productSchema";
-import { getProducts } from "@/actions/product.actions";
-/* ================= GET ================= */
+
+import { productSchema } from "@/lib/validators/productSchema";
+
+/* ================= GET ALL ================= */
 
 export function useProducts() {
   return useQuery<ProductRequest[]>({
@@ -21,6 +23,19 @@ export function useProducts() {
   });
 }
 
+/* ================= GET ONE ================= */
+
+export function useProductBySlug(slug: string, initialData?: Product) {
+  return useQuery<Product>({
+    queryKey: ["product", slug],
+    queryFn: async () => {
+      const res = await axios.get(`/api/products/${slug}`);
+      return ProductSchema.parse(res.data);
+    },
+    initialData,
+  });
+}
+
 /* ================= CREATE ================= */
 
 export function useCreateProduct() {
@@ -28,10 +43,9 @@ export function useCreateProduct() {
 
   return useMutation<ProductRequest, Error, CreateProductInput>({
     mutationFn: async (data) => {
-      const res = await axios.post("/api/products", data); // ✅ FIXED
+      const res = await axios.post("/api/products", data);
       return res.data;
     },
-
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
     },
@@ -49,10 +63,9 @@ export function useUpdateProduct() {
     { id: string; data: UpdateProductInput }
   >({
     mutationFn: async ({ id, data }) => {
-      const res = await axios.put(`/api/products/${id}`, data); // ✅ FIXED
+      const res = await axios.put(`/api/products/${id}`, data);
       return res.data;
     },
-
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
     },
@@ -66,55 +79,11 @@ export function useDeleteProduct() {
 
   return useMutation<ProductRequest, Error, string>({
     mutationFn: async (id) => {
-      const res = await axios.delete(`/api/products/${id}`); // ✅ FIXED
+      const res = await axios.delete(`/api/products/${id}`);
       return res.data;
     },
-
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-    },
-  });
-}
-
-export function useProduct(
-  slug: string,
-  initialData: Product
-) {
-  return useQuery<Product>({
-    queryKey: ["product", slug],
-    queryFn: async (): Promise<Product> => {
-      const res = await api.get(`/product/${slug}`);
-      return ProductSchema.parse(res.data);
-    },
-    initialData,
-  });
-}
-
-"use client";
-
-import { useQuery } from "@tanstack/react-query";
-import { fetchProductTranslations } from "@/lib/api/productTranslation";
-
-export function useProductTranslations(productId: string) {
-  return useQuery({
-    queryKey: ["product-translations", productId],
-    queryFn: () => fetchProductTranslations(productId),
-    enabled: !!productId,
-  });
-}
-
-
-
-export function useCreateVariant() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: any) => {
-      const res = await axios.post("/api/product-variants", data);
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["variants"] });
     },
   });
 }

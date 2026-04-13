@@ -5,32 +5,44 @@ import { columns } from "./columns";
 import { auth } from "@/auth";
 
 export default async function Page() {
-
   const session = await auth();
 
-  if (!session?.user?.id) return null;
+  /* ================= AUTH CHECK ================= */
+  if (!session?.user?.id) {
+    return (
+      <div className="p-6 text-sm text-red-500">
+        Unauthorized access
+      </div>
+    );
+  }
 
-  const role = session.user.role;
-  const userId = session.user.id;
+  const { id: userId, role } = session.user;
 
-  // ✅ SERVER FILTER (IMPORTANT)
+  /* ================= ROLE BASED FILTER =================
+     ADMIN  -> all products
+     VENDOR -> only own products
+  ====================================================== */
   const products = await getProducts({
     userId: role === "ADMIN" ? undefined : userId,
+    includeRelations: true,
   });
 
   return (
-    <div>
-
+    <div className="space-y-6">
+      {/* ================= PAGE HEADER ================= */}
       <PageHeader
         heading="Products"
         href="/dashboard/products/new"
         linkTitle="Add Product"
       />
 
-      <div className="py-8">
-        <DataTable data={products} columns={columns} />
+      {/* ================= TABLE ================= */}
+      <div className="py-2">
+        <DataTable
+          data={products}
+          columns={columns}
+        />
       </div>
-
     </div>
   );
 }

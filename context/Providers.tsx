@@ -1,18 +1,16 @@
 "use client";
 
-import React, { type ReactNode } from "react";
+import React, { type ReactNode, useState } from "react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "react-hot-toast";
 import DeliverWrapper from "@/components/location/DeliverWrapper";
-import { Provider } from "react-redux";
+import { Provider as ReduxProvider } from "react-redux";
 import { store } from "@/redux/store";
-
 import { SessionProvider } from "next-auth/react";
 
 import {
   QueryClient,
   QueryClientProvider,
-  type QueryClientConfig,
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
@@ -24,53 +22,45 @@ type ProvidersProps = {
   children: ReactNode;
 };
 
-/* ---------------- React Query Config ---------------- */
-
-const queryClientConfig: QueryClientConfig = {
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      gcTime: 5 * 60_000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-    mutations: {
-      retry: 0,
-    },
-  },
-};
-
-function makeQueryClient() {
-  return new QueryClient(queryClientConfig);
-}
-
-let browserQueryClient: QueryClient | undefined;
-
-function getQueryClient() {
-  if (typeof window === "undefined") return makeQueryClient();
-  if (!browserQueryClient) browserQueryClient = makeQueryClient();
-  return browserQueryClient;
-}
-
-/* ---------------- Providers ---------------- */
-
 export default function Providers({ children }: ProvidersProps) {
-  const queryClient = getQueryClient();
+  /* ✅ Fix: Stable QueryClient (NO hydration bug) */
+  const [queryClient] = useState(() => 
+    new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 30_000,
+          gcTime: 5 * 60_000,
+          retry: 1,
+          refetchOnWindowFocus: false,
+        },
+        mutations: {
+          retry: 0,
+        },
+      },
+    })
+  );
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark">
+   <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      {/* UploadThing SSR */}
       <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
 
-      <Toaster position="top-center" reverseOrder={false} />
+      {/* Toast */}
+      <Toaster position="top-center" />
 
+      {/* Auth */}
       <SessionProvider>
+        {/* React Query */}
         <QueryClientProvider client={queryClient}>
-          <Provider store={store}>
-             <DeliverWrapper>
-            {children}
+          {/* Redux */}
+          <ReduxProvider store={store}>
+            {/* Custom Wrapper */}
+            <DeliverWrapper>
+              {children}
             </DeliverWrapper>
-          </Provider>
+          </ReduxProvider>
 
+          {/* Devtools */}
           {process.env.NODE_ENV === "development" && (
             <ReactQueryDevtools initialIsOpen={false} />
           )}

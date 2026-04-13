@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { NextResponse } from "next/server";
 
 export async function GET(
   req: Request,
@@ -7,28 +8,82 @@ export async function GET(
   try {
     const { slug } = await context.params;
 
-    // ✅ Validate slug
+    /* ================= VALIDATE ================= */
+
     if (!slug) {
-      return new Response("Invalid slug", { status: 400 });
+      return NextResponse.json(
+        { message: "Invalid slug" },
+        { status: 400 }
+      );
     }
 
-    // ✅ Fetch product with relations (important for ecommerce)
+    /* ================= FETCH PRODUCT ================= */
+
     const product = await db.product.findUnique({
       where: { slug },
+
       include: {
+        /* relations */
         category: true,
+        subCategory: true,
         user: true,
         hsnCode: true,
+
+        /* gallery */
+        images: {
+          orderBy: {
+            isPrimary: "desc",
+          },
+        },
+
+        /* variants */
+        variants: {
+          include: {
+            attributes: true,
+            wholesalePricing: {
+              orderBy: {
+                minQty: "asc",
+              },
+            },
+          },
+
+          orderBy: {
+            isDefault: "desc",
+          },
+        },
+
+        /* multilingual */
+        translations: true,
+
+        /* blogs linked */
+        blogs: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+          },
+        },
       },
     });
 
+    /* ================= NOT FOUND ================= */
+
     if (!product) {
-      return new Response("Product not found", { status: 404 });
+      return NextResponse.json(
+        { message: "Product not found" },
+        { status: 404 }
+      );
     }
 
-    return Response.json(product);
+    /* ================= SUCCESS ================= */
+
+    return NextResponse.json(product);
   } catch (error) {
-    console.error("🔥 API ERROR:", error);
-    return new Response("Internal Server Error", { status: 500 });
+    console.error("PRODUCT DETAIL API ERROR ❌", error);
+
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

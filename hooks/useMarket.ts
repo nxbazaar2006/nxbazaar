@@ -9,6 +9,7 @@ import {
 } from "@/lib/apiRequest";
 
 import { Market } from "@/types/market";
+import { MarketInput } from "@/schemas/market";
 
 export const MARKET_QUERY_KEY = ["markets"] as const;
 
@@ -20,20 +21,17 @@ export function useMarkets() {
 }
 
 /* ================================
-   GET SINGLE 🔥
+   GET SINGLE
 ================================ */
-export function useMarket(id: string) {
-  return useApiGet<Market>(
-    `/markets/${id}`,
-    ["markets", id]
-  );
+export function useMarketById(id: string) {
+  return useApiGet<Market>(`/markets/${id}`, ["markets", id]);
 }
 
 /* ================================
    CREATE
 ================================ */
-export function useCreateMarket() {
-  return useApiPost<Market, Partial<Market>>(
+export function useCreateMarketApi() {
+  return useApiPost<Market, MarketInput>(
     "/markets",
     MARKET_QUERY_KEY
   );
@@ -42,8 +40,8 @@ export function useCreateMarket() {
 /* ================================
    UPDATE
 ================================ */
-export function useUpdateMarket() {
-  return useApiPut<Market, Partial<Market>>(
+export function useUpdateMarketApi() {
+  return useApiPut<Market, { id: string; data: MarketInput }>(
     "/markets",
     MARKET_QUERY_KEY
   );

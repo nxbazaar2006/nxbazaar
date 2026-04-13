@@ -1,41 +1,54 @@
+import SubCategoryForm from "@/components/backoffice/Forms/SubCategoryForm";
+import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
-import {db} from "@/lib/db";
-import FormHeader from "@/components/backoffice/FormHeader";
-import NewCategoryForm from "@/components/backoffice/Forms/NewCategoryForm";
-import { Category } from "@prisma/client";
 
-interface PageProps {
+interface Props {
   params: Promise<{
     id: string;
   }>;
 }
 
-export default async function UpdateCategory({
+export default async function UpdateSubCategoryPage({
   params,
-}: PageProps) {
+}: Props) {
+  const { id } = await params;
 
-  const { id } = await params; // ✅ Next 16 unwrap
-
-  const category: Category | null =
-    await db.category.findUnique({
+  const [subCategory, categories] = await Promise.all([
+    db.subCategory.findUnique({
       where: { id },
-    });
+    }),
+    db.category.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+  ]);
 
-  if (!category) {
-    notFound(); // ✅ native 404 page
+  if (!subCategory) {
+    return notFound();
   }
 
-  // ✅ Normalize null → undefined for form
-  const normalizedCategory = {
-    ...category,
-    imageUrl: category.imageUrl ?? undefined,
-    description: category.description ?? undefined,
+  const formattedCategories = categories.map((item) => ({
+    id: item.id,
+    title: item.title,
+  }));
+
+  const formattedSubCategory = {
+    id: subCategory.id,
+    title: subCategory.title,
+    description: subCategory.description ?? "",
+    imageUrl: subCategory.imageUrl ?? "",
+    isActive: subCategory.isActive,
+    categoryId: subCategory.categoryId,
+    hsnCodeId: subCategory.hsnCodeId ?? null,
+    metaTitle: subCategory.metaTitle ?? "",
+    metaDescription: subCategory.metaDescription ?? "",
   };
 
   return (
-    <>
-      <FormHeader title="Update Category" />
-      <NewCategoryForm updateData={normalizedCategory} />
-    </>
+    <SubCategoryForm
+      categories={formattedCategories}
+      updateData={formattedSubCategory}
+    />
   );
 }

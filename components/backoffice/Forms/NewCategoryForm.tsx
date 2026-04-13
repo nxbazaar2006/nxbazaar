@@ -1,148 +1,220 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { useForm } from "react-hook-form"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import ImageInput from "@/components/FormInputs/ImageInput"
-import SubmitButton from "@/components/FormInputs/SubmitButton"
-import TextareaInput from "@/components/FormInputs/TextAreaInput"
-import TextInput from "@/components/FormInputs/TextInput"
-import ToggleInput from "@/components/FormInputs/ToggleInput"
+import React, { useState } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import ImageInput from "@/components/FormInputs/ImageInput";
+import SubmitButton from "@/components/FormInputs/SubmitButton";
+import TextareaInput from "@/components/FormInputs/TextAreaInput";
+import TextInput from "@/components/FormInputs/TextInput";
+import ToggleInput from "@/components/FormInputs/ToggleInput";
 
 import {
   useCreateCategory,
-  useUpdateCategory
-} from "@/hooks/useCategoryMutation"
+  useUpdateCategory,
+} from "@/hooks/useCategoryMutation";
 
-import {
-  Category,
-  CategoryFormData
-} from "@/types/category"
+import { categorySchema } from "@/lib/validators/category.schema";
+import { Category } from "@/types/category";
+import { slugify } from "@/lib/utils/slug";
 
+// ✅ ENTERPRISE LOCALES
+const LOCALES = ["en", "hi", "mr"] as const;
+type Language = (typeof LOCALES)[number];
 
-
-interface Props {
-  updateData?: Category
+interface TranslationInput {
+  locale: Language;
+  title: string;
+  description?: string;
 }
 
-export default function NewCategoryForm({
-  updateData
-}: Props) {
+interface CategoryFormData {
+  imageUrl?: string;
+  isActive: boolean;
+  translations: TranslationInput[];
+}
 
-  const router = useRouter()
-  const id = updateData?.id
+interface Props {
+  updateData?: Category;
+}
+
+export default function NewCategoryForm({ updateData }: Props) {
+  const router = useRouter();
+  const id = updateData?.id;
+
+  // ✅ lowercase locale
+  const [activeTab, setActiveTab] = useState<Language>("en");
 
   const [imageUrl, setImageUrl] = useState<string>(
     updateData?.imageUrl ?? ""
-  )
+  );
+
+  // ✅ dynamic translations (SCALABLE)
+  const defaultTranslations: TranslationInput[] = LOCALES.map(
+    (locale) => ({
+      locale,
+      title:
+        updateData?.translations?.find((t) => t.locale === locale)
+          ?.title ?? "",
+      description:
+        updateData?.translations?.find((t) => t.locale === locale)
+          ?.description ?? "",
+    })
+  );
 
   const {
-  register,
-  handleSubmit,
-  reset,
-  formState: { errors }
-} = useForm<CategoryFormData>({
-  defaultValues: {
-    title: updateData?.title ?? "",
-    description: updateData?.description ?? "",
-    imageUrl: updateData?.imageUrl ?? "",
-    isActive: updateData?.isActive ?? true
-  }
-})
+    register,
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<CategoryFormData>({
+    resolver: zodResolver(categorySchema),
+    defaultValues: {
+      imageUrl: updateData?.imageUrl ?? "",
+      isActive: updateData?.isActive ?? true,
+      translations: defaultTranslations,
+    },
+  });
 
-  const createMutation = useCreateCategory()
-  const updateMutation = useUpdateCategory()
+  const { fields } = useFieldArray({
+    control,
+    name: "translations",
+  });
 
- async function onSubmit(data: CategoryFormData) {
-  const formattedData: CategoryFormData = {
-    ...data,
-    imageUrl,
-  }
+  const createMutation = useCreateCategory();
+  const updateMutation = useUpdateCategory();
 
-  let res
+  const watchedTranslations = watch("translations");
 
-  if (id) {
-    // 🔥 UPDATE
-    res = await updateMutation.mutateAsync({
-      id,
-      data: formattedData,
-    })
-  } else {
-    // 🔥 CREATE
-    res = await createMutation.mutateAsync(formattedData)
-  }
+  // 🔥 SUBMIT
+  async function onSubmit(data: CategoryFormData) {
+    try {
+      // ✅ slug from EN
+      const enTitle =
+        data.translations.find((t) => t.locale === "en")?.title || "";
 
-  // ✅ Handle Response Properly
-  if (res.success) {
-    toast.success(res.message)
+      const payload = {
+        ...data,
+        imageUrl,
+        slug: slugify(enTitle), // ✅ IMPORTANT FIX
+      };
 
-    if (!id) {
-      reset()
-      setImageUrl("")
+      const res = id
+        ? await updateMutation.mutateAsync({ id, data: payload })
+        : await createMutation.mutateAsync(payload);
+
+      if (res?.success) {
+        toast.success(res.message ?? "Success");
+
+        if (!id) {
+          reset();
+          setImageUrl("");
+        }
+
+        router.push("/dashboard/categories");
+        router.refresh();
+      } else {
+        toast.error(res?.message ?? "Failed");
+      }
+    } catch (error: unknown) {
+      console.error(error);
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unexpected server error"
+      );
     }
-
-    router.push("/dashboard/categories")
-  } else {
-    toast.error(res.message)
   }
-}
 
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-     className="max-w-4xl mx-auto p-6 rounded-lg 
-bg-orange-500 dark:bg-orange-500 
-border border-orange-300 dark:border-orange-900 
-text-foreground"
+      className="max-w-4xl mx-auto p-6 space-y-6 bg-white dark:bg-zinc-900 rounded-xl shadow"
     >
-      <div className="grid gap-4 sm:grid-cols-2">
-
-        <TextInput
-          label="Category Title"
-          name="title"
-          register={register}
-          errors={errors}
-        />
-
-        <TextareaInput
-          label="Category Description"
-          name="description"
-          register={register}
-          errors={errors}
-        />
-
-        <ImageInput
-          imageUrl={imageUrl}
-          setImageUrl={setImageUrl}
-          endpoint="categoryImageUploader"
-          label="Category Image"
-        />
-
-        <ToggleInput
-          label="Publish your Category"
-          name="isActive"
-          trueTitle="Active"
-          falseTitle="Draft"
-          register={register}
-        />
-
+      {/* 🔥 LANGUAGE TABS */}
+      <div className="flex gap-2">
+        {LOCALES.map((lang) => (
+          <button
+            type="button"
+            key={lang}
+            onClick={() => setActiveTab(lang)}
+            className={`px-4 py-2 rounded ${
+              activeTab === lang
+                ? "bg-black text-white"
+                : "bg-gray-200 dark:bg-zinc-800"
+            }`}
+          >
+            {lang.toUpperCase()}
+          </button>
+        ))}
       </div>
 
+      {/* 🔥 TRANSLATION FIELDS */}
+      {fields.map((field, index) => {
+        if (field.locale !== activeTab) return null;
+
+        const current = watchedTranslations[index];
+
+        return (
+          <div key={field.id} className="space-y-4">
+            <TextInput
+              label={`Title (${field.locale.toUpperCase()})`}
+              name={`translations.${index}.title`}
+              register={register}
+              errors={errors}
+            />
+
+            <TextareaInput
+              label={`Description (${field.locale.toUpperCase()})`}
+              name={`translations.${index}.description`}
+              register={register}
+              errors={errors}
+            />
+
+            {/* ✅ SLUG PREVIEW */}
+            <div className="text-sm text-gray-500">
+              Slug Preview:
+              <span className="ml-2 px-2 py-1 bg-gray-200 dark:bg-zinc-800 rounded font-mono">
+                /category/{slugify(current?.title || "")}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* IMAGE */}
+      <ImageInput
+        imageUrl={imageUrl}
+        setImageUrl={setImageUrl}
+        endpoint="categoryImageUploader"
+        label="Category Image"
+      />
+
+      {/* STATUS */}
+      <ToggleInput
+        label="Publish Category"
+        name="isActive"
+        trueTitle="Active"
+        falseTitle="Draft"
+        register={register}
+      />
+
+      {/* SUBMIT */}
       <SubmitButton
         isLoading={
-          createMutation.isPending ||
-          updateMutation.isPending
+          createMutation.isPending || updateMutation.isPending
         }
-        buttonTitle={
-          id ? "Update Category" : "Create Category"
-        }
+        buttonTitle={id ? "Update Category" : "Create Category"}
         loadingButtonTitle={
-          id
-            ? "Updating Category..."
-            : "Creating Category..."
+          id ? "Updating..." : "Creating..."
         }
       />
     </form>
-  )
+  );
 }

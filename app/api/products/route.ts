@@ -2,27 +2,7 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { productSchema } from "@/lib/validators/productSchema";
 import { auth } from "@/auth";
-
-/* ================= HELPER ================= */
-
-async function generateUniqueBarcode() {
-  let barcode = "";
-  let exists = true;
-
-  while (exists) {
-    barcode = Math.floor(
-      100000000000 + Math.random() * 900000000000
-    ).toString();
-
-    const found = await db.product.findUnique({
-      where: { barcode },
-    });
-
-    if (!found) exists = false;
-  }
-
-  return barcode;
-}
+import slugify from "slugify";
 
 /* ================= GET ================= */
 
@@ -30,11 +10,23 @@ export async function GET() {
   try {
     const products = await db.product.findMany({
       orderBy: { createdAt: "desc" },
+
       include: {
         category: true,
-        subCategory: true, // ✅ FIX
+        subCategory: true,
         hsnCode: true,
         user: true,
+
+        images: true,
+
+        variants: {
+          include: {
+            attributes: true,
+            wholesalePricing: true,
+          },
+        },
+
+        translations: true,
       },
     });
 
@@ -69,12 +61,7 @@ export async function POST(request: Request): Promise<Response> {
 
     const slug =
       body.slug ||
-      body.title
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, "-") +
-        "-" +
-        Date.now();
+      `${slugify(body.title, { lower: true, strict: true })}-${Date.now()}`;
 
     /* ================= DUPLICATE SLUG ================= */
 
@@ -89,55 +76,22 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
-    /* ================= BARCODE FIX ================= */
-
-    let barcode = body.barcode;
-
-    if (barcode) {
-      const exists = await db.product.findUnique({
-        where: { barcode },
-      });
-
-      if (exists) {
-        return NextResponse.json(
-          { message: "Barcode already exists" },
-          { status: 409 }
-        );
-      }
-    } else {
-      barcode = await generateUniqueBarcode(); // ✅ AUTO GENERATE
-    }
-
-    /* ================= CREATE ================= */
+    /* ================= CREATE PRODUCT ================= */
 
     const product = await db.product.create({
       data: {
         title: body.title,
         slug,
 
-        description: body.description ?? null,
-
-        barcode, // ✅ FIXED
-        sku: body.sku ?? null,
-        productCode: body.productCode ?? null,
-
-        productPrice: body.productPrice,
-        salePrice: body.salePrice ?? null,
-
-        wholesalePrice: body.wholesalePrice ?? null,
-        wholesaleQty: body.wholesaleQty ?? null,
-
-        productStock: body.productStock ?? null,
-
-        unit: body.unit ?? null,
+        imageUrl: body.imageUrl ?? null,
 
         tags: body.tags ?? [],
+        unit: body.unit ?? null,
+
+        currency: body.currency ?? "INR",
 
         isActive: body.isActive ?? true,
         isWholesale: body.isWholesale ?? false,
-
-        productImages: body.productImages,
-        imageUrl: body.productImages?.[0] ?? null,
 
         /* ================= RELATIONS ================= */
 
@@ -145,24 +99,99 @@ export async function POST(request: Request): Promise<Response> {
           connect: { id: session.user.id },
         },
 
-        category: body.categoryId
-          ? { connect: { id: body.categoryId } }
-          : undefined,
+        category: {
+          connect: { id: body.categoryId },
+        },
 
         subCategory: body.subCategoryId
-          ? { connect: { id: body.subCategoryId } }
-          : undefined, // ✅ FIXED
+          ? {
+              connect: { id: body.subCategoryId },
+            }
+          : undefined,
 
         hsnCode: body.hsnCodeId
-          ? { connect: { id: body.hsnCodeId } }
+          ? {
+              connect: { id: body.hsnCodeId },
+            }
           : undefined,
+
+        /* ================= IMAGES ================= */
+
+        images: {
+          create: body.images.map((img) => ({
+            url: img.url,
+            isPrimary: img.isPrimary ?? false,
+          })),
+        },
+
+        /* ================= VARIANTS ================= */
+
+        variants: {
+          create: body.variants.map((variant) => ({
+            title: variant.title,
+
+            sku: variant.sku ?? null,
+            barcode: variant.barcode ?? null,
+
+            price: variant.price,
+            salePrice: variant.salePrice ?? null,
+            costPrice: variant.costPrice ?? null,
+
+            currency: body.currency ?? "INR",
+
+            stock: variant.stock ?? null,
+            reservedStock: 0,
+            lowStockAlert: null,
+            trackInventory: true,
+
+            image: variant.image ?? null,
+
+            isActive: true,
+            isDefault: variant.isDefault ?? false,
+
+            attributes: {
+              create: variant.attributes.map((attr) => ({
+                name: attr.name,
+                value: attr.value,
+              })),
+            },
+
+            wholesalePricing: {
+              create: variant.wholesalePricing.map((w) => ({
+                minQty: w.minQty,
+                price: w.price,
+              })),
+            },
+          })),
+        },
+
+        /* ================= TRANSLATIONS ================= */
+
+        translations: {
+          create: body.translations.map((translation) => ({
+            locale: translation.locale,
+            title: translation.title,
+            description: translation.description ?? null,
+          })),
+        },
       },
 
       include: {
         category: true,
-        subCategory: true, // ✅ FIX
+        subCategory: true,
         hsnCode: true,
         user: true,
+
+        images: true,
+
+        variants: {
+          include: {
+            attributes: true,
+            wholesalePricing: true,
+          },
+        },
+
+        translations: true,
       },
     });
 
@@ -171,7 +200,9 @@ export async function POST(request: Request): Promise<Response> {
     console.error("CREATE PRODUCT ERROR ❌", error);
 
     return NextResponse.json(
-      { message: "Failed to create product" },
+      {
+        message: "Failed to create product",
+      },
       { status: 500 }
     );
   }

@@ -1,59 +1,139 @@
 "use client";
-import React from "react";
+
+import React, { useState, useMemo } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  Title,
   Tooltip,
-  Legend,
+  Filler,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import { Sale } from "@/types/dashboard";
+
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  Title,
   Tooltip,
-  Legend
+  Filler
 );
 
-interface Props {
-  sales: Sale[];
-}
+export default function WeeklySalesChart() {
+  const [activeTab, setActiveTab] = useState("sales");
 
-export default function WeeklySalesChart({ sales }: Props) {
-  const labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
 
-  // weekly totals
-  const weeklyTotals = Array(7).fill(0);
+  const generateData = () =>
+  labels.map((_, i) => 500 + i * 200 + Math.floor(Math.random() * 300));
 
-  sales.forEach((sale) => {
-    const day = new Date(sale.createdAt).getDay();
-    weeklyTotals[day] += sale.total;
-  });
+  const tabs = [
+    {
+      title: "Sales",
+      type: "sales",
+      color: "#6366f1",
+    },
+    {
+      title: "Orders",
+      type: "orders",
+      color: "#10b981",
+    },
+  ];
 
-  const data = {
-    labels,
-    datasets: [
-      {
-        label: "Weekly Sales",
-        data: weeklyTotals,
-        borderColor: "rgb(34,197,94)",
-        backgroundColor: "rgba(34,197,94,0.4)",
+  const chartData = useMemo(() => {
+    const tab = tabs.find((t) => t.type === activeTab);
+
+    return {
+      labels,
+      datasets: [
+        {
+          data: generateData(),
+          borderColor: tab?.color,
+          borderWidth: 2,
+          tension: 0.4,
+          fill: true,
+          pointRadius: 0,
+          backgroundColor: (ctx: any) => {
+            const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, `${tab?.color}40`);
+            gradient.addColorStop(1, "transparent");
+            return gradient;
+          },
+        },
+      ],
+    };
+  }, [activeTab]);
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+      duration: 800,
+      easing: "easeOutCubic",
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: "rgba(0,0,0,0.7)",
+        borderRadius: 10,
+        padding: 10,
       },
-    ],
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: "#aaa", font: { size: 11 } },
+      },
+      y: {
+        grid: { color: "rgba(255,255,255,0.05)" },
+        ticks: { color: "#aaa", font: { size: 11 } },
+      },
+    },
   };
 
   return (
-    <div className="dark:bg-slate-700 bg-slate-50 p-8 rounded-lg shadow-xl">
-      <h2 className="text-xl font-bold mb-4">Weekly Sales</h2>
-      <Line data={data} />
+    <div className="
+      backdrop-blur-xl bg-white/5
+      border border-white/10
+      rounded-2xl p-4
+      shadow-[0_10px_40px_rgba(0,0,0,0.25)]
+    ">
+      {/* HEADER */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-medium text-white/70">
+          Weekly Analytics
+        </h2>
+
+        {/* TABS */}
+        <div className="flex gap-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.type}
+              onClick={() => setActiveTab(tab.type)}
+              className={`
+                px-3 py-1 text-xs rounded-full
+                transition-all duration-200
+
+                ${
+                  activeTab === tab.type
+                    ? "bg-white/10 text-white"
+                    : "text-white/50 hover:text-white"
+                }
+              `}
+            >
+              {tab.title}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* CHART */}
+      <div className="h-[220px]">
+        <Line data={chartData} options={options} />
+      </div>
     </div>
   );
 }

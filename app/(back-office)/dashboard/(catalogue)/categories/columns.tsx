@@ -1,24 +1,22 @@
-"use client"
+"use client";
 
-import { ColumnDef } from "@tanstack/react-table"
-import { Category } from "@/types/category"
-import { Checkbox } from "@/components/ui/checkbox"
-import DateColumn from "@/components/DataTableColumns/DateColumn"
-import ImageColumn from "@/components/DataTableColumns/ImageColumn"
-import SortableColumn from "@/components/DataTableColumns/SortableColumn"
-import ActionColumn from "@/components/DataTableColumns/ActionColumn"
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import ActionColumn from "@/components/DataTableColumns/ActionColumn";
+import { SubCategory } from "@/types/subcategory";
 
-export const columns: ColumnDef<Category>[] = [
+export const columns: ColumnDef<SubCategory>[] = [
   {
     id: "select",
     header: ({ table }) => (
       <Checkbox
         checked={
           table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
+          (table.getIsSomePageRowsSelected() &&
+            "indeterminate")
         }
         onCheckedChange={(value) =>
-          table.toggleAllPageRowsSelected(!!value)
+          table.toggleAllPageRowsSelected(Boolean(value))
         }
         aria-label="Select all"
       />
@@ -27,60 +25,43 @@ export const columns: ColumnDef<Category>[] = [
       <Checkbox
         checked={row.getIsSelected()}
         onCheckedChange={(value) =>
-          row.toggleSelected(!!value)
+          row.toggleSelected(Boolean(value))
         }
         aria-label="Select row"
       />
     ),
     enableSorting: false,
-    enableHiding: false
+    enableHiding: false,
   },
-
   {
     accessorKey: "title",
-    header: ({ column }) => (
-      <SortableColumn column={column} title="Title" />
-    )
+    header: "Title",
   },
-
   {
-    accessorKey: "imageUrl",
-    header: "Category Image",
-    cell: ({ row }) => (
-      <ImageColumn<Category>
-        row={row}
-        accessorKey="imageUrl"
-      />
-    )
+    accessorKey: "slug",
+    header: "Slug",
   },
-
   {
     accessorKey: "isActive",
-    header: "Active",
+    header: "Status",
     cell: ({ row }) =>
-      row.original.isActive ? "Active" : "Draft"
+      row.original.isActive ? "Active" : "Inactive",
   },
-
   {
     accessorKey: "createdAt",
-    header: "Date Created",
-    cell: ({ row }) => (
-      <DateColumn<Category>
-        row={row}
-        accessorKey="createdAt"
-      />
-    )
+    header: "Created At",
+    cell: ({ row }) =>
+      new Date(row.original.createdAt).toLocaleDateString(),
   },
-
   {
     id: "actions",
     cell: ({ row }) => (
       <ActionColumn
         row={row}
-        title="Category"
-        editEndpoint={`categories/update/${row.original.id}`}
-        endpoint={`categories/${row.original.id}`}
+        title="SubCategory"
+        editEndpoint={`/dashboard/subcategories/update/${row.original.id}`}
+        endpoint={`subcategories/${row.original.id}`}
       />
-    )
-  }
-]
+    ),
+  },
+];

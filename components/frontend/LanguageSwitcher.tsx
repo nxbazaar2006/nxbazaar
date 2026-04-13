@@ -1,29 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import { setLanguage, Locale } from "@/redux/slices/languageSlice";
 
 export default function LanguageSwitcher() {
-  const [lang, setLang] = useState("en");
+  const dispatch = useDispatch();
+  const locale = useSelector((state: RootState) => state.language.locale);
+
+  const changeLanguage = (lang: Locale) => {
+    dispatch(setLanguage(lang));
+  };
 
   return (
     <div className="flex gap-2">
-      <button
-        onClick={() => setLang("en")}
-        className={`px-2 py-1 rounded ${
-          lang === "en" ? "bg-white/20" : "bg-white/10"
-        }`}
-      >
-        EN
-      </button>
-
-      <button
-        onClick={() => setLang("hi")}
-        className={`px-2 py-1 rounded ${
-          lang === "hi" ? "bg-white/20" : "bg-white/10"
-        }`}
-      >
-        हिंदी
-      </button>
+      {["en", "hi", "mr"].map((lang) => (
+        <button
+          key={lang}
+          onClick={() => changeLanguage(lang as Locale)}
+          className={`px-3 py-1 rounded ${
+            locale === lang ? "bg-black text-white" : "bg-gray-200"
+          }`}
+        >
+          {lang.toUpperCase()}
+        </button>
+      ))}
     </div>
   );
 }

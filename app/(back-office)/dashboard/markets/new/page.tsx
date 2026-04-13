@@ -1,14 +1,39 @@
 import { getCategories } from "@/actions/category";
 import NewMarketForm from "@/components/backoffice/NewMarketForm";
-import { Category } from "@prisma/client";
 
 export default async function NewMarket() {
-  const categoriesData: Category[] = await getCategories();
+  /* ================================
+     FETCH CATEGORIES
+  ================================ */
+  const categoriesResponse = await getCategories();
 
-  const categories = categoriesData.map((cat) => ({
-    label: cat.title,
-    value: cat.id,
+  /* ================================
+     HANDLE ERROR
+  ================================ */
+  if (!categoriesResponse.success) {
+    return (
+      <div className="p-6 text-sm text-red-500">
+        Failed to load categories
+      </div>
+    );
+  }
+
+  const categoriesData = categoriesResponse.data ?? [];
+
+  /* ================================
+     MAP OPTIONS
+  ================================ */
+  const categories = categoriesData.map((category) => ({
+    label: category.title,
+    value: category.id,
   }));
 
-  return <NewMarketForm categories={categories} />;
+  /* ================================
+     RENDER FORM
+  ================================ */
+  return (
+    <NewMarketForm
+      categories={categories}
+    />
+  );
 }

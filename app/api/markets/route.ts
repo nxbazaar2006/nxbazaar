@@ -3,46 +3,96 @@ import { NextResponse } from "next/server";
 import { marketSchema } from "@/lib/validators/market.schema";
 import { z } from "zod";
 
-/**
- * CREATE MARKET
- */
+/* =====================================================
+   HELPERS
+===================================================== */
+function handleServerError(error: unknown, label: string) {
+  console.error(`${label}:`, error);
+
+  if (error instanceof z.ZodError) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Validation failed",
+        errors: error.flatten(),
+      },
+      { status: 400 }
+    );
+  }
+
+  return NextResponse.json(
+    {
+      success: false,
+      message: "Internal Server Error",
+    },
+    { status: 500 }
+  );
+}
+
+/* =====================================================
+   CREATE MARKET
+===================================================== */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // ✅ validate
+    /* -----------------------------
+       VALIDATE INPUT
+    ------------------------------ */
     const data = marketSchema.parse(body);
 
-    // ✅ check duplicate slug
+    /* -----------------------------
+       CHECK DUPLICATE SLUG
+    ------------------------------ */
     const existingMarket = await db.market.findUnique({
-      where: { slug: data.slug },
+      where: {
+        slug: data.slug,
+      },
     });
 
     if (existingMarket) {
       return NextResponse.json(
         {
           success: false,
-          message: `Market (${data.title}) already exists`,
+          message: `Market slug "${data.slug}" already exists`,
         },
         { status: 409 }
       );
     }
 
-    // ✅ create market
+    /* -----------------------------
+       CREATE MARKET
+    ------------------------------ */
     const newMarket = await db.market.create({
       data: {
         title: data.title,
         slug: data.slug,
         logoUrl: data.logoUrl,
         description: data.description,
-        isActive: data.isActive,
+        isActive: data.isActive ?? true,
 
         categories: {
-          connect: data.categoryIds.map((id) => ({ id })),
+          connect:
+            data.categoryIds?.map((id) => ({
+              id,
+            })) ?? [],
         },
+
+        translations: data.translations
+          ? {
+              create: data.translations.map((translation) => ({
+                locale: translation.locale,
+                title: translation.title,
+                description: translation.description,
+                slug: translation.slug,
+              })),
+            }
+          : undefined,
       },
+
       include: {
-        categories: true, // 🔥 return relations
+        categories: true,
+        translations: true,
       },
     });
 
@@ -54,41 +104,28 @@ export async function POST(req: Request) {
       },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("POST ERROR:", error);
-
-    // 🔥 Zod error
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Validation failed",
-          errors: error.flatten(), // ✅ better format
-        },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Internal Server Error",
-      },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleServerError(error, "POST MARKET ERROR");
   }
 }
 
-/**
- * GET ALL MARKETS
- */
+/* =====================================================
+   GET ALL MARKETS
+===================================================== */
 export async function GET() {
   try {
     const markets = await db.market.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: {
+        createdAt: "desc",
+      },
 
       include: {
         categories: true,
+        translations: {
+          orderBy: {
+            locale: "asc",
+          },
+        },
       },
     });
 
@@ -96,39 +133,51 @@ export async function GET() {
       {
         success: true,
         data: markets,
-        message: "Markets fetched successfully", // ✅ consistency
+        message: "Markets fetched successfully",
       },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("GET ERROR:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch markets",
-      },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleServerError(error, "GET MARKETS ERROR");
   }
 }
 
-
-
+/* =====================================================
+   BULK DELETE MARKETS
+===================================================== */
 export async function DELETE(req: Request) {
-  const body = await req.json();
-  const ids: string[] = body.ids;
+  try {
+    const body = await req.json();
 
-  await db.market.deleteMany({
-    where: {
-      id: {
-        in: ids,
+    const ids = body.ids as string[];
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "No market IDs provided",
+        },
+        { status: 400 }
+      );
+    }
+
+    const deletedMarkets = await db.market.deleteMany({
+      where: {
+        id: {
+          in: ids,
+        },
       },
-    },
-  });
+    });
 
-  return Response.json({
-    success: true,
-    message: "Markets deleted successfully",
-  });
+    return NextResponse.json(
+      {
+        success: true,
+        count: deletedMarkets.count,
+        message: "Markets deleted successfully",
+      },
+      { status: 200 }
+    );
+  } catch (error: unknown) {
+    return handleServerError(error, "DELETE MARKETS ERROR");
+  }
 }

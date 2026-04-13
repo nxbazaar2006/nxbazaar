@@ -1,3 +1,5 @@
+import LargeCard from "./LargeCard";
+import { DollarSign, ShoppingCart } from "lucide-react";
 import { Sale } from "@/types/dashboard";
 
 type Props = {
@@ -9,20 +11,20 @@ export default function LargeCards({ sales }: Props) {
   const totalSales = sales.length;
 
   return (
-    <div className="grid gap-6 md:grid-cols-3">
-      <div className="bg-card p-6 rounded-xl border">
-        <p className="text-muted-foreground">Total Revenue</p>
-        <h2 className="text-3xl font-bold mt-2">
-          ₹ {totalRevenue}
-        </h2>
-      </div>
+    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      
+      <LargeCard
+        title="Total Revenue"
+        value={`₹ ${totalRevenue}`}
+        icon={<DollarSign className="w-6 h-6 text-indigo-500" />}
+      />
 
-      <div className="bg-card p-6 rounded-xl border">
-        <p className="text-muted-foreground">Total Sales</p>
-        <h2 className="text-3xl font-bold mt-2">
-          {totalSales}
-        </h2>
-      </div>
+      <LargeCard
+        title="Total Sales"
+        value={totalSales}
+        icon={<ShoppingCart className="w-6 h-6 text-pink-500" />}
+      />
+
     </div>
   );
 }

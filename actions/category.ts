@@ -3,7 +3,6 @@
 import { Prisma, Category } from "@prisma/client";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { generateSlug } from "@/lib/utils/Slug";
 
 /* ==============================
 TYPES
@@ -21,15 +20,49 @@ interface ActionResponse<T = null> {
 }
 
 /* ==============================
+UTIL: SLUG GENERATOR (ENTERPRISE)
+============================== */
+
+async function generateUniqueSlug(base: string): Promise<string> {
+  const slugBase = base
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-");
+
+  let slug = slugBase;
+  let count = 1;
+
+  while (true) {
+    const existing = await db.category.findUnique({
+      where: { slug },
+    });
+
+    if (!existing) break;
+
+    slug = `${slugBase}-${count++}`;
+  }
+
+  return slug;
+}
+
+/* ==============================
 CREATE CATEGORY
 ============================== */
 
 export async function createCategory(
   data: CategoryFormData
 ): Promise<ActionResponse<Category>> {
-  const slug = generateSlug(data.title);
-
   try {
+    if (!data.title || data.title.length < 2) {
+      return {
+        success: false,
+        message: "Title is required ❌",
+      };
+    }
+
+    const slug = await generateUniqueSlug(data.title);
+
     const category = await db.category.create({
       data: { ...data, slug },
     });
@@ -52,6 +85,8 @@ export async function createCategory(
       };
     }
 
+    console.error("CREATE CATEGORY ERROR:", error);
+
     return {
       success: false,
       message: "Failed to create category ❌",
@@ -65,7 +100,7 @@ GET ALL CATEGORIES
 
 export async function getCategories(): Promise<Category[]> {
   try {
-    const categories = await db.category.findMany({
+    return await db.category.findMany({
       include: {
         products: true,
       },
@@ -73,10 +108,8 @@ export async function getCategories(): Promise<Category[]> {
         createdAt: "desc",
       },
     });
-
-    return categories;
   } catch (error) {
-    console.log(error);
+    console.error("GET CATEGORIES ERROR:", error);
     return [];
   }
 }
@@ -89,16 +122,14 @@ export async function getCategoryBySlug(
   slug: string
 ): Promise<Category | null> {
   try {
-    const category = await db.category.findUnique({
+    return await db.category.findUnique({
       where: { slug },
       include: {
         products: true,
       },
     });
-
-    return category;
   } catch (error) {
-    console.log(error);
+    console.error("GET CATEGORY BY SLUG ERROR:", error);
     return null;
   }
 }
@@ -111,16 +142,14 @@ export async function getCategoryById(
   id: string
 ): Promise<Category | null> {
   try {
-    const category = await db.category.findUnique({
+    return await db.category.findUnique({
       where: { id },
       include: {
         products: true,
       },
     });
-
-    return category;
   } catch (error) {
-    console.log(error);
+    console.error("GET CATEGORY BY ID ERROR:", error);
     return null;
   }
 }
@@ -133,22 +162,15 @@ export async function updateCategory(
   id: string,
   data: CategoryFormData
 ): Promise<ActionResponse<Category>> {
-  const slug = generateSlug(data.title);
-
   try {
-    const existing = await db.category.findFirst({
-      where: {
-        slug,
-        NOT: { id },
-      },
-    });
-
-    if (existing) {
+    if (!data.title || data.title.length < 2) {
       return {
         success: false,
-        message: "Another category with this title exists ❌",
+        message: "Title is required ❌",
       };
     }
+
+    const slug = await generateUniqueSlug(data.title);
 
     const category = await db.category.update({
       where: { id },
@@ -163,7 +185,7 @@ export async function updateCategory(
       data: category,
     };
   } catch (error) {
-    console.log(error);
+    console.error("UPDATE CATEGORY ERROR:", error);
 
     return {
       success: false,
@@ -191,7 +213,7 @@ export async function deleteCategory(
       message: "Category deleted successfully 🗑️",
     };
   } catch (error) {
-    console.log(error);
+    console.error("DELETE CATEGORY ERROR:", error);
 
     return {
       success: false,

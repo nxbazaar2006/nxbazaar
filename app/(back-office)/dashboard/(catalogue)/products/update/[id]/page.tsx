@@ -4,7 +4,17 @@ import { getProduct } from "@/actions/products";
 import { getCategories } from "@/actions/category";
 import { getSubCategories } from "@/actions/subcategory";
 import React from "react";
-import { Product, Category } from "@prisma/client";
+
+/*
+  Enterprise schema compatible
+  ----------------------------
+  Product now includes:
+  - images
+  - variants
+  - translations
+  - category
+  - subCategory
+*/
 
 type Params = {
   params: Promise<{
@@ -12,18 +22,34 @@ type Params = {
   }>;
 };
 
-export default async function UpdateProduct({ params }: Params) {
-  const { id } = await params; // ✅ FIX
+export default async function UpdateProduct({
+  params,
+}: Params) {
+  const { id } = await params;
 
-  const product: Product = await getProduct(id);
-  const categories: Category[] = await getCategories();
-const subCategories = await getSubCategories();
+  /* ================= FETCH DATA ================= */
+
+  const [product, categories, subCategories] =
+    await Promise.all([
+      getProduct(id),
+      getCategories(),
+      getSubCategories(),
+    ]);
+
+  /* ================= NOT FOUND ================= */
+
   if (!product) {
-    return <div>Product not found</div>;
+    return (
+      <div className="p-6 text-red-500">
+        Product not found
+      </div>
+    );
   }
 
+  /* ================= PAGE ================= */
+
   return (
-    <div>
+    <div className="space-y-6">
       <FormHeader title="Update Product" />
 
       <NewProductForm

@@ -10,6 +10,7 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+// ================= ENUMS =================
 
 enum UserRole {
   ADMIN
@@ -43,17 +44,20 @@ enum Language {
   GU
 }
 
-model User {
-  id            String  @id @default(uuid())
-  name          String?
-  email         String? @unique
-  password      String
-  emailVerified Boolean @default(false)
+// ================= USER =================
 
-  role              UserRole @default(USER)
-  plan              String?
+model User {
+  id            String   @id @default(uuid())
+  name          String?
+  email         String?  @unique
+  password      String
+  emailVerified Boolean  @default(false)
+ blogs Blog[] 
+  role   UserRole @default(USER)
+  plan   String?
+  status Boolean  @default(true)
+
   verificationToken String?
-  status            Boolean  @default(false)
 
   products Product[]
   coupons  Coupon[]
@@ -65,25 +69,27 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([email])
 }
+
+// ================= PROFILE =================
 
 model UserProfile {
   id     String @id @default(uuid())
   userId String @unique
 
-  // Personal Details
-
   firstName String?
   lastName  String?
-  email     String?
   username  String?
   phone     String?
 
-  // Shipping Details
   streetAddress String?
   city          String?
-  country       String?
   district      String?
+  state         String?
+  country       String?
+  zip           String?
 
   dateOfBirth  DateTime?
   profileImage String?
@@ -91,24 +97,24 @@ model UserProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// ================= SELLER =================
+
 model SellerProfile {
   id     String @id @default(uuid())
   userId String @unique
 
-  code               String?
+  code String? @unique
+
   contactPerson      String?
   contactPersonPhone String?
-  profileImageUrl    String?
-
-  firstName String?
-  lastName  String?
-  notes     String?
 
   phone           String?
   physicalAddress String?
-  terms           String?
 
-  isActive Boolean?
+  profileImageUrl String?
+  notes           String?
+
+  isActive Boolean @default(true)
 
   turnover    Float?
   mainProduct String?
@@ -119,18 +125,15 @@ model SellerProfile {
   updatedAt DateTime @updatedAt
 }
 
-//////////////////////////////////////////////////////
-// CATEGORY + MARKET
-//////////////////////////////////////////////////////
+// ================= CATEGORY =================
 
 model Category {
-  id          String  @id @default(uuid())
-  title       String
-  slug        String  @unique
-  imageUrl    String?
-  description String?
-  isActive    Boolean @default(true)
-translations CategoryTranslation[]
+  id       String  @id @default(uuid())
+  slug     String  @unique
+  imageUrl String?
+  isActive Boolean @default(true)
+
+  translations CategoryTranslation[]
   subCategories SubCategory[]
   products      Product[]
 
@@ -138,12 +141,14 @@ translations CategoryTranslation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([slug])
 }
 
 model CategoryTranslation {
-  id         String @id @default(uuid())
-  locale     String // en, hi
-  title      String
+  id          String   @id @default(uuid())
+  locale      Language
+  title       String
   description String?
 
   categoryId String
@@ -152,17 +157,19 @@ model CategoryTranslation {
   @@unique([categoryId, locale])
 }
 
+// ================= SUB CATEGORY =================
 
 model SubCategory {
-  id          String  @id @default(uuid())
-  title       String
-  slug        String  @unique
-  imageUrl    String
-  description String
-  isActive    Boolean @default(true)
-translations SubCategoryTranslation[]
+  id       String  @id @default(uuid())
+  slug     String  @unique
+  imageUrl String?
+  isActive Boolean @default(true)
+
+  translations SubCategoryTranslation[]
+
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
   hsnCodeId String?
   hsnCode   HsnCode? @relation(fields: [hsnCodeId], references: [id])
 
@@ -170,13 +177,15 @@ translations SubCategoryTranslation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([slug])
 }
 
 model SubCategoryTranslation {
-  id            String @id @default(uuid())
-  locale        String
-  title         String
-  description   String?
+  id          String   @id @default(uuid())
+  locale      Language
+  title       String
+  description String?
 
   subCategoryId String
   subCategory   SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
@@ -184,19 +193,41 @@ model SubCategoryTranslation {
   @@unique([subCategoryId, locale])
 }
 
+// ================= MARKET =================
+
 model Market {
   id          String  @id @default(uuid())
-  title       String
   slug        String  @unique
-  logoUrl     String?
+  title       String
   description String?
-  isActive    Boolean @default(true)
+  logoUrl     String?
 
+  isActive Boolean @default(true)
+ translations MarketTranslation[]
   categories Category[] @relation("MarketCategories")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model MarketTranslation {
+  id          String   @id @default(uuid())
+
+  locale      String   // en, hi, mr
+  title       String
+  description String?
+
+  marketId String
+  market   Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([marketId, locale]) // same market + language duplicate na ho
+  @@index([locale])
+}
+
+// ================= HSN =================
 
 model HsnCode {
   id      String @id @default(uuid())
@@ -205,56 +236,189 @@ model HsnCode {
   gstRate Float
 
   products      Product[]
-  subCategories SubCategory[] 
+  subCategories SubCategory[]
+ createdAt     DateTime @default(now())  
+  updatedAt     DateTime @updatedAt
+  @@index([code])
+}
+
+// ================= PRODUCT =================
+
+model Product {
+  id       String @id @default(uuid())
+  title    String
+  slug     String @unique
+  imageUrl String?
+
+  tags String[]
+  unit String?
+
+  isActive    Boolean @default(true)
+  isWholesale Boolean @default(false)
+
+  currency String @default("INR")
+
+  images       ProductImage[]
+  variants     ProductVariant[]
+  translations ProductTranslation[]
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  subCategoryId String?
+  subCategory   SubCategory? @relation(fields: [subCategoryId], references: [id])
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
+  hsnCodeId String?
+  hsnCode   HsnCode? @relation(fields: [hsnCodeId], references: [id])
+
+  orderItems OrderItem[]
+  sales      Sale[]
+  blogs Blog[] @relation("BlogProducts")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([userId])
+}
+
+// ================= PRODUCT IMAGE =================
+
+model ProductImage {
+  id        String @id @default(uuid())
+  url       String
+  isPrimary Boolean @default(false)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+// ================= VARIANT =================
+
+model ProductVariant {
+  id        String @id @default(uuid())
+  productId String
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  title String
+
+  sku     String? @unique
+  barcode String? @unique
+
+  price     Float
+  salePrice Float?
+  costPrice Float?
+
+  currency String @default("INR")
+
+  stock          Int?
+  reservedStock  Int @default(0)
+  lowStockAlert  Int?
+  trackInventory Boolean @default(true)
+
+  image String?
+
+  isActive  Boolean @default(true)
+  isDefault Boolean @default(false)
+
+  attributes       VariantAttribute[]
+  wholesalePricing WholesalePricing[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([code])
+  @@index([productId])
 }
 
+// ================= ATTRIBUTES =================
+
+model VariantAttribute {
+  id        String @id @default(uuid())
+  variantId String
+
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  name  String
+  value String
+}
+
+// ================= WHOLESALE =================
+
+model WholesalePricing {
+  id String @id @default(uuid())
+
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  minQty Int
+  price  Float
+
+  @@unique([variantId, minQty])
+}
+
+// ================= TRANSLATION =================
+
+model ProductTranslation {
+  id          String   @id @default(uuid())
+  locale      Language
+  title       String
+  description String?
+
+  metaTitle       String?
+  metaDescription String?
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, locale])
+}
+
+// ================= ORDER =================
 
 model Order {
   id String @id @default(uuid())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
 
-  // personal
+  orderNumber String @unique
+
   firstName String
   lastName  String
   email     String
   phone     String
 
-  // shipping
   streetAddress String?
   city          String?
   state         String?
   country       String?
-  apartment     String?
   zip           String?
+
+  paymentMethod String
+  orderStatus   OrderStatus @default(PENDING)
 
   shippingCost Float?
 
-  orderNumber String @unique
-
-  paymentMethod String
-
-  orderStatus OrderStatus @default(PROCESSING)
-
   orderItems OrderItem[]
-
-  sales Sale[]
+  sales      Sale[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+// ================= ORDER ITEM =================
+
 model OrderItem {
   id String @id @default(uuid())
 
   orderId String
-  order   Order  @relation(fields: [orderId], references: [id])
+  order   Order @relation(fields: [orderId], references: [id])
 
   productId String
   product   Product @relation(fields: [productId], references: [id])
@@ -266,231 +430,102 @@ model OrderItem {
 
   quantity Int
   price    Float
-
-  // GST Snapshot
-  hsnCode String?
-  cgst    Float?
-  sgst    Float?
-  igst    Float?
-
-  // QR Code
-  qrCode String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
+// ================= SALE =================
+
 model Sale {
-  id        String @id @default(uuid())
+  id String @id @default(uuid())
+
   orderId   String
   productId String
   vendorId  String
 
-  total        Float
-  productTitle String
-  productImage String
-  productPrice Float
-  productQty   Int
+  total Float
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  vendor  User    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+  vendor  User    @relation(fields: [vendorId], references: [id])
+  createdAt DateTime @default(now()) 
 }
 
-//////////////////////////////////////////////////////
-// COUPON 
-//////////////////////////////////////////////////////
+// ================= COUPON =================
 
 model Coupon {
   id         String   @id @default(uuid())
   title      String
-  couponCode String
+  couponCode String   @unique
   expiryDate DateTime
-  isActive   Boolean
+  isActive   Boolean  @default(true)
 
   vendorId String
-  vendor   User   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  vendor   User @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 }
 
-//////////////////////////////////////////////////////
-// SLUG TRANSLATION SYSTEM
-//////////////////////////////////////////////////////
-
-model SlugTranslation {
-  id        String    @id @default(uuid())
-  model     SlugModel
-  entityId  String
-  language  Language
-  slug      String
-  createdAt DateTime  @default(now())
-
-  @@unique([model, language, slug])
-}
-
-model SlugHistory {
-  id        String    @id @default(uuid())
-  model     SlugModel
-  entityId  String
-  language  Language
-  oldSlug   String
-  createdAt DateTime  @default(now())
-
-  @@unique([model, language, oldSlug])
-}
+// ================= BANNER =================
 
 model Banner {
   id        String   @id @default(uuid())
   title     String
   link      String
   imageUrl  String
-  isActive  Boolean
+  isActive  Boolean  @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Product {
-  id             String   @id @default(uuid())
-  title          String
-  slug           String   @unique
-  description    String?
-  imageUrl       String?
-  productImages  String[]
+model Blog {
+  id       String @id @default(uuid())
+  slug     String @unique
 
-  unit           String?   // kg, pcs, liter
-  tags           String[]
+  imageUrl String?
 
-  isActive    Boolean @default(true)
-  isWholesale Boolean @default(false)
+  isActive Boolean @default(true)
+  isFeatured Boolean @default(false)
 
-  // RELATIONS
-  variants     ProductVariant[]
-  translations ProductTranslation[]
-
-  categoryId    String
-  category      Category @relation(fields: [categoryId], references: [id])
-
-  subCategoryId String?
-  subCategory   SubCategory? @relation(fields: [subCategoryId], references: [id])
+  // 🔥 content (NO QUILL)
+  content Json   // markdown / rich json
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
 
-  hsnCodeId String?
-  hsnCode   HsnCode? @relation(fields: [hsnCodeId], references: [id])
+  categoryId String?
+  category   BlogCategory? @relation(fields: [categoryId], references: [id])
 
-  orderItems OrderItem[]
-  sales      Sale[]
+  translations BlogTranslation[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // 🔗 relation with product
+  relatedProducts Product[] @relation("BlogProducts")
 
-  @@index([categoryId])
-  @@index([userId])
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
 }
 
-model ProductVariant {
-  id        String @id @default(uuid())
+model BlogTranslation {
+  id          String   @id @default(uuid())
+  locale      Language
 
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  title String // "M / Red"
-
-  // 🔑 Identification
-  sku         String? @unique
-  barcode     String? @unique
-  productCode String?
-
-  unit String? // override unit
-
-  // 💰 Pricing
-  price     Float
-  salePrice Float?
-
-  costPrice Float?
-  margin    Float?
-
-  // 📦 Inventory
-  stock         Int?
-  reservedStock Int  @default(0)
-  lowStockAlert Int?
-
-  // 🖼️ Media
-  image String?
-
-  // ⚙️ Status
-  isActive  Boolean @default(true)
-  isDefault Boolean @default(false)
-
-  // 🚚 Shipping
-  weight Float?
-  length Float?
-  width  Float?
-  height Float?
-
-  // 🏷️ Relations
-  attributes        VariantAttribute[]
-  wholesalePricing  WholesalePricing[]
-
-  // 📊 Analytics
-  soldCount Int @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([productId])
-  @@index([sku])
-  @@index([barcode])
-}
-
-model VariantAttribute {
-  id        String @id @default(uuid())
-
-  variantId String
-  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
-
-  name  String // Size / Color
-  value String // M / Red
-
-  createdAt DateTime @default(now())
-
-  @@index([variantId])
-}
-
-
-model WholesalePricing {
-  id String @id @default(uuid())
-
-  variantId String
-  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
-
-  minQty Int
-  price  Float
-
-  createdAt DateTime @default(now())
-
-  @@index([variantId])
-  @@unique([variantId, minQty]) // duplicate tier avoid
-}
-
-model ProductTranslation {
-  id          String @id @default(uuid())
-  locale      String // en, hi, mr
   title       String
   description String?
 
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  metaTitle       String?
+  metaDescription String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  blogId String
+  blog   Blog @relation(fields: [blogId], references: [id], onDelete: Cascade)
 
-  @@unique([productId, locale])
-  @@index([locale])
+  @@unique([blogId, locale])
+}
+
+model BlogCategory {
+  id   String @id @default(uuid())
+  slug String @unique
+
+  title String
+
+  blogs Blog[]
 }

@@ -1,11 +1,21 @@
-import FormHeader from "@/components/backoffice/FormHeader"
-import NewCategoryForm from "@/components/backoffice/Forms/NewCategoryForm"
+import SubCategoryForm from "@/components/backoffice/Forms/SubCategoryForm";
+import { db } from "@/lib/db";
 
-export default function NewCategory() {
+export default async function NewSubCategoryPage() {
+  const categories = await db.category.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const formattedCategories = categories.map((item) => ({
+    id: item.id,
+    title: item.title,
+  }));
+
   return (
-    <div>
-      <FormHeader title="New Category" />
-      <NewCategoryForm />
-    </div>
-  )
+    <SubCategoryForm
+      categories={formattedCategories}
+    />
+  );
 }

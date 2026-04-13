@@ -1,27 +1,37 @@
-import PageHeader from "@/components/backoffice/PageHeader"
-import DataTable from "@/components/data-table-components/DataTable"
-import { columns } from "./columns"
-import { getCategories } from "@/actions/category"
-import { Category } from "@/types/category"
-import CategoriesClient from "./CategoriesClient"
+import PageHeader from "@/components/backoffice/PageHeader";
+import CategoriesClient from "./CategoriesClient";
+import { db } from "@/lib/db";
+import { Category } from "@/types/category";
 
-export default async function Page() {
-  const categories: Category[] =
-    await getCategories()
+/**
+ * Server-side fetch categories
+ */
+async function getCategories(): Promise<Category[]> {
+  const categories = await db.category.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      translations: true,
+      products: true,
+    },
+  });
+
+  return categories;
+}
+
+export default async function CategoriesPage() {
+  const categories = await getCategories();
 
   return (
-    <div>
+    <div className="space-y-4">
       <PageHeader
         heading="Categories"
         href="/dashboard/categories/new"
         linkTitle="Add Category"
       />
 
-      <div className="py-0">
-        <CategoriesClient
-          initialData={categories}
-        />
-      </div>
+      <CategoriesClient initialData={categories ?? []} />
     </div>
-  )
+  );
 }
