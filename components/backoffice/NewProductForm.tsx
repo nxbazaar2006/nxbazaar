@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   useForm,
@@ -16,6 +16,7 @@ import ToggleInput from "@/components/FormInputs/ToggleInput";
 import ArrayItemsInput from "@/components/FormInputs/ArrayItemsInput";
 import MultipleImageInput from "@/components/FormInputs/MultipleImageInput";
 import SubmitButton from "@/components/FormInputs/SubmitButton";
+import HsnSearchSelect from "@/components/FormInputs/HsnSearchSelect";
 
 import {
   productSchema,
@@ -44,8 +45,16 @@ type SubCategoryOption = {
   hsnCode?: {
     id: string;
     code: string;
+    title: string;
     gstRate: number;
   } | null;
+};
+
+type HsnOption = {
+  id: string;
+  code: string;
+  title: string;
+  gstRate: number;
 };
 
 type Props = {
@@ -53,6 +62,7 @@ type Props = {
   subCategories?: SubCategoryOption[];
   updateData?: Partial<ProductInput> & {
     id?: string;
+    hsnCode?: HsnOption | null;
   };
 };
 
@@ -75,6 +85,9 @@ export default function NewProductForm({
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
+  const [selectedHsn, setSelectedHsn] = useState<HsnOption | null>(
+    updateData?.hsnCode ?? null
+  );
 
   /* ================= FORM ================= */
 
@@ -109,6 +122,7 @@ export default function NewProductForm({
         updateData?.subCategoryId ?? "",
 
       hsnCodeId: updateData?.hsnCodeId ?? "",
+      gstRate: updateData?.gstRate ?? updateData?.hsnCode?.gstRate ?? undefined,
 
       images:
         updateData?.images ?? [],
@@ -171,6 +185,7 @@ export default function NewProductForm({
 
   const selectedCategoryId =
     watch("categoryId");
+  const selectedSubCategoryId = watch("subCategoryId");
 
   /* ================= FILTER SUBCATEGORY ================= */
 
@@ -185,6 +200,29 @@ export default function NewProductForm({
       subCategories,
       selectedCategoryId,
     ]);
+
+  const selectedSubCategory = useMemo(
+    () =>
+      filteredSubCategories.find(
+        (sub) => sub.id === selectedSubCategoryId
+      ),
+    [filteredSubCategories, selectedSubCategoryId]
+  );
+
+  useEffect(() => {
+    if (selectedSubCategory?.hsnCode) {
+      setSelectedHsn(selectedSubCategory.hsnCode);
+      setValue("hsnCodeId", selectedSubCategory.hsnCode.id, {
+        shouldValidate: true,
+      });
+      setValue("gstRate", selectedSubCategory.hsnCode.gstRate);
+      return;
+    }
+
+    setSelectedHsn(null);
+    setValue("hsnCodeId", "");
+    setValue("gstRate", undefined);
+  }, [selectedSubCategory, setValue]);
 
   /* ================= SUBMIT ================= */
 
@@ -252,6 +290,9 @@ export default function NewProductForm({
         onSubmit={handleSubmit(onSubmit)}
         className="max-w-6xl mx-auto p-6 rounded-xl shadow bg-orange-400/20 backdrop-blur border border-orange-300/30 space-y-8"
       >
+        <input type="hidden" {...register("hsnCodeId")} />
+        <input type="hidden" {...register("gstRate")} />
+
         {/* ================= BASIC ================= */}
         <div className="grid grid-cols-2 gap-4">
           <TextInput
@@ -292,6 +333,31 @@ export default function NewProductForm({
                 value: sub.id,
               })
             )}
+          />
+
+          <div className="space-y-2">
+            <label className="block mb-2 text-sm font-medium">
+              HSN Code
+            </label>
+            <HsnSearchSelect
+              value={selectedHsn}
+              onChange={(value) => {
+                setSelectedHsn(value);
+                setValue("hsnCodeId", value.id, {
+                  shouldValidate: true,
+                });
+                setValue("gstRate", value.gstRate);
+              }}
+            />
+          </div>
+
+          <TextInput
+            label="GST Rate (%)"
+            name="gstRate"
+            type="number"
+            register={register}
+            errors={errors}
+            disabled
           />
 
           <ToggleInput

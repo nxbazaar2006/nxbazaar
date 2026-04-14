@@ -1,59 +1,39 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import api from "@/lib/axios";
+import {
+  createSubCategory,
+  deleteSubCategory,
+  updateSubCategory,
+} from "@/actions/subcategory";
+import type { ActionResponse } from "@/types/action-response";
+import type {
+  SubCategory,
+  SubCategoryPayload,
+} from "@/types/subcategory";
 
-/* ================================
-   BASE MUTATION
-================================ */
+const SUBCATEGORIES_QUERY_KEY = ["subcategories"] as const;
 
-function useAppMutation<TData = any, TVariables = void>(
-  mutationFn: (variables: TVariables) => Promise<any>,
-  queryKey: string[]
-) {
+export function useCreateSubCategory() {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn,
-    onSuccess: (res) => {
-      if (res?.success) {
-        toast.success(res.message || "Success");
-        queryClient.invalidateQueries({ queryKey });
-      } else {
-        toast.error(res?.message || "Something went wrong");
-      }
-    },
-    onError: (error: any) => {
-      console.error(error);
-      toast.error(error?.message || "Something went wrong");
+  return useMutation<ActionResponse, Error, SubCategoryPayload>({
+    mutationFn: createSubCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: SUBCATEGORIES_QUERY_KEY,
+      });
     },
   });
 }
 
-/* ================================
-   CREATE
-================================ */
-
-export function useCreateSubCategory() {
-  return useAppMutation(async (data: any) => {
-    const res = await fetch("/api/subcategories", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-    return res.json();
-  }, ["subcategories"]);
-}
-
-/* ================================
-   GET
-================================ */
-
-export function useSubCategories(initialData: any[] = []) {
-  return useQuery({
-    queryKey: ["subcategories"],
+export function useSubCategories(initialData: SubCategory[] = []) {
+  return useQuery<SubCategory[]>({
+    queryKey: SUBCATEGORIES_QUERY_KEY,
     queryFn: async () => {
-      const res = await fetch("/api/subcategories");
-      return res.json();
+      const { data } = await api.get<SubCategory[]>("/subcategories");
+      return data;
     },
     initialData,
     staleTime: 1000 * 60 * 5,
@@ -61,14 +41,31 @@ export function useSubCategories(initialData: any[] = []) {
 }
 
 export function useUpdateSubCategory() {
-  return useAppMutation(
-    async ({ id, data }: { id: string; data: any }) => {
-      const res = await fetch(`/api/subcategories/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    ActionResponse,
+    Error,
+    { id: string; data: SubCategoryPayload }
+  >({
+    mutationFn: ({ id, data }) => updateSubCategory(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: SUBCATEGORIES_QUERY_KEY,
       });
-      return res.json();
     },
-    ["subcategories"]
-  );
+  });
+}
+
+export function useDeleteSubCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation<ActionResponse, Error, string>({
+    mutationFn: deleteSubCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: SUBCATEGORIES_QUERY_KEY,
+      });
+    },
+  });
 }

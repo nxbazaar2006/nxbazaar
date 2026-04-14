@@ -15,7 +15,7 @@ export default async function UpdateSubCategoryPage({ params }: PageProps) {
   const [categories, subCategory, hsnCodes] = await Promise.all([
     getCategories(),
     getSubCategoryById(id),
-    getHsnCodes(""),
+    getHsnCodes(),
   ]);
 
   return (

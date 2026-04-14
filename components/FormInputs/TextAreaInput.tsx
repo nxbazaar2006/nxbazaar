@@ -48,7 +48,7 @@ export default function TextareaInput<T extends FieldValues>({
           w-full px-4 py-3
           rounded-2xl
 
-          bg-white/80 dark:bg-gray-900/80
+           dark:bg-gray-900/80
           backdrop-blur
 
           border

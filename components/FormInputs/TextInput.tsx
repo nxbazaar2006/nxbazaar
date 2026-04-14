@@ -39,7 +39,7 @@ export default function TextInput<T extends FieldValues>({
   return (
     <div className="space-y-2">
       {/* 🍎 Label */}
-      <label className="text-sm font-medium text-gray-900 dark:text-white">
+      <label className="text-sm font-medium text-gray-900 dark:text-white/90">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
 
@@ -61,13 +61,13 @@ export default function TextInput<T extends FieldValues>({
             ${icon ? "pl-10" : ""}
             rounded-2xl
 
-            bg-white dark:bg-black
+            bg-transparent dark:bg-black
 
             border
             ${
               error
                 ? "border-red-500 focus:ring-red-500/20"
-                : "border-gray-900 dark:border-white"
+                : "border-white/80 hover:border-white"
             }
 
             text-gray-900 dark:text-white
@@ -78,11 +78,8 @@ export default function TextInput<T extends FieldValues>({
 
             shadow-sm hover:shadow-md
 
-            focus:ring-2 focus:ring-gray-900/10
-            focus:border-gray-900
-
-            dark:focus:ring-white/20
-            dark:focus:border-white
+            focus:ring-2 focus:ring-white/20
+            focus:border-white
 
             ${disabled ? "opacity-60 cursor-not-allowed" : ""}
           `}

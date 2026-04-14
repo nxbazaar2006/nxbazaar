@@ -39,7 +39,7 @@ export default async function Page() {
         {/* MAIN CHART */}
         <div className="
           col-span-12 lg:col-span-7
-          bg-white dark:bg-slate-900
+           dark:bg-slate-900
           border border-slate-200 dark:border-slate-700
           rounded-2xl p-5
         ">

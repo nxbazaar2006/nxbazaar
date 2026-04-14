@@ -29,7 +29,7 @@ export default function ImageInput({
 
       {/* UPLOAD AREA */}
       {!imageUrl && (
-        <div className="border-1 border-black dark:border-slate-600 rounded-xl p-6 text-center hover:border-orange-400 transition">
+        <div className="border-1 border-white dark:border-slate-600 rounded-xl p-6 text-center hover:border-orange-400 transition">
           
           <UploadButton<OurFileRouter>
             endpoint={endpoint}

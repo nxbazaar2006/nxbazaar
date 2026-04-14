@@ -1,30 +1,32 @@
+import Card from "@/components/ui/card";
+
 interface Props {
   title: string;
   description?: string;
+  align?: "left" | "center";
 }
 
-export default function Heading({ title, description }: Props) {
+export default function Heading({
+  title,
+  description,
+  align = "left",
+}: Props) {
   return (
-    <div className="space-y-1">
-
-      <h1 className="
-        text-lg md:text-xl lg:text-2xl
-        font-semibold tracking-tight
-        text-slate-900 dark:text-white
-      ">
+    <Card
+      className={`
+        space-y-2
+        ${align === "center" ? "text-center" : "text-left"}
+      `}
+    >
+      <h1 className="text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900 dark:text-white">
         {title}
       </h1>
 
       {description && (
-        <p className="
-          text-sm md:text-base
-          text-slate-500 dark:text-slate-400
-          max-w-xl
-        ">
+        <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-2xl">
           {description}
         </p>
       )}
-
-    </div>
+    </Card>
   );
 }

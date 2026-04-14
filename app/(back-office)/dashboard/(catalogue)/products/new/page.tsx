@@ -17,6 +17,7 @@ type SubCategoryOption = {
   hsnCode: {
     id: string;
     code: string;
+    title: string;
     gstRate: number;
   } | null;
 };
@@ -42,6 +43,7 @@ export default async function NewProduct() {
       ? {
           id: sub.hsnCode.id,
           code: sub.hsnCode.code,
+          title: sub.hsnCode.title,
           gstRate: sub.hsnCode.gstRate,
         }
       : null,

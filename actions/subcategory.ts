@@ -8,9 +8,11 @@ import { generateSlug } from "@/lib/utils/slug";
 
 /* ---------------- RESPONSE TYPES ---------------- */
 
-type ActionResponse<T = null> =
-  | { success: true; data?: T }
-  | { success: false; error: string | Record<string, string[]> };
+type ActionResponse<T = null> = {
+  success: boolean;
+  message: string;
+  data?: T;
+};
 
 /* ---------------- CREATE ---------------- */
 
@@ -23,7 +25,7 @@ export async function createSubCategory(
     if (!parsed.success) {
       return {
         success: false,
-        error: parsed.error.flatten().fieldErrors,
+        message: parsed.error.issues[0]?.message ?? "Invalid subcategory payload",
       };
     }
 
@@ -36,7 +38,7 @@ export async function createSubCategory(
     if (existing) {
       return {
         success: false,
-        error: { slug: ["Slug already exists"] },
+        message: "SubCategory slug already exists",
       };
     }
 
@@ -49,12 +51,15 @@ export async function createSubCategory(
 
     revalidatePath("/dashboard/subcategories");
 
-    return { success: true };
+    return {
+      success: true,
+      message: "SubCategory created successfully",
+    };
   } catch (error) {
     console.error("Create SubCategory Error:", error);
     return {
       success: false,
-      error: "Something went wrong while creating subcategory",
+      message: "Failed to create subcategory",
     };
   }
 }
@@ -71,7 +76,7 @@ export async function updateSubCategory(
     if (!parsed.success) {
       return {
         success: false,
-        error: parsed.error.flatten().fieldErrors,
+        message: parsed.error.issues[0]?.message ?? "Invalid subcategory payload",
       };
     }
 
@@ -87,7 +92,7 @@ export async function updateSubCategory(
     if (existing) {
       return {
         success: false,
-        error: { slug: ["Slug already exists"] },
+        message: "SubCategory slug already exists",
       };
     }
 
@@ -101,12 +106,15 @@ export async function updateSubCategory(
 
     revalidatePath("/dashboard/subcategories");
 
-    return { success: true };
+    return {
+      success: true,
+      message: "SubCategory updated successfully",
+    };
   } catch (error) {
     console.error("Update SubCategory Error:", error);
     return {
       success: false,
-      error: "Something went wrong while updating subcategory",
+      message: "Failed to update subcategory",
     };
   }
 }
@@ -123,12 +131,15 @@ export async function deleteSubCategory(
 
     revalidatePath("/dashboard/subcategories");
 
-    return { success: true };
+    return {
+      success: true,
+      message: "SubCategory deleted successfully",
+    };
   } catch (error) {
     console.error("Delete SubCategory Error:", error);
     return {
       success: false,
-      error: "Failed to delete subcategory",
+      message: "Failed to delete subcategory",
     };
   }
 }
@@ -145,12 +156,15 @@ export async function deleteMultipleSubCategories(
 
     revalidatePath("/dashboard/subcategories");
 
-    return { success: true };
+    return {
+      success: true,
+      message: "SubCategories deleted successfully",
+    };
   } catch (error) {
     console.error("Bulk Delete Error:", error);
     return {
       success: false,
-      error: "Failed to delete multiple subcategories",
+      message: "Failed to delete multiple subcategories",
     };
   }
 }
@@ -205,7 +219,7 @@ export async function createSubCategoryTranslation(
     if (!validated.success) {
       return {
         success: false,
-        error: validated.error.flatten().fieldErrors,
+        message: validated.error.issues[0]?.message ?? "Invalid translation payload",
       };
     }
 
@@ -213,12 +227,16 @@ export async function createSubCategoryTranslation(
       data: validated.data,
     });
 
-    return { success: true, data: result };
+    return {
+      success: true,
+      message: "SubCategory translation created successfully",
+      data: result,
+    };
   } catch (error) {
     console.error("Create Translation Error:", error);
     return {
       success: false,
-      error: "Failed to create translation",
+      message: "Failed to create translation",
     };
   }
 }
@@ -235,7 +253,7 @@ export async function updateSubCategoryTranslation(
     if (!validated.success) {
       return {
         success: false,
-        error: validated.error.flatten().fieldErrors,
+        message: validated.error.issues[0]?.message ?? "Invalid translation payload",
       };
     }
 
@@ -244,12 +262,16 @@ export async function updateSubCategoryTranslation(
       data: validated.data,
     });
 
-    return { success: true, data: result };
+    return {
+      success: true,
+      message: "SubCategory translation updated successfully",
+      data: result,
+    };
   } catch (error) {
     console.error("Update Translation Error:", error);
     return {
       success: false,
-      error: "Failed to update translation",
+      message: "Failed to update translation",
     };
   }
 }
@@ -264,12 +286,15 @@ export async function deleteSubCategoryTranslation(
       where: { id },
     });
 
-    return { success: true };
+    return {
+      success: true,
+      message: "SubCategory translation deleted successfully",
+    };
   } catch (error) {
     console.error("Delete Translation Error:", error);
     return {
       success: false,
-      error: "Failed to delete translation",
+      message: "Failed to delete translation",
     };
   }
 }

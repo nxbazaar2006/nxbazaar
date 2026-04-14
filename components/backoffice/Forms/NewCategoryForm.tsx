@@ -147,8 +147,8 @@ export default function NewCategoryForm({ updateData }: Props) {
     <form
       onSubmit={handleSubmit(onSubmit, onInvalid)}
       className="
-        max-w-4xl mx-auto p-6 space-y-6
-         dark:bg-black
+        max-w-7xl mx-auto p-6 space-y-6
+         dark:bg-black 
         rounded-2xl shadow-lg
       "
     >

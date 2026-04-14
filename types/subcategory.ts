@@ -1,21 +1,23 @@
-import { Category } from "./category";
+export const LOCALES = ["en", "hi", "mr"] as const;
 
-export interface SubCategory {
-  id: string;
+export type Language = (typeof LOCALES)[number];
+
+export interface TranslationInput {
+  locale: Language;
   title: string;
-  slug: string;
-  imageUrl?: string | null;
-  description?: string | null;
-  isActive: boolean;
-  categoryId: string;
-  category?: Pick<Category, "id" | "title">;
-  createdAt: string;
-  hsnCode?: HsnCode | null;
+  description?: string;
 }
 
 export interface HsnCode {
   id: string;
   code: string;
-  title: string;
-  gstRate: number;
+  description?: string;
+}
+
+export interface SubCategoryFormData {
+  categoryId: string;
+  imageUrl?: string;
+  isActive: boolean;
+  translations: TranslationInput[];
+  hsnCodeId: string | null;
 }

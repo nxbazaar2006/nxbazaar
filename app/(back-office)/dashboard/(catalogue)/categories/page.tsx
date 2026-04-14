@@ -1,7 +1,7 @@
 import PageHeader from "@/components/backoffice/PageHeader";
 import CategoriesClient from "./CategoriesClient";
 import { getCategories } from "@/actions/category";
-import { Category } from "@/types/category";
+
 
 export default async function CategoriesPage() {
   const categoriesData = await getCategories();
