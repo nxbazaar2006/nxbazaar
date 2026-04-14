@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import {
+  useForm,
+  useFieldArray,
+  useWatch,
+  type FieldErrors,
+} from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,9 +24,8 @@ import {
 
 import { categorySchema } from "@/lib/validators/category.schema";
 import { Category } from "@/types/category";
-import { generateSlug } from "@/lib/utils/Slug";
+import { generateSlug } from "@/lib/utils/slug";
 
-// ✅ ENTERPRISE LOCALES
 const LOCALES = ["en", "hi", "mr"] as const;
 type Language = (typeof LOCALES)[number];
 
@@ -45,14 +49,11 @@ export default function NewCategoryForm({ updateData }: Props) {
   const router = useRouter();
   const id = updateData?.id;
 
-  // ✅ lowercase locale
   const [activeTab, setActiveTab] = useState<Language>("en");
-
   const [imageUrl, setImageUrl] = useState<string>(
     updateData?.imageUrl ?? ""
   );
 
-  // ✅ dynamic translations (SCALABLE)
   const defaultTranslations: TranslationInput[] = LOCALES.map(
     (locale) => ({
       locale,
@@ -69,7 +70,6 @@ export default function NewCategoryForm({ updateData }: Props) {
     register,
     control,
     handleSubmit,
-    watch,
     reset,
     formState: { errors },
   } = useForm<CategoryFormData>({
@@ -86,15 +86,17 @@ export default function NewCategoryForm({ updateData }: Props) {
     name: "translations",
   });
 
+  const watchedTranslations = useWatch({
+    control,
+    name: "translations",
+    defaultValue: defaultTranslations,
+  });
+
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
 
-  const watchedTranslations = watch("translations");
-
-  // 🔥 SUBMIT
   async function onSubmit(data: CategoryFormData) {
     try {
-      // ✅ slug from EN
       const enTitle =
         data.translations.find((t) => t.locale === "en")?.title || "";
 
@@ -121,45 +123,43 @@ export default function NewCategoryForm({ updateData }: Props) {
       } else {
         toast.error(res?.message ?? "Failed");
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error(error);
-
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Unexpected server error"
-      );
+      toast.error("Server error");
     }
+  }
+
+  function onInvalid(errors: FieldErrors<CategoryFormData>) {
+    const translationErrors = errors.translations;
+
+    if (Array.isArray(translationErrors)) {
+      const firstInvalidIndex = translationErrors.findIndex(Boolean);
+
+      if (firstInvalidIndex >= 0) {
+        setActiveTab(fields[firstInvalidIndex]?.locale);
+      }
+    }
+
+    toast.error("Please fill required fields");
   }
 
   return (
     <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="max-w-4xl mx-auto p-6 space-y-6 bg-white dark:bg-zinc-900 rounded-xl shadow"
+      onSubmit={handleSubmit(onSubmit, onInvalid)}
+      className="
+        max-w-4xl mx-auto p-6 space-y-6
+         dark:bg-black
+        rounded-2xl shadow-lg
+      "
     >
-      {/* 🔥 LANGUAGE TABS */}
-      <div className="flex gap-2">
-        {LOCALES.map((lang) => (
-          <button
-            type="button"
-            key={lang}
-            onClick={() => setActiveTab(lang)}
-            className={`px-4 py-2 rounded ${
-              activeTab === lang
-                ? "bg-black text-white"
-                : "bg-gray-200 dark:bg-zinc-800"
-            }`}
-          >
-            {lang.toUpperCase()}
-          </button>
-        ))}
-      </div>
+     
+           
 
-      {/* 🔥 TRANSLATION FIELDS */}
+      {/* 🔥 FIELDS */}
       {fields.map((field, index) => {
         if (field.locale !== activeTab) return null;
 
-        const current = watchedTranslations[index];
+        const current = watchedTranslations?.[index];
 
         return (
           <div key={field.id} className="space-y-4">
@@ -168,6 +168,7 @@ export default function NewCategoryForm({ updateData }: Props) {
               name={`translations.${index}.title`}
               register={register}
               errors={errors}
+              required
             />
 
             <TextareaInput
@@ -177,10 +178,10 @@ export default function NewCategoryForm({ updateData }: Props) {
               errors={errors}
             />
 
-            {/* ✅ SLUG PREVIEW */}
-            <div className="text-sm text-gray-500">
-              Slug Preview:
-              <span className="ml-2 px-2 py-1 bg-gray-200 dark:bg-zinc-800 rounded font-mono">
+            {/* 🔥 SLUG PREVIEW */}
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Slug:
+              <span className="ml-2 px-2 py-1 rounded bg-gray-200 dark:bg-zinc-800 font-mono">
                 /category/{generateSlug(current?.title || "")}
               </span>
             </div>
@@ -188,7 +189,7 @@ export default function NewCategoryForm({ updateData }: Props) {
         );
       })}
 
-      {/* IMAGE */}
+      {/* 🔥 IMAGE */}
       <ImageInput
         imageUrl={imageUrl}
         setImageUrl={setImageUrl}
@@ -196,7 +197,7 @@ export default function NewCategoryForm({ updateData }: Props) {
         label="Category Image"
       />
 
-      {/* STATUS */}
+      {/* 🔥 STATUS */}
       <ToggleInput
         label="Publish Category"
         name="isActive"
@@ -205,15 +206,13 @@ export default function NewCategoryForm({ updateData }: Props) {
         register={register}
       />
 
-      {/* SUBMIT */}
+      {/* 🔥 SUBMIT */}
       <SubmitButton
         isLoading={
           createMutation.isPending || updateMutation.isPending
         }
         buttonTitle={id ? "Update Category" : "Create Category"}
-        loadingButtonTitle={
-          id ? "Updating..." : "Creating..."
-        }
+        loadingButtonTitle={id ? "Updating..." : "Creating..."}
       />
     </form>
   );

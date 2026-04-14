@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import api from "@/lib/axios";
 import {
   createCategory,
@@ -25,12 +24,6 @@ export function useCreateCategory() {
   return useMutation<ActionResponse<Category>, Error, CategoryFormData>({
     mutationFn: createCategory,
     onSuccess: (response) => {
-      if (!response.success) {
-        toast.error(response.message);
-        return;
-      }
-
-      toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
     },
   });
@@ -47,12 +40,6 @@ export function useUpdateCategory() {
   return useMutation<ActionResponse<Category>, Error, UpdateCategoryVariables>({
     mutationFn: ({ id, data }) => updateCategory(id, data),
     onSuccess: (response) => {
-      if (!response.success) {
-        toast.error(response.message);
-        return;
-      }
-
-      toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
     },
   });
@@ -64,12 +51,6 @@ export function useDeleteCategory() {
   return useMutation<ActionResponse, Error, string>({
     mutationFn: deleteCategory,
     onSuccess: (response) => {
-      if (!response.success) {
-        toast.error(response.message);
-        return;
-      }
-
-      toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
     },
   });

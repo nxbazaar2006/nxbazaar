@@ -5,6 +5,7 @@ import { z } from "zod";
 
 const resetPasswordSchema = z.object({
   id: z.string(),
+  token: z.string().min(1, "Reset token is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -12,7 +13,7 @@ export async function PUT(req: Request) {
   try {
     const body = await req.json();
 
-    const { id, password } = resetPasswordSchema.parse(body);
+    const { id, token, password } = resetPasswordSchema.parse(body);
 
     const user = await db.user.findUnique({
       where: { id },
@@ -28,6 +29,16 @@ export async function PUT(req: Request) {
       );
     }
 
+    if (!user.verificationToken || user.verificationToken !== token) {
+      return NextResponse.json(
+        {
+          data: null,
+          message: "Invalid or expired reset link",
+        },
+        { status: 400 }
+      );
+    }
+
     // Encrypt password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -35,6 +46,7 @@ export async function PUT(req: Request) {
       where: { id },
       data: {
         password: hashedPassword,
+        verificationToken: null,
       },
     });
 

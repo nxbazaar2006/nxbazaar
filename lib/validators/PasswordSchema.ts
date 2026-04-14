@@ -12,6 +12,7 @@ export const resetPasswordSchema = z.object({
     .string()
     .min(6, "Password must be at least 6 characters"),
   id: z.string().min(1),
+  token: z.string().min(1, "Reset token is required"),
 });
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;

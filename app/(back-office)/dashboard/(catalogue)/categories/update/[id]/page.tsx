@@ -1,5 +1,5 @@
-import SubCategoryForm from "@/components/backoffice/Forms/SubCategoryForm";
-import { db } from "@/lib/db";
+import NewCategoryForm from "@/components/backoffice/Forms/NewCategoryForm";
+import { getCategoryById } from "@/actions/category";
 import { notFound } from "next/navigation";
 
 interface Props {
@@ -8,47 +8,16 @@ interface Props {
   }>;
 }
 
-export default async function UpdateSubCategoryPage({
+export default async function UpdateCategoryPage({
   params,
 }: Props) {
   const { id } = await params;
 
-  const [subCategory, categories] = await Promise.all([
-    db.subCategory.findUnique({
-      where: { id },
-    }),
-    db.category.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    }),
-  ]);
+  const category = await getCategoryById(id);
 
-  if (!subCategory) {
+  if (!category) {
     return notFound();
   }
 
-  const formattedCategories = categories.map((item) => ({
-    id: item.id,
-    title: item.title,
-  }));
-
-  const formattedSubCategory = {
-    id: subCategory.id,
-    title: subCategory.title,
-    description: subCategory.description ?? "",
-    imageUrl: subCategory.imageUrl ?? "",
-    isActive: subCategory.isActive,
-    categoryId: subCategory.categoryId,
-    hsnCodeId: subCategory.hsnCodeId ?? null,
-    metaTitle: subCategory.metaTitle ?? "",
-    metaDescription: subCategory.metaDescription ?? "",
-  };
-
-  return (
-    <SubCategoryForm
-      categories={formattedCategories}
-      updateData={formattedSubCategory}
-    />
-  );
+  return <NewCategoryForm updateData={category} />;
 }

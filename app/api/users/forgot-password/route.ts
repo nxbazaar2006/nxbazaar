@@ -40,8 +40,7 @@ export async function PUT(req: Request) {
     await db.user.update({
       where: { email },
       data: {
-        resetToken: token,
-        resetTokenExpiry: tokenExpiry,
+        verificationToken: token,
       },
     });
 

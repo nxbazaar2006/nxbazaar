@@ -89,13 +89,14 @@ export const columns: ColumnDef<BlogType>[] = [
 
       return (
         <div className="flex gap-2">
-          <Link href={`/dashboard/blogs/update/${blog.id}`}>
+          <Link href={`/dashboard/blog/update/${blog.id}`}>
             Edit
           </Link>
 
           <ActionColumn
             row={row}
             title="Blog"
+            editEndpoint={`blog/update/${blog.id}`}
             endpoint={`blogs/${blog.id}`}
           />
         </div>

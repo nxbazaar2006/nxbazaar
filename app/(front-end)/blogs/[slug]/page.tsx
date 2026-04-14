@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
+import { getSafeTranslation } from "@/lib/getTranslation";
 
 /* ================================
    METADATA (SEO 🔥)
@@ -17,7 +18,7 @@ export async function generateMetadata({
 
   if (!blog) return {};
 
-  const t = blog.translations[0];
+  const t = getSafeTranslation(blog.translations, "en") ?? blog.translations[0];
 
   return {
     title: t?.metaTitle || t?.title || blog.slug,
@@ -48,7 +49,7 @@ export default async function BlogDetailPage({
 
   if (!blog) return notFound();
 
-  const t = blog.translations[0];
+  const t = getSafeTranslation(blog.translations, "en") ?? blog.translations[0];
 
   return (
     <article className="max-w-3xl mx-auto p-6 space-y-6">

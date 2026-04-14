@@ -13,12 +13,12 @@ interface CategoriesClientProps {
   initialData: Category[];
 }
 
-type Locale = "EN" | "HI";
+type Locale = "en" | "hi" | "mr";
 
 export default function CategoriesClient({
   initialData,
 }: CategoriesClientProps) {
-  const [locale, setLocale] = useState<Locale>("EN");
+  const [locale, setLocale] = useState<Locale>("en");
 
   const { data, isLoading } = useQuery<Category[]>({
     queryKey: ["categories", locale],

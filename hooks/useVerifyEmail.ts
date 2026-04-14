@@ -11,7 +11,7 @@ type VerifyEmailPayload = {
 export function useVerifyEmail() {
   return useMutation({
     mutationFn: async (data: VerifyEmailPayload) => {
-      const res = await axiosClient.put("/users/verify-email", data);
+      const res = await axiosClient.put("/users/verify", data);
       return res.data;
     },
   });

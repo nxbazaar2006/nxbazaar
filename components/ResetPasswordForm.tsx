@@ -13,6 +13,8 @@ import { useResetPassword } from "@/hooks/useAuth";
 export default function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const id = searchParams.get("id") ?? "";
+  const token = searchParams.get("token") ?? "";
 
   const { mutateAsync, isPending } = useResetPassword();
 
@@ -22,15 +24,20 @@ export default function ResetPasswordForm() {
     formState: { errors },
   } = useForm<ResetPasswordInput>({
     resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      id,
+      token,
+      password: "",
+    },
   });
 
   async function onSubmit(data: ResetPasswordInput) {
-    const id = searchParams.get("id");
+    if (!id || !token) {
+      toast.error("Invalid reset link");
+      return;
+    }
 
-    const res = await mutateAsync({
-      ...data,
-      id: id || "",
-    });
+    const res = await mutateAsync({ ...data, id, token });
 
     if (res?.success) {
       toast.success("Password Updated Successfully");
@@ -42,6 +49,9 @@ export default function ResetPasswordForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <input type="hidden" {...register("id")} value={id} />
+      <input type="hidden" {...register("token")} value={token} />
+
       <div>
         <label className="block mb-2 text-sm font-medium">
           New Password

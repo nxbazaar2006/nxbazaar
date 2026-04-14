@@ -23,7 +23,7 @@ export async function verifyEmailAction(data: unknown) {
       },
       data: {
         emailVerified: true,
-        verificationRequestCount: Number(user.verificationRequestCount) + 1,
+        verificationToken: null,
       },
     });
 

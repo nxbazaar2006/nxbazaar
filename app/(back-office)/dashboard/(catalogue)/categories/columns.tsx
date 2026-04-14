@@ -3,9 +3,9 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import ActionColumn from "@/components/DataTableColumns/ActionColumn";
-import { SubCategory } from "@/types/subcategory";
+import { Category } from "@/types/category";
 
-export const columns: ColumnDef<SubCategory>[] = [
+export const columns: ColumnDef<Category>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -38,8 +38,9 @@ export const columns: ColumnDef<SubCategory>[] = [
     header: "Title",
   },
   {
-    accessorKey: "slug",
-    header: "Slug",
+    accessorKey: "description",
+    header: "Description",
+    cell: ({ row }) => row.original.description ?? "-",
   },
   {
     accessorKey: "isActive",
@@ -58,9 +59,9 @@ export const columns: ColumnDef<SubCategory>[] = [
     cell: ({ row }) => (
       <ActionColumn
         row={row}
-        title="SubCategory"
-        editEndpoint={`/dashboard/subcategories/update/${row.original.id}`}
-        endpoint={`subcategories/${row.original.id}`}
+        title="Category"
+        editEndpoint={`categories/update/${row.original.id}`}
+        endpoint={`categories/${row.original.id}`}
       />
     ),
   },

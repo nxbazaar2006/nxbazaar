@@ -6,15 +6,23 @@ type ApiError = {
   statusCode?: number;
 };
 
+/* 🔥 Backend response type (no any) */
+type ErrorResponse = {
+  message?: string;
+  errors?: {
+    fieldErrors?: Record<string, string[]>;
+  };
+};
+
 export function getErrorMessage(error: unknown): ApiError {
-  // ✅ AXIOS ERROR (API CALL FAILED)
+  // ✅ AXIOS ERROR
   if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<any>;
+    const axiosError = error as AxiosError<ErrorResponse>;
 
     const data = axiosError.response?.data;
     const statusCode = axiosError.response?.status;
 
-    // 🔥 1. ZOD VALIDATION ERROR (BEST CASE)
+    // 🔥 1. ZOD ERROR
     if (data?.errors?.fieldErrors) {
       return {
         message: data.message || "Validation failed",
@@ -23,7 +31,7 @@ export function getErrorMessage(error: unknown): ApiError {
       };
     }
 
-    // 🔥 2. STANDARD BACKEND ERROR (message)
+    // 🔥 2. BACKEND MESSAGE
     if (data?.message) {
       return {
         message: data.message,
@@ -31,7 +39,7 @@ export function getErrorMessage(error: unknown): ApiError {
       };
     }
 
-    // 🔥 3. STRING ERROR FORMAT (rare APIs)
+    // 🔥 3. STRING RESPONSE
     if (typeof data === "string") {
       return {
         message: data,
@@ -39,7 +47,7 @@ export function getErrorMessage(error: unknown): ApiError {
       };
     }
 
-    // 🔥 4. NETWORK ERROR (no response)
+    // 🔥 4. NETWORK ERROR
     if (!axiosError.response) {
       return {
         message: "Network error. Please check your internet connection.",
@@ -53,14 +61,14 @@ export function getErrorMessage(error: unknown): ApiError {
     };
   }
 
-  // ✅ NORMAL JS ERROR
+  // ✅ NORMAL ERROR
   if (error instanceof Error) {
     return {
       message: error.message,
     };
   }
 
-  // ❌ UNKNOWN ERROR
+  // ❌ UNKNOWN
   return {
     message: "Unexpected error occurred",
   };

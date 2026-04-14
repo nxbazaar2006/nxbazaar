@@ -1,16 +1,20 @@
 import Link from "next/link";
 import { BlogType } from "@/types/blog.types";
+import { getSafeTranslation } from "@/lib/getTranslation";
 
 type Props = {
   blog: BlogType;
+  locale?: string;
 };
 
-export default function BlogCard({ blog }: Props) {
+export default function BlogCard({ blog, locale = "en" }: Props) {
+  const translation = getSafeTranslation(blog.translations ?? [], locale);
+
   const title =
-    blog.translations?.[0]?.title ?? blog.slug;
+    translation?.title ?? blog.translations?.[0]?.title ?? blog.slug;
 
   const description =
-    blog.translations?.[0]?.description ?? "";
+    translation?.description ?? blog.translations?.[0]?.description ?? "";
 
   return (
     <div className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition">
@@ -37,7 +41,7 @@ export default function BlogCard({ blog }: Props) {
 
         {/* READ MORE */}
         <Link
-          href={`/blogs/${blog.slug}`}
+          href={`/${locale}/blogs/${blog.slug}`}
           className="text-blue-600 text-sm"
         >
           Read More →

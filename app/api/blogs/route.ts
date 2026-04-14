@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { blogSchema } from "@/lib/validators/blog.schema";
 import { generateUniqueSlug } from "@/lib/utils/generateSlug";
+import { auth } from "@/auth";
 
 /* ================================
    GET BLOGS (LIST + FILTER + PAGINATION)
@@ -14,6 +15,7 @@ export async function GET(req: Request) {
     const page = Number(searchParams.get("page") ?? "1");
     const limit = Number(searchParams.get("limit") ?? "10");
     const search = searchParams.get("search") ?? "";
+    const locale = searchParams.get("locale")?.toUpperCase();
     const skip = (page - 1) * limit;
 
     const where = {
@@ -33,7 +35,9 @@ export async function GET(req: Request) {
       db.blog.findMany({
         where,
         include: {
-          translations: true,
+          translations: locale
+            ? { where: { locale: locale as any } }
+            : true,
           category: true,
         },
         skip,
@@ -74,25 +78,42 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const session = await auth();
     const body = await req.json();
     const validated = blogSchema.parse(body);
 
     const slug = await generateUniqueSlug(validated.slug);
+    const userId = validated.userId || session?.user?.id;
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
     const blog = await db.blog.create({
       data: {
-        ...validated,
         slug,
+        imageUrl: validated.imageUrl,
+        isActive: validated.isActive,
+        isFeatured: validated.isFeatured,
+        content: validated.content,
+        userId,
+        ...(validated.categoryId
+          ? {
+              category: {
+                connect: { id: validated.categoryId },
+              },
+            }
+          : {}),
 
         translations: {
-          create: validated.translations,
+          create: validated.translations.map((translation) => ({
+            ...translation,
+            locale: translation.locale.toUpperCase() as any,
+          })),
         },
-
-        ...(validated.categoryId && {
-          category: {
-            connect: { id: validated.categoryId },
-          },
-        }),
       },
       include: {
         translations: true,

@@ -1,6 +1,6 @@
 "use client";
 
-import { HiInformationCircle } from "react-icons/hi";
+import { Info } from "lucide-react";
 import { Alert } from "flowbite-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -42,7 +42,7 @@ export default function ForgotPasswordForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {showNotification && (
-        <Alert color="failure" icon={HiInformationCircle}>
+        <Alert color="failure" icon={Info}>
           <span className="font-medium">Please Check your Email!</span>
         </Alert>
       )}

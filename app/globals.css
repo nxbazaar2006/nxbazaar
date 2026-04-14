@@ -127,3 +127,19 @@ html {
   scrollbar-width: none;
 }
 
+.apple-input {
+  @apply w-full px-4 py-3 rounded-2xl 
+  bg-white dark:bg-black
+
+  border border-gray-900 dark:border-white
+
+  text-gray-900 dark:text-white
+  placeholder:text-gray-400
+
+  outline-none transition-all duration-300
+
+  focus:ring-2 focus:ring-gray-900/10
+  dark:focus:ring-white/20
+
+  shadow-sm hover:shadow-md;
+}

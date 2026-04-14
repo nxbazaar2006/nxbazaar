@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { blogSchema } from "@/lib/validators/blog.schema";
 import { generateUniqueSlug } from "@/lib/utils/generateSlug";
+import { auth } from "@/auth";
 
 /* ================================
    GET SINGLE BLOG
@@ -9,11 +10,12 @@ import { generateUniqueSlug } from "@/lib/utils/generateSlug";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const blog = await db.blog.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         translations: true,
         category: true,
@@ -52,15 +54,17 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    const { id } = await params;
     const body = await req.json();
     const validated = blogSchema.parse(body);
 
     const existing = await db.blog.findUnique({
-      where: { id: params.id },
-      select: { slug: true },
+      where: { id },
+      select: { slug: true, userId: true },
     });
 
     if (!existing) {
@@ -70,6 +74,8 @@ export async function PUT(
       );
     }
 
+    const userId = validated.userId || session?.user?.id || existing.userId;
+
     let slug = validated.slug;
 
     if (validated.slug !== existing.slug) {
@@ -77,21 +83,29 @@ export async function PUT(
     }
 
     const blog = await db.blog.update({
-      where: { id: params.id },
+      where: { id },
       data: {
-        ...validated,
         slug,
+        imageUrl: validated.imageUrl,
+        isActive: validated.isActive,
+        isFeatured: validated.isFeatured,
+        content: validated.content,
+        userId,
+        category: validated.categoryId
+          ? {
+              connect: { id: validated.categoryId },
+            }
+          : {
+              disconnect: true,
+            },
 
         translations: {
           deleteMany: {},
-          create: validated.translations,
+          create: validated.translations.map((translation) => ({
+            ...translation,
+            locale: translation.locale.toUpperCase() as any,
+          })),
         },
-
-        ...(validated.categoryId && {
-          category: {
-            connect: { id: validated.categoryId },
-          },
-        }),
       },
       include: {
         translations: true,
@@ -123,11 +137,12 @@ export async function PUT(
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const existing = await db.blog.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true },
     });
 
@@ -139,7 +154,7 @@ export async function DELETE(
     }
 
     await db.blog.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({

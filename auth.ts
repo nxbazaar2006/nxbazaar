@@ -71,7 +71,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           role: user.role,
           status: user.status, // boolean
-          image: user.image,
           emailVerified: user.emailVerified,
         };
       },
@@ -84,7 +83,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.role = user.role;
         token.status = user.status; // ✅ boolean
-        token.image = user.image;
         token.emailVerified = user.emailVerified;
       }
       return token;
@@ -95,7 +93,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.status = token.status as boolean;
-        session.user.image = token.image as string;
         session.user.emailVerified =
           token.emailVerified as Date | null;
       }

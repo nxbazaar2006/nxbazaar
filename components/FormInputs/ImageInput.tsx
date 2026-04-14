@@ -9,12 +9,14 @@ type Props = {
   label: string;
   imageUrl: string;
   setImageUrl: (url: string) => void;
+  endpoint: keyof OurFileRouter;
 };
 
 export default function ImageInput({
   label,
   imageUrl,
   setImageUrl,
+  endpoint,
 }: Props) {
   const [loading, setLoading] = useState(false);
 
@@ -30,7 +32,7 @@ export default function ImageInput({
         <div className="border-1 border-black dark:border-slate-600 rounded-xl p-6 text-center hover:border-orange-400 transition">
           
           <UploadButton<OurFileRouter>
-            endpoint="bannerImageUploader"
+            endpoint={endpoint}
             onUploadBegin={() => setLoading(true)}
             onClientUploadComplete={(res) => {
               if (res && res.length > 0) {
@@ -72,7 +74,7 @@ export default function ImageInput({
           {/* REPLACE BUTTON */}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition">
             <UploadButton<OurFileRouter>
-              endpoint="bannerImageUploader"
+              endpoint={endpoint}
               appearance={{
                 button:
                   "text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded",

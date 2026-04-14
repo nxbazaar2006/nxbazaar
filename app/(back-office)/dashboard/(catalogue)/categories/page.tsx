@@ -1,27 +1,11 @@
 import PageHeader from "@/components/backoffice/PageHeader";
 import CategoriesClient from "./CategoriesClient";
-import { db } from "@/lib/db";
+import { getCategories } from "@/actions/category";
 import { Category } from "@/types/category";
 
-/**
- * Server-side fetch categories
- */
-async function getCategories(): Promise<Category[]> {
-  const categories = await db.category.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
-    include: {
-      translations: true,
-      products: true,
-    },
-  });
-
-  return categories;
-}
-
 export default async function CategoriesPage() {
-  const categories = await getCategories();
+  const categoriesData = await getCategories();
+  const categories = Array.isArray(categoriesData) ? categoriesData : [];
 
   return (
     <div className="space-y-4">

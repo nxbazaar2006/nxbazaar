@@ -1,7 +1,7 @@
 "use server";
 
 import { forgotPasswordSchema, resetPasswordSchema } from "@/lib/zod/auth";
-import { api } from "@/lib/axios";
+import api from "@/lib/axios";
 
 export async function forgotPasswordAction(data: unknown) {
   const parsed = forgotPasswordSchema.safeParse(data);
@@ -11,7 +11,7 @@ export async function forgotPasswordAction(data: unknown) {
   }
 
   try {
-    const res = await api.put("/api/users/forgot-password", parsed.data);
+    const res = await api.put("/users/forgot-password", parsed.data);
 
     return {
       success: true,
@@ -32,7 +32,7 @@ export async function resetPasswordAction(data: unknown) {
   }
 
   try {
-    const res = await api.put("/api/users/update-password", parsed.data);
+    const res = await api.put("/users/reset-password", parsed.data);
 
     return {
       success: true,
