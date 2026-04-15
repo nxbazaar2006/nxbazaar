@@ -14,6 +14,7 @@ const loginSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
+
   secret:
     process.env.AUTH_SECRET ??
     process.env.NEXTAUTH_SECRET ??
@@ -21,9 +22,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       ? "local-development-auth-secret"
       : undefined),
 
-  // ✅ FIX: database session (important with Prisma)
+  // ✅ FIXED HERE
   session: {
-    strategy: "database",
+    strategy: "jwt",
   },
 
   pages: {
@@ -40,37 +41,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
 
       async authorize(credentials) {
-        // ✅ Validate input
+         console.log("LOGIN DATA:", credentials);
         const parsed = loginSchema.safeParse(credentials);
 
         if (!parsed.success) {
+            console.log("ZOD ERROR");
           throw new Error("Invalid inputs");
         }
 
         const { email, password } = parsed.data;
 
-        // ✅ Find user
         const user = await db.user.findUnique({
           where: { email },
         });
-
+  console.log("USER:", user);
         if (!user || !user.password) {
           throw new Error("User not found");
         }
 
-        // ✅ Block inactive users
         if (!user.status) {
           throw new Error("Account is inactive");
         }
 
-        // ✅ Check password
         const isMatch = await compare(password, user.password);
-
+ console.log("PASSWORD MATCH:", isMatch);
         if (!isMatch) {
           throw new Error("Invalid credentials");
         }
 
-        // ✅ Return safe user object
         return {
           id: user.id,
           name: user.name,
@@ -107,7 +105,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 
   trustHost: true,
-
-  // ✅ optional but helps debugging
   debug: process.env.NODE_ENV === "development",
 });
