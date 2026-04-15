@@ -1,18 +1,9 @@
-"use client"
+"use client";
 
-import { ColumnDef } from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
-import ActionColumn from "@/components/DataTableColumns/ActionColumn"
-
-export type SubCategory = {
-  id: string
-  title: string
-  slug: string
-  imageUrl: string | null
-  isActive: boolean
-  category: { title: string }
-  createdAt: Date
-}
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import ActionColumn from "@/components/DataTableColumns/ActionColumn";
+import type { SubCategory } from "@/types/subcategory";
 
 export const columns: ColumnDef<SubCategory>[] = [
   {
@@ -23,18 +14,14 @@ export const columns: ColumnDef<SubCategory>[] = [
           table.getIsAllPageRowsSelected() ||
           (table.getIsSomePageRowsSelected() && "indeterminate")
         }
-        onCheckedChange={(value) =>
-          table.toggleAllPageRowsSelected(!!value)
-        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(Boolean(value))}
         aria-label="Select all"
       />
     ),
     cell: ({ row }) => (
       <Checkbox
         checked={row.getIsSelected()}
-        onCheckedChange={(value) =>
-          row.toggleSelected(!!value)
-        }
+        onCheckedChange={(value) => row.toggleSelected(Boolean(value))}
         aria-label="Select row"
       />
     ),
@@ -46,23 +33,23 @@ export const columns: ColumnDef<SubCategory>[] = [
     header: "Title",
   },
   {
-    accessorKey: "category.title",
+    accessorKey: "categoryTitle",
     header: "Category",
+  },
+  {
+    accessorKey: "hsnCode.code",
+    header: "HSN",
+    cell: ({ row }) => row.original.hsnCode?.code ?? "-",
   },
   {
     accessorKey: "isActive",
     header: "Status",
-    cell: ({ row }) => (
-      <span>
-        {row.original.isActive ? "Active" : "Inactive"}
-      </span>
-    ),
+    cell: ({ row }) => (row.original.isActive ? "Active" : "Inactive"),
   },
   {
     accessorKey: "createdAt",
     header: "Created",
-    cell: ({ row }) =>
-      new Date(row.original.createdAt).toLocaleDateString(),
+    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
   },
   {
     id: "actions",
@@ -75,4 +62,4 @@ export const columns: ColumnDef<SubCategory>[] = [
       />
     ),
   },
-]
+];

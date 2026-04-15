@@ -1,20 +1,16 @@
-
-
 "use client";
 
 import DataTable from "@/components/data-table-components/DataTable";
 import { columns } from "./columns";
-import { SubCategory } from "@/types/subcategory";
+import type { SubCategory } from "@/types/subcategory";
 import { useSubCategories } from "@/hooks/useSubCategory";
 
 interface SubCategoriesClientProps {
   initialData: SubCategory[];
 }
 
-export default function SubCategoriesClient({
-  initialData,
-}: SubCategoriesClientProps) {
-  const { data, isLoading } = useSubCategories(initialData);
+export default function SubCategoriesClient({ initialData }: SubCategoriesClientProps) {
+  const { data } = useSubCategories(initialData);
 
   return (
     <DataTable<SubCategory>
@@ -22,7 +18,6 @@ export default function SubCategoriesClient({
       columns={columns}
       endpoint="subcategories"
       queryKey={["subcategories"]}
-      isLoading={isLoading}
     />
   );
 }
