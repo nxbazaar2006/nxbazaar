@@ -21,8 +21,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       ? "local-development-auth-secret"
       : undefined),
 
+  // ✅ FIX: database session (important with Prisma)
   session: {
-    strategy: "jwt",
+    strategy: "database",
   },
 
   pages: {
@@ -33,7 +34,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       name: "credentials",
 
-      // ✅ FIX: required credentials field
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
@@ -76,7 +76,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
-          status: user.status, // boolean
+          status: user.status,
           emailVerified: user.emailVerified,
         };
       },
@@ -88,7 +88,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.status = user.status; // ✅ boolean
+        token.status = user.status;
         token.emailVerified = user.emailVerified;
       }
       return token;
@@ -107,4 +107,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 
   trustHost: true,
+
+  // ✅ optional but helps debugging
+  debug: process.env.NODE_ENV === "development",
 });

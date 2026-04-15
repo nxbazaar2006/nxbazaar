@@ -3,7 +3,23 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import ActionColumn from "@/components/DataTableColumns/ActionColumn";
+<<<<<<< HEAD
 import type { SubCategory } from "@/types/subcategory";
+=======
+
+export type SubCategory = {
+  id: string;
+  title: string;
+  slug: string;
+  imageUrl: string | null;
+  isActive: boolean;
+  category?: {
+    id?: string;
+    title?: string;
+  };
+  createdAt: string;
+};
+>>>>>>> cfe7124 (update)
 
 export const columns: ColumnDef<SubCategory>[] = [
   {
@@ -28,14 +44,27 @@ export const columns: ColumnDef<SubCategory>[] = [
     enableSorting: false,
     enableHiding: false,
   },
+
   {
     accessorKey: "title",
     header: "Title",
   },
+
+  // ✅ FIXED CATEGORY COLUMN
   {
+<<<<<<< HEAD
     accessorKey: "categoryTitle",
+=======
+    id: "category",
+>>>>>>> cfe7124 (update)
     header: "Category",
+    cell: ({ row }) => (
+      <span>
+        {row.original.category?.title || "N/A"}
+      </span>
+    ),
   },
+
   {
     accessorKey: "hsnCode.code",
     header: "HSN",
@@ -44,13 +73,29 @@ export const columns: ColumnDef<SubCategory>[] = [
   {
     accessorKey: "isActive",
     header: "Status",
+<<<<<<< HEAD
     cell: ({ row }) => (row.original.isActive ? "Active" : "Inactive"),
+=======
+    cell: ({ row }) => (
+      <span
+        className={
+          row.original.isActive
+            ? "text-green-600"
+            : "text-red-500"
+        }
+      >
+        {row.original.isActive ? "Active" : "Inactive"}
+      </span>
+    ),
+>>>>>>> cfe7124 (update)
   },
+
   {
     accessorKey: "createdAt",
     header: "Created",
     cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
   },
+
   {
     id: "actions",
     cell: ({ row }) => (
@@ -62,4 +107,8 @@ export const columns: ColumnDef<SubCategory>[] = [
       />
     ),
   },
+<<<<<<< HEAD
 ];
+=======
+];
+>>>>>>> cfe7124 (update)

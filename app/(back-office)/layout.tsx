@@ -45,9 +45,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <main
           className={`
-            pt-24 pr-3 pb-2 flex-1
+            pt-24 pr-6 pb-6 flex-1
             transition-all duration-300
-            ${sidebarExpanded ? "lg:pl-55" : "pl-20"}
+            ${sidebarExpanded ? "lg:pl-64" : "pl-20"}
           `}
         >
          

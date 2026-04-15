@@ -1,11 +1,17 @@
-export function generateSlug(text: string): string {
-  return text
-    .normalize("NFKD") // unicode normalize
-    .replace(/[\u0300-\u036f]/g, "") // remove accents
+export function generateSlug(text?: string): string {
+  if (!text || typeof text !== "string") {
+    return "item";
+  }
+
+  const slug = text
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim()
     .replace(/&/g, "-and-")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/--+/g, "-")
     .replace(/^-+|-+$/g, "");
+
+  return slug || "item"; // 👈 empty slug fix
 }

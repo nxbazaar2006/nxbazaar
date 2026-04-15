@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 "use server";
 
 import { Prisma } from "@prisma/client";
@@ -226,3 +227,36 @@ export async function getSubCategoriesByCategory(categoryId: string): Promise<Su
 
   return records.map(mapSubCategoryRecord);
 }
+=======
+export async function createSubCategory(data: unknown) {
+  const res = await fetch("/api/subcategories", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error("Create failed");
+
+  return res.json();
+}
+
+export async function updateSubCategory(id: string, data: unknown) {
+  const res = await fetch(`/api/subcategories/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error("Update failed");
+
+  return res.json();
+}
+
+export async function deleteSubCategory(id: string) {
+  const res = await fetch(`/api/subcategories/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) throw new Error("Delete failed");
+
+  return res.json();
+}
+>>>>>>> cfe7124 (update)

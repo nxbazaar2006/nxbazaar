@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+<<<<<<< HEAD
 import { Prisma } from "@prisma/client";
 
 import { db } from "@/lib/db";
@@ -148,7 +149,73 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   } catch {
     return NextResponse.json(
       { success: false, message: "Failed to delete subcategory" },
+=======
+import { db } from "@/lib/db";
+import { subCategorySchema } from "@/lib/validators/subcategory.schema";
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  const data = await db.subCategory.findUnique({
+    where: { id },
+    include: {
+      translations: true,
+    },
+  });
+
+  return NextResponse.json(data);
+}
+
+// UPDATE
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await req.json();
+
+    const data = subCategorySchema.parse(body);
+
+    await db.subCategory.update({
+      where: { id },
+      data: {
+        slug: data.slug,
+        imageUrl: data.imageUrl,
+        isActive: data.isActive,
+        categoryId: data.categoryId,
+        hsnCodeId: data.hsnCodeId,
+
+        translations: {
+          deleteMany: {},
+          create: data.translations,
+        },
+      },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Update failed", error },
+>>>>>>> cfe7124 (update)
       { status: 500 }
     );
   }
+}
+
+// DELETE
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  await db.subCategory.delete({
+    where: { id },
+  });
+
+  return NextResponse.json({ success: true });
 }

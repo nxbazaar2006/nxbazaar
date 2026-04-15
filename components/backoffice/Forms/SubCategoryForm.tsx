@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import React, { useMemo, useState } from "react";
 import {
   useFieldArray,
@@ -11,11 +12,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+=======
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+>>>>>>> cfe7124 (update)
 import {
-  useCreateSubCategory,
-  useUpdateSubCategory,
-} from "@/hooks/useSubCategory";
+  subCategorySchema,
+  SubCategoryInput,
+} from "@/lib/validators/subcategory.schema";
 
+<<<<<<< HEAD
 import TextInput from "@/components/FormInputs/TextInput";
 import TextareaInput from "@/components/FormInputs/TextAreaInput";
 import ImageInput from "@/components/FormInputs/ImageInput";
@@ -262,6 +268,36 @@ export default function SubCategoryForm({ categories, hsnCodes, updateData }: Pr
         buttonTitle={id ? "Update SubCategory" : "Create SubCategory"}
         loadingButtonTitle={id ? "Updating..." : "Creating..."}
       />
+=======
+type Props = {
+  initialData?: SubCategoryInput;
+  onSubmit: (data: SubCategoryInput) => Promise<void>;
+};
+
+export default function SubCategoryForm({
+  initialData,
+  onSubmit,
+}: Props) {
+  const form = useForm<SubCategoryInput>({
+    resolver: zodResolver(subCategorySchema),
+    defaultValues: initialData,
+  });
+
+  return (
+    <form
+      onSubmit={form.handleSubmit(onSubmit)}
+      className="space-y-4"
+    >
+      <input {...form.register("slug")} placeholder="Slug" />
+
+      <input {...form.register("imageUrl")} placeholder="Image URL" />
+
+      <select {...form.register("categoryId")}>
+        <option value="">Select Category</option>
+      </select>
+
+      <button type="submit">Save</button>
+>>>>>>> cfe7124 (update)
     </form>
   );
 }

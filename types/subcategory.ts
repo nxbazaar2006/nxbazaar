@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { Language } from "@prisma/client";
 
 export const LOCALES = ["en", "hi", "mr"] as const;
@@ -46,3 +47,29 @@ export interface SubCategoryPayload {
 }
 
 export type SubCategoryFormData = SubCategoryPayload;
+=======
+export type SubCategory = {
+  id: string;
+  title: string;
+  description: string;
+  slug: string;
+  imageUrl?: string;
+  isActive: boolean;
+
+  categoryId: string;
+
+  // ✅ ADD THIS
+  category?: {
+    id: string;
+    title: string;
+  };
+
+  hsnCodeId?: string;
+
+  createdAt: string;
+  updatedAt: string;
+
+  metaTitle?: string;
+  metaDescription?: string;
+};
+>>>>>>> cfe7124 (update)
