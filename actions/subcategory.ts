@@ -1,142 +1,185 @@
 "use server";
 
-import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+
+import { db } from "@/lib/db";
 import { subCategorySchema } from "@/lib/validators/subcategory.schema";
-import { subCategoryTranslationSchema } from "@/lib/validators/subcategory.schema";
-import { generateSlug } from "@/lib/utils/slug";
+import { generateSlug } from "@/lib/utils/Slug";
+import type { ActionResponse } from "@/types/action-response";
+import type { SubCategory, SubCategoryPayload } from "@/types/subcategory";
 
-/* ---------------- RESPONSE TYPES ---------------- */
+type DbSubCategory = Prisma.SubCategoryGetPayload<{
+  include: {
+    category: {
+      include: {
+        translations: true;
+      };
+    };
+    hsnCode: true;
+    translations: true;
+  };
+}>;
 
-type ActionResponse<T = null> = {
-  success: boolean;
-  message: string;
-  data?: T;
-};
+const toLocaleCode = (value: string): SubCategory["translations"][number]["locale"] =>
+  value.toLowerCase() as SubCategory["translations"][number]["locale"];
 
-/* ---------------- CREATE ---------------- */
+function mapSubCategoryRecord(record: DbSubCategory): SubCategory {
+  const primaryTranslation =
+    record.translations.find((item) => item.locale === "EN") ??
+    record.translations[0];
+
+  const primaryCategoryTranslation =
+    record.category.translations.find((item) => item.locale === "EN") ??
+    record.category.translations[0];
+
+  return {
+    id: record.id,
+    slug: record.slug,
+    imageUrl: record.imageUrl,
+    isActive: record.isActive,
+    categoryId: record.categoryId,
+    categoryTitle: primaryCategoryTranslation?.title ?? record.category.slug,
+    hsnCodeId: record.hsnCodeId,
+    hsnCode: record.hsnCode
+      ? {
+          id: record.hsnCode.id,
+          code: record.hsnCode.code,
+          title: record.hsnCode.title,
+          gstRate: record.hsnCode.gstRate,
+        }
+      : null,
+    title: primaryTranslation?.title ?? record.slug,
+    description: primaryTranslation?.description ?? null,
+    translations: record.translations.map((translation) => ({
+      id: translation.id,
+      locale: toLocaleCode(translation.locale),
+      title: translation.title,
+      description: translation.description,
+    })),
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+  };
+}
+
+function buildSlug(payload: SubCategoryPayload): string {
+  if (payload.slug) return payload.slug;
+
+  const englishTitle =
+    payload.translations.find((item) => item.locale === "en")?.title ??
+    payload.translations[0]?.title;
+
+  return generateSlug(englishTitle ?? "subcategory");
+}
 
 export async function createSubCategory(
-  data: unknown
-): Promise<ActionResponse> {
+  data: SubCategoryPayload
+): Promise<ActionResponse<SubCategory>> {
+  const parsed = subCategorySchema.safeParse(data);
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid subcategory payload",
+    };
+  }
+
   try {
-    const parsed = subCategorySchema.safeParse(data);
+    const slug = buildSlug(data);
 
-    if (!parsed.success) {
-      return {
-        success: false,
-        message: parsed.error.issues[0]?.message ?? "Invalid subcategory payload",
-      };
-    }
-
-    const slug = generateSlug(parsed.data.title);
-
-    const existing = await db.subCategory.findUnique({
-      where: { slug },
-    });
-
-    if (existing) {
-      return {
-        success: false,
-        message: "SubCategory slug already exists",
-      };
-    }
-
-    await db.subCategory.create({
+    const created = await db.subCategory.create({
       data: {
-        ...parsed.data,
         slug,
+        imageUrl: parsed.data.imageUrl,
+        isActive: parsed.data.isActive,
+        categoryId: parsed.data.categoryId,
+        hsnCodeId: parsed.data.hsnCodeId,
+        translations: {
+          create: parsed.data.translations,
+        },
+      },
+      include: {
+        category: { include: { translations: true } },
+        hsnCode: true,
+        translations: true,
       },
     });
 
     revalidatePath("/dashboard/subcategories");
-
     return {
       success: true,
       message: "SubCategory created successfully",
+      data: mapSubCategoryRecord(created),
     };
   } catch (error) {
-    console.error("Create SubCategory Error:", error);
-    return {
-      success: false,
-      message: "Failed to create subcategory",
-    };
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return { success: false, message: "SubCategory slug already exists" };
+    }
+
+    return { success: false, message: "Failed to create subcategory" };
   }
 }
-
-/* ---------------- UPDATE ---------------- */
 
 export async function updateSubCategory(
   id: string,
-  data: unknown
-): Promise<ActionResponse> {
+  data: SubCategoryPayload
+): Promise<ActionResponse<SubCategory>> {
+  const parsed = subCategorySchema.safeParse(data);
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid subcategory payload",
+    };
+  }
+
   try {
-    const parsed = subCategorySchema.safeParse(data);
+    const slug = buildSlug(data);
 
-    if (!parsed.success) {
-      return {
-        success: false,
-        message: parsed.error.issues[0]?.message ?? "Invalid subcategory payload",
-      };
-    }
-
-    const slug = generateSlug(parsed.data.title);
-
-    const existing = await db.subCategory.findFirst({
-      where: {
-        slug,
-        NOT: { id },
-      },
-    });
-
-    if (existing) {
-      return {
-        success: false,
-        message: "SubCategory slug already exists",
-      };
-    }
-
-    await db.subCategory.update({
+    const updated = await db.subCategory.update({
       where: { id },
       data: {
-        ...parsed.data,
         slug,
+        imageUrl: parsed.data.imageUrl,
+        isActive: parsed.data.isActive,
+        categoryId: parsed.data.categoryId,
+        hsnCodeId: parsed.data.hsnCodeId,
+        translations: {
+          deleteMany: {},
+          create: parsed.data.translations,
+        },
+      },
+      include: {
+        category: { include: { translations: true } },
+        hsnCode: true,
+        translations: true,
       },
     });
 
     revalidatePath("/dashboard/subcategories");
-
     return {
       success: true,
       message: "SubCategory updated successfully",
+      data: mapSubCategoryRecord(updated),
     };
-  } catch (error) {
-    console.error("Update SubCategory Error:", error);
-    return {
-      success: false,
-      message: "Failed to update subcategory",
-    };
+  } catch {
+    return { success: false, message: "Failed to update subcategory" };
   }
 }
 
-/* ---------------- DELETE ---------------- */
-
-export async function deleteSubCategory(
-  id: string
-): Promise<ActionResponse> {
+export async function deleteSubCategory(id: string): Promise<ActionResponse> {
   try {
-    await db.subCategory.delete({
-      where: { id },
-    });
+    await db.subCategory.delete({ where: { id } });
 
     revalidatePath("/dashboard/subcategories");
-
     return {
       success: true,
       message: "SubCategory deleted successfully",
     };
-  } catch (error) {
-    console.error("Delete SubCategory Error:", error);
+  } catch {
     return {
       success: false,
       message: "Failed to delete subcategory",
@@ -144,167 +187,42 @@ export async function deleteSubCategory(
   }
 }
 
-/* ---------------- BULK DELETE ---------------- */
-
-export async function deleteMultipleSubCategories(
-  ids: string[]
-): Promise<ActionResponse> {
-  try {
-    await db.subCategory.deleteMany({
-      where: { id: { in: ids } },
-    });
-
-    revalidatePath("/dashboard/subcategories");
-
-    return {
-      success: true,
-      message: "SubCategories deleted successfully",
-    };
-  } catch (error) {
-    console.error("Bulk Delete Error:", error);
-    return {
-      success: false,
-      message: "Failed to delete multiple subcategories",
-    };
-  }
-}
-
-/* ---------------- GET ALL ---------------- */
-
-export async function getSubCategories() {
-  return await db.subCategory.findMany({
+export async function getSubCategories(): Promise<SubCategory[]> {
+  const records = await db.subCategory.findMany({
     orderBy: { createdAt: "desc" },
     include: {
-      category: true,
+      category: { include: { translations: true } },
       hsnCode: true,
+      translations: true,
     },
   });
+
+  return records.map(mapSubCategoryRecord);
 }
 
-/* ---------------- GET BY ID ---------------- */
-
-export async function getSubCategoryById(id: string) {
-  return await db.subCategory.findUnique({
+export async function getSubCategoryById(id: string): Promise<SubCategory | null> {
+  const record = await db.subCategory.findUnique({
     where: { id },
     include: {
-      category: true,
+      category: { include: { translations: true } },
       hsnCode: true,
+      translations: true,
     },
   });
+
+  return record ? mapSubCategoryRecord(record) : null;
 }
 
-/* ---------------- GET BY CATEGORY ---------------- */
-
-export async function getSubCategoriesByCategory(
-  categoryId: string
-) {
-  return await db.subCategory.findMany({
+export async function getSubCategoriesByCategory(categoryId: string): Promise<SubCategory[]> {
+  const records = await db.subCategory.findMany({
     where: { categoryId },
     include: {
+      category: { include: { translations: true } },
       hsnCode: true,
+      translations: true,
     },
+    orderBy: { createdAt: "desc" },
   });
-}
 
-/* ================= TRANSLATIONS ================= */
-
-/* ---------------- CREATE ---------------- */
-
-export async function createSubCategoryTranslation(
-  data: unknown
-): Promise<ActionResponse> {
-  try {
-    const validated = subCategoryTranslationSchema.safeParse(data);
-
-    if (!validated.success) {
-      return {
-        success: false,
-        message: validated.error.issues[0]?.message ?? "Invalid translation payload",
-      };
-    }
-
-    const result = await db.subCategoryTranslation.create({
-      data: validated.data,
-    });
-
-    return {
-      success: true,
-      message: "SubCategory translation created successfully",
-      data: result,
-    };
-  } catch (error) {
-    console.error("Create Translation Error:", error);
-    return {
-      success: false,
-      message: "Failed to create translation",
-    };
-  }
-}
-
-/* ---------------- UPDATE ---------------- */
-
-export async function updateSubCategoryTranslation(
-  id: string,
-  data: unknown
-): Promise<ActionResponse> {
-  try {
-    const validated = subCategoryTranslationSchema.safeParse(data);
-
-    if (!validated.success) {
-      return {
-        success: false,
-        message: validated.error.issues[0]?.message ?? "Invalid translation payload",
-      };
-    }
-
-    const result = await db.subCategoryTranslation.update({
-      where: { id },
-      data: validated.data,
-    });
-
-    return {
-      success: true,
-      message: "SubCategory translation updated successfully",
-      data: result,
-    };
-  } catch (error) {
-    console.error("Update Translation Error:", error);
-    return {
-      success: false,
-      message: "Failed to update translation",
-    };
-  }
-}
-
-/* ---------------- DELETE ---------------- */
-
-export async function deleteSubCategoryTranslation(
-  id: string
-): Promise<ActionResponse> {
-  try {
-    await db.subCategoryTranslation.delete({
-      where: { id },
-    });
-
-    return {
-      success: true,
-      message: "SubCategory translation deleted successfully",
-    };
-  } catch (error) {
-    console.error("Delete Translation Error:", error);
-    return {
-      success: false,
-      message: "Failed to delete translation",
-    };
-  }
-}
-
-/* ---------------- GET ---------------- */
-
-export async function getTranslationsBySubCategory(
-  subCategoryId: string
-) {
-  return await db.subCategoryTranslation.findMany({
-    where: { subCategoryId },
-  });
+  return records.map(mapSubCategoryRecord);
 }

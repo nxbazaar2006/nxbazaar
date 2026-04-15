@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+
 import SubCategoryForm from "@/components/backoffice/Forms/SubCategoryForm";
 import { getCategories } from "@/actions/category";
 import { getSubCategoryById } from "@/actions/subcategory";
@@ -18,9 +20,13 @@ export default async function UpdateSubCategoryPage({ params }: PageProps) {
     getHsnCodes(),
   ]);
 
+  if (!subCategory) {
+    return notFound();
+  }
+
   return (
     <SubCategoryForm
-      categories={categories}
+      categories={Array.isArray(categories) ? categories : []}
       hsnCodes={hsnCodes}
       updateData={subCategory}
     />
