@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { UploadButton } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { useState } from "react";
+import { UploadButton, UploadDropzone } from "@/lib/uploadthing";
 
 type Props = {
   label: string;
@@ -30,8 +30,7 @@ export default function ImageInput({
       {/* UPLOAD AREA */}
       {!imageUrl && (
         <div className="border-1 border-white dark:border-slate-600 rounded-xl p-6 text-center hover:border-orange-400 transition">
-          
-          <UploadButton<OurFileRouter>
+          <UploadDropzone
             endpoint={endpoint}
             onUploadBegin={() => setLoading(true)}
             onClientUploadComplete={(res) => {
@@ -73,7 +72,7 @@ export default function ImageInput({
 
           {/* REPLACE BUTTON */}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition">
-            <UploadButton<OurFileRouter>
+            <UploadButton
               endpoint={endpoint}
               appearance={{
                 button:
