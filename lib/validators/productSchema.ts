@@ -55,6 +55,7 @@ export const variantSchema = z
 
     sku: optionalString(),
     barcode: optionalString(),
+    productCode: optionalString(),
 
     price: requiredNumber("Price required", 0),
     salePrice: optionalNumber(),

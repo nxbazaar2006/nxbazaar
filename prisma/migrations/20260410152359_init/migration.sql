@@ -190,6 +190,7 @@ CREATE TABLE "ProductVariant" (
     "title" TEXT NOT NULL,
     "sku" TEXT,
     "barcode" TEXT,
+    "productCode" TEXT,
     "price" DOUBLE PRECISION NOT NULL,
     "salePrice" DOUBLE PRECISION,
     "costPrice" DOUBLE PRECISION,
@@ -436,6 +437,8 @@ CREATE UNIQUE INDEX "ProductVariant_sku_key" ON "ProductVariant"("sku");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ProductVariant_barcode_key" ON "ProductVariant"("barcode");
+
+CREATE UNIQUE INDEX "ProductVariant_productCode_key" ON "ProductVariant"("productCode");
 
 -- CreateIndex
 CREATE INDEX "ProductVariant_productId_idx" ON "ProductVariant"("productId");

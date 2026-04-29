@@ -320,8 +320,9 @@ model ProductVariant {
 
   title String
 
-  sku     String? @unique
-  barcode String? @unique
+  sku         String? @unique
+  barcode     String? @unique
+  productCode String? @unique
 
   price     Float
   salePrice Float?
