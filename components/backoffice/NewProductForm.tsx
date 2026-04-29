@@ -57,6 +57,18 @@ type HsnOption = {
   gstRate: number;
 };
 
+
+const randomCode = (length: number) =>
+  Math.random()
+    .toString(36)
+    .replace(/[^a-z0-9]/gi, "")
+    .toUpperCase()
+    .slice(0, length)
+    .padEnd(length, "0");
+
+const generateSku = () => `SKU-${randomCode(8)}`;
+const generateProductCode = () => `PC-${randomCode(10)}`;
+
 type Props = {
   categories?: SelectOption[];
   subCategories?: SubCategoryOption[];
@@ -140,8 +152,9 @@ export default function NewProductForm({
         updateData?.variants ?? [
           {
             title: "Default Variant",
-            sku: "",
+            sku: generateSku(),
             barcode: generateBarcode(),
+            productCode: generateProductCode(),
 
             price: 0,
             salePrice: 0,
@@ -431,6 +444,13 @@ export default function NewProductForm({
                 />
 
                 <TextInput
+                  label="Product Code"
+                  name={`variants.${index}.productCode`}
+                  register={register}
+                  errors={errors}
+                />
+
+                <TextInput
                   label="Price"
                   name={`variants.${index}.price`}
                   type="number"
@@ -472,9 +492,10 @@ export default function NewProductForm({
             onClick={() =>
               appendVariant({
                 title: "",
-                sku: "",
+                sku: generateSku(),
                 barcode:
                   generateBarcode(),
+                productCode: generateProductCode(),
                 price: 0,
                 salePrice: 0,
                 costPrice: 0,

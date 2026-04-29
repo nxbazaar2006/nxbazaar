@@ -137,6 +137,7 @@ export async function PUT(
 
             sku: variant.sku ?? null,
             barcode: variant.barcode ?? null,
+            productCode: variant.productCode ?? null,
 
             price: variant.price,
             salePrice: variant.salePrice ?? null,
