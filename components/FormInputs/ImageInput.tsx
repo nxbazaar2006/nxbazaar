@@ -6,10 +6,11 @@ import { Loader2 } from "lucide-react";
 import { UploadButton, UploadDropzone } from "@/lib/uploadthing";
 
 import {
+  Control,
   FieldValues,
   Path,
   useController,
-  Control,
+  useFormContext,
 } from "react-hook-form";
 
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
@@ -24,7 +25,6 @@ type UploadResponseItem = {
 type Props<T extends FieldValues> = {
   label: string;
   name: Path<T>;
-  control: Control<T>; // ✅ important
   endpoint: keyof OurFileRouter;
   previewSize?: number;
 };
