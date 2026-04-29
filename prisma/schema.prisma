@@ -10,6 +10,7 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
 // ================= ENUMS =================
 
 enum UserRole {
@@ -52,10 +53,10 @@ model User {
   email         String?  @unique
   password      String
   emailVerified Boolean  @default(false)
- blogs Blog[] 
-  role   UserRole @default(USER)
-  plan   String?
-  status Boolean  @default(true)
+  blogs         Blog[]
+  role          UserRole @default(USER)
+  plan          String?
+  status        Boolean  @default(true)
 
   verificationToken String?
 
@@ -133,7 +134,7 @@ model Category {
   imageUrl String?
   isActive Boolean @default(true)
 
-  translations CategoryTranslation[]
+  translations  CategoryTranslation[]
   subCategories SubCategory[]
   products      Product[]
 
@@ -148,6 +149,7 @@ model Category {
 model CategoryTranslation {
   id          String   @id @default(uuid())
   locale      Language
+  slug        String?
   title       String
   description String?
 
@@ -155,6 +157,8 @@ model CategoryTranslation {
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([categoryId, locale])
+  @@unique([locale, slug])
+  @@index([locale, slug])
 }
 
 // ================= SUB CATEGORY =================
@@ -184,6 +188,7 @@ model SubCategory {
 model SubCategoryTranslation {
   id          String   @id @default(uuid())
   locale      Language
+  slug        String?
   title       String
   description String?
 
@@ -191,6 +196,8 @@ model SubCategoryTranslation {
   subCategory   SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
 
   @@unique([subCategoryId, locale])
+  @@unique([locale, slug])
+  @@index([locale, slug])
 }
 
 // ================= MARKET =================
@@ -202,18 +209,19 @@ model Market {
   description String?
   logoUrl     String?
 
-  isActive Boolean @default(true)
- translations MarketTranslation[]
-  categories Category[] @relation("MarketCategories")
+  isActive     Boolean             @default(true)
+  translations MarketTranslation[]
+  categories   Category[]          @relation("MarketCategories")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model MarketTranslation {
-  id          String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  locale      String   // en, hi, mr
+  locale      String // en, hi, mr
+  slug        String?
   title       String
   description String?
 
@@ -224,6 +232,8 @@ model MarketTranslation {
   updatedAt DateTime @updatedAt
 
   @@unique([marketId, locale]) // same market + language duplicate na ho
+  @@unique([locale, slug])
+  @@index([locale, slug])
   @@index([locale])
 }
 
@@ -237,17 +247,18 @@ model HsnCode {
 
   products      Product[]
   subCategories SubCategory[]
- createdAt     DateTime @default(now())  
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
   @@index([code])
 }
 
 // ================= PRODUCT =================
 
 model Product {
-  id       String @id @default(uuid())
+  id       String  @id @default(uuid())
   title    String
-  slug     String @unique
+  slug     String  @unique
   imageUrl String?
 
   tags String[]
@@ -269,16 +280,16 @@ model Product {
   subCategory   SubCategory? @relation(fields: [subCategoryId], references: [id])
 
   userId String
-  user   User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   hsnCodeId String?
   hsnCode   HsnCode? @relation(fields: [hsnCodeId], references: [id])
 
   orderItems OrderItem[]
   sales      Sale[]
-  blogs Blog[] @relation("BlogProducts")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  blogs      Blog[]      @relation("BlogProducts")
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
   @@index([slug])
   @@index([categoryId])
@@ -288,7 +299,7 @@ model Product {
 // ================= PRODUCT IMAGE =================
 
 model ProductImage {
-  id        String @id @default(uuid())
+  id        String  @id @default(uuid())
   url       String
   isPrimary Boolean @default(false)
 
@@ -318,7 +329,7 @@ model ProductVariant {
   currency String @default("INR")
 
   stock          Int?
-  reservedStock  Int @default(0)
+  reservedStock  Int     @default(0)
   lowStockAlert  Int?
   trackInventory Boolean @default(true)
 
@@ -367,6 +378,7 @@ model WholesalePricing {
 model ProductTranslation {
   id          String   @id @default(uuid())
   locale      Language
+  slug        String?
   title       String
   description String?
 
@@ -377,6 +389,8 @@ model ProductTranslation {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, locale])
+  @@unique([locale, slug])
+  @@index([locale, slug])
 }
 
 // ================= ORDER =================
@@ -385,7 +399,7 @@ model Order {
   id String @id @default(uuid())
 
   userId String
-  user   User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   orderNumber String @unique
 
@@ -418,7 +432,7 @@ model OrderItem {
   id String @id @default(uuid())
 
   orderId String
-  order   Order @relation(fields: [orderId], references: [id])
+  order   Order  @relation(fields: [orderId], references: [id])
 
   productId String
   product   Product @relation(fields: [productId], references: [id])
@@ -443,10 +457,10 @@ model Sale {
 
   total Float
 
-  order   Order   @relation(fields: [orderId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-  vendor  User    @relation(fields: [vendorId], references: [id])
-  createdAt DateTime @default(now()) 
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  vendor    User     @relation(fields: [vendorId], references: [id])
+  createdAt DateTime @default(now())
 }
 
 // ================= COUPON =================
@@ -459,36 +473,36 @@ model Coupon {
   isActive   Boolean  @default(true)
 
   vendorId String
-  vendor   User @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  vendor   User   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 }
 
 // ================= BANNER =================
 
 model Banner {
-  id        String   @id @default(uuid())
-  title     String
-  link      String
-  imageUrl  String
-  isActive  Boolean  @default(true)
+  id       String  @id @default(uuid())
+  title    String
+  link     String
+  imageUrl String
+  isActive Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Blog {
-  id       String @id @default(uuid())
-  slug     String @unique
+  id   String @id @default(uuid())
+  slug String @unique
 
   imageUrl String?
 
-  isActive Boolean @default(true)
+  isActive   Boolean @default(true)
   isFeatured Boolean @default(false)
 
   // 🔥 content (NO QUILL)
-  content Json   // markdown / rich json
+  content Json // markdown / rich json
 
   userId String
-  user   User @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   categoryId String?
   category   BlogCategory? @relation(fields: [categoryId], references: [id])
@@ -499,15 +513,16 @@ model Blog {
   relatedProducts Product[] @relation("BlogProducts")
 
   publishedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([slug])
 }
 
 model BlogTranslation {
-  id          String   @id @default(uuid())
-  locale      Language
+  id     String   @id @default(uuid())
+  locale Language
+  slug   String?
 
   title       String
   description String?
@@ -516,9 +531,11 @@ model BlogTranslation {
   metaDescription String?
 
   blogId String
-  blog   Blog @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  blog   Blog   @relation(fields: [blogId], references: [id], onDelete: Cascade)
 
   @@unique([blogId, locale])
+  @@unique([locale, slug])
+  @@index([locale, slug])
 }
 
 model BlogCategory {
