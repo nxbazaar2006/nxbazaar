@@ -1,23 +1,30 @@
-'use client';
+"use client";
 
 import Image from "next/image";
-import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { useState } from "react";
-import { UploadButton, UploadDropzone } from "@/lib/uploadthing";
 import { Loader2 } from "lucide-react";
+import { UploadButton, UploadDropzone } from "@/lib/uploadthing";
 
 import {
   FieldValues,
   Path,
   useController,
-  useFormContext,
+  Control,
 } from "react-hook-form";
 
+import type { OurFileRouter } from "@/app/api/uploadthing/core";
+
 /* ================= TYPES ================= */
+
+type UploadResponseItem = {
+  ufsUrl?: string;
+  serverData?: { url?: string };
+};
 
 type Props<T extends FieldValues> = {
   label: string;
   name: Path<T>;
+  control: Control<T>; // ✅ important
   endpoint: keyof OurFileRouter;
   previewSize?: number;
 };
@@ -27,15 +34,10 @@ type Props<T extends FieldValues> = {
 export default function ImageInput<T extends FieldValues>({
   label,
   name,
+  control,
   endpoint,
   previewSize = 160,
 }: Props<T>) {
-
-  const { control } = useFormContext();
-
-  if (!control) {
-    throw new Error("ImageInput must be used inside FormProvider");
-  }
 
   const { field } = useController({
     name,
@@ -49,18 +51,12 @@ export default function ImageInput<T extends FieldValues>({
 
   /* ================= UPLOAD ================= */
 
-  const handleUploadComplete = (
-    res: Array<{
-      ufsUrl?: string;
-      serverData?: { url?: string };
-    }>
-  ) => {
+  const handleUploadComplete = (res: UploadResponseItem[]) => {
     const uploadedUrl =
       res?.[0]?.serverData?.url ??
       res?.[0]?.ufsUrl ??
       "";
 
-    // ✅ prevent unnecessary re-render
     if (uploadedUrl && uploadedUrl !== imageUrl) {
       field.onChange(uploadedUrl);
       setUploadError("");
@@ -77,27 +73,14 @@ export default function ImageInput<T extends FieldValues>({
   return (
     <div className="space-y-3">
 
-      {/* LABEL */}
-      <label className="text-sm font-medium block">
-        {label}
-      </label>
+      <label className="text-sm font-medium block">{label}</label>
 
-      {/* UPLOAD AREA */}
       {!imageUrl && (
-        <div className="border border-white dark:border-slate-600 rounded-xl p-6 text-center hover:border-orange-400 transition">
+        <div className="border rounded-xl p-6 text-center">
 
           <UploadDropzone
             endpoint={endpoint}
             disabled={loading}
-            appearance={{
-              button: loading
-                ? "bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
-                : "bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded",
-              allowedContent: "hidden",
-            }}
-            content={{
-              button: loading ? "Uploading..." : "Upload image",
-            }}
             onUploadBegin={() => {
               setLoading(true);
               setUploadError("");
@@ -106,65 +89,45 @@ export default function ImageInput<T extends FieldValues>({
             onUploadError={handleUploadError}
           />
 
-          <p className="mt-2 text-xs text-gray-500 flex justify-center gap-2">
-            {loading && <Loader2 className="h-3 w-3 animate-spin" />}
-            {loading ? "Uploading..." : "Upload image"}
-          </p>
+          {loading && (
+            <p className="text-xs flex justify-center gap-2 mt-2">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Uploading...
+            </p>
+          )}
 
           {uploadError && (
-            <p className="text-xs text-red-500">
+            <p className="text-xs text-red-500 mt-2">
               {uploadError}
             </p>
           )}
         </div>
       )}
 
-      {/* PREVIEW */}
       {imageUrl && (
         <div
-          className="relative group"
-          style={{
-            width: previewSize,
-            height: previewSize,
-          }}
+          className="relative"
+          style={{ width: previewSize, height: previewSize }}
         >
+          <Image
+            src={imageUrl}
+            alt="preview"
+            fill
+            className="object-cover rounded"
+          />
 
-          {/* ✅ safe render */}
-          {imageUrl && (
-            <Image
-              src={imageUrl}
-              alt="preview"
-              fill
-              className="object-cover rounded"
-            />
-          )}
-
-          {/* REMOVE */}
           <button
             type="button"
-            onClick={() => {
-              field.onChange("");
-              setUploadError("");
-            }}
-            className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100"
+            onClick={() => field.onChange("")}
+            className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded"
           >
             Remove
           </button>
 
-          {/* REPLACE */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition">
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
             <UploadButton
               endpoint={endpoint}
               disabled={loading}
-              appearance={{
-                button: loading
-                  ? "text-xs bg-gray-400 text-white px-3 py-1 rounded cursor-not-allowed"
-                  : "text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded",
-                allowedContent: "hidden",
-              }}
-              content={{
-                button: loading ? "Uploading..." : "Replace",
-              }}
               onUploadBegin={() => {
                 setLoading(true);
                 setUploadError("");
@@ -174,15 +137,13 @@ export default function ImageInput<T extends FieldValues>({
             />
           </div>
 
-          {/* LOADER */}
           {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded">
-              <Loader2 className="h-4 w-4 animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded">
+              <Loader2 className="h-4 w-4 animate-spin text-white" />
             </div>
           )}
         </div>
       )}
-
     </div>
   );
 }

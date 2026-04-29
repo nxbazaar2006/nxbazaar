@@ -40,7 +40,7 @@ export default function CategoryForm({ initialData }: Props) {
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory(id ?? "");
 
-  const [imageUrl, setImageUrl] = useState<string>(
+  const [imageUrl] = useState<string>(
     initialData?.imageUrl ?? ""
   );
 
@@ -131,11 +131,11 @@ export default function CategoryForm({ initialData }: Props) {
             errors={errors}
           />
 
-          <ImageInput
-            imageUrl={imageUrl}
-            setImageUrl={setImageUrl}
-            endpoint="categoryImageUploader"
-            label="Category Image"
+         <ImageInput<CategoryInput>
+  name="imageUrl"
+  control={control} // ✅ VERY IMPORTANT
+  endpoint="categoryImageUploader"
+  label="Category Image"
           />
 
           <select

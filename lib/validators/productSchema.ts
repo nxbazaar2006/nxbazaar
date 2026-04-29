@@ -1,310 +1,220 @@
 import { z } from "zod";
 
+/* ================= HELPERS ================= */
+
+const optionalString = () =>
+z
+.string()
+.trim()
+.transform((val) => (val === "" ? undefined : val))
+.optional();
+
+const requiredNumber = (msg = "Required", min = 0) =>
+z.coerce.number().min(min, msg);
+
+const optionalNumber = () =>
+z.preprocess(
+(val) => (val === "" ? undefined : val),
+z.coerce.number().optional()
+);
+
+/* ================= CONSTANTS ================= */
+
 export const LOCALES = ["EN", "HI", "MR"] as const;
 export const CURRENCIES = ["INR", "USD"] as const;
 
+/* ================= IMAGE ================= */
+
 export const productImageSchema = z.object({
-  url: z.string().url("Valid image URL required"),
-  isPrimary: z.boolean().default(false),
+url: z.string().url("Valid image URL required"),
+isPrimary: z.boolean().default(false),
 });
 
+/* ================= VARIANT ================= */
+
 export const variantAttributeSchema = z.object({
-  name: z.string().min(1, "Attribute name required"),
-  value: z.string().min(1, "Attribute value required"),
+name: z.string().min(1, "Attribute name required"),
+value: z.string().min(1, "Attribute value required"),
 });
 
 export const wholesalePricingSchema = z.object({
-  minQty: z.coerce.number().min(1, "Minimum qty must be at least 1"),
-  price: z.coerce.number().min(0, "Price must be at least 0"),
+minQty: z.coerce.number().min(1),
+price: z.coerce.number().min(0),
 });
 
 export const productVariantSchema = z.object({
-  title: z.string().min(1, "Variant title required"),
-  sku: z.string().optional(),
-  barcode: z.string().optional(),
-  price: z.coerce.number().min(0, "Price must be at least 0"),
-  salePrice: z.coerce.number().optional(),
-  costPrice: z.coerce.number().optional(),
-  currency: z.enum(CURRENCIES).default("INR"),
-  stock: z.coerce.number().optional(),
-  reservedStock: z.coerce.number().default(0),
-  lowStockAlert: z.coerce.number().optional(),
-  trackInventory: z.boolean().default(true),
-  image: z.string().optional(),
-  isActive: z.boolean().default(true),
-  isDefault: z.boolean().default(false),
-  attributes: z.array(variantAttributeSchema).default([]),
-  wholesalePricing: z.array(wholesalePricingSchema).default([]),
+title: z.string().min(1),
+
+sku: optionalString(),
+barcode: optionalString(),
+
+price: requiredNumber("Price required", 0),
+salePrice: optionalNumber(),
+costPrice: optionalNumber(),
+
+currency: z.enum(CURRENCIES).default("INR"),
+
+stock: optionalNumber(),
+reservedStock: z.coerce.number().default(0),
+
+trackInventory: z.boolean().default(true),
+
+image: optionalString(),
+
+isActive: z.boolean().default(true),
+isDefault: z.boolean().default(false),
+
+attributes: z.array(variantAttributeSchema).default([]),
+wholesalePricing: z.array(wholesalePricingSchema).default([]),
 });
-
-export const productTranslationSchema = z.object({
-  locale: z.enum(LOCALES),
-  title: z.string().min(1, "Translation title required"),
-  description: z.string().optional(),
-  metaTitle: z.string().optional(),
-  metaDescription: z.string().optional(),
-});
-
-export const productSchema = z
-  .object({
-    title: z.string().min(1),
-
-    sku: optionalString(),
-    barcode: optionalString(),
-    productCode: optionalString(),
-
-    price: requiredNumber("Price required", 0),
-    salePrice: optionalNumber(),
-    costPrice: optionalNumber(),
-
-    stock: optionalNumber(),
-    image: optionalString(),
-
-    isDefault: z.boolean().default(false),
-    isActive: z.boolean().default(true),
-    isWholesale: z.boolean().default(false),
-    currency: z.enum(CURRENCIES).default("INR"),
-    categoryId: z.string().min(1, "Category required"),
-    subCategoryId: z.string().optional(),
-    userId: z.string().min(1, "User required"),
-    hsnCodeId: z.string().optional(),
-    images: z.array(productImageSchema).default([]),
-    variants: z.array(productVariantSchema).default([]),
-    translations: z.array(productTranslationSchema).default([]),
-  })
-  .superRefine((data, ctx) => {
-    if (data.variants.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "At least one variant required",
-        path: ["variants"],
-      });
-    }
-
-    const defaults = data.variants.filter((variant) => variant.isDefault);
-    if (defaults.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "One default variant required",
-        path: ["variants"],
-      });
-    }
-    if (defaults.length > 1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Only one default variant allowed",
-        path: ["variants"],
-      });
-    }
-
-    data.variants.forEach((variant, index) => {
-      if (
-        typeof variant.salePrice === "number" &&
-        variant.salePrice > variant.price
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Sale price must be less than or equal to price",
-          path: ["variants", index, "salePrice"],
-        });
-      }
-
-      const minQtySet = new Set<number>();
-      variant.wholesalePricing.forEach((pricing, pricingIndex) => {
-        if (minQtySet.has(pricing.minQty)) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Duplicate minimum quantity",
-            path: [
-              "variants",
-              index,
-              "wholesalePricing",
-              pricingIndex,
-              "minQty",
-            ],
-          });
-        }
-        minQtySet.add(pricing.minQty);
-      });
-    });
-
-    if (data.translations.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "At least one translation required",
-        path: ["translations"],
-      });
-    }
-
-    const localeSet = new Set<string>();
-    data.translations.forEach((translation, index) => {
-      if (localeSet.has(translation.locale)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Duplicate locale",
-          path: ["translations", index, "locale"],
-        });
-      }
-      localeSet.add(translation.locale);
-    });
-
-    const primaryImages = data.images.filter((image) => image.isPrimary);
-    if (data.images.length > 0 && primaryImages.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "One primary image required",
-        path: ["images"],
-      });
-    }
-    if (primaryImages.length > 1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Only one primary image allowed",
-        path: ["images"],
-      });
-    }
-  });
 
 /* ================= TRANSLATION ================= */
 
-export const translationSchema = z.object({
-  locale: z.enum(LOCALES),
-  slug: optionalString(),
-  title: z.string().min(2),
-  description: optionalString(),
-});
-
-/* ================= BASE PRODUCT ================= */
-
-const baseProductSchema = z.object({
-  id: z.string().optional(),
-
-  title: z.string().min(2),
-  slug: optionalString(),
-
-  description: optionalString(),
-
-  imageUrl: optionalString(),
-
-  productImages: z.array(z.string().url()).min(1),
-
-  tags: z.array(z.string()).max(10).default([]),
-
-  unit: optionalString(),
-
-  isActive: z.boolean().default(true),
-  isWholesale: z.boolean().default(false),
-
-  currency: z.enum(["INR", "USD"]).default("INR"),
-
-  categoryId: z.string().min(1),
-  subCategoryId: optionalString(),
-
-  userId: z.string().min(1),
-
-  hsnCodeId: optionalString(),
-
-  gstRate: optionalNumber(),
-  cgst: optionalNumber(),
-  sgst: optionalNumber(),
-  igst: optionalNumber(),
-});
-
-/* ================= GST VALIDATION ================= */
-
-const withGSTValidation = baseProductSchema.superRefine(
-  (data, ctx) => {
-    const hasSplit = data.cgst || data.sgst || data.igst;
-
-    if (data.gstRate && hasSplit) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["gstRate"],
-        message: "Use either gstRate OR cgst/sgst/igst",
-      });
-    }
-
-    if (data.igst && (data.cgst || data.sgst)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["igst"],
-        message: "IGST cannot mix with CGST/SGST",
-      });
-    }
-
-    if (data.cgst && !data.sgst) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["sgst"],
-        message: "SGST required",
-      });
-    }
-
-    if (data.sgst && !data.cgst) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["cgst"],
-        message: "CGST required",
-      });
-    }
-  }
-);
-
-/* ================= BASE EXTENDED ================= */
-
-const productBaseSchema = withGSTValidation.extend({
-  variants: z.array(variantSchema).min(1),
-  translations: z.array(translationSchema).min(1),
+export const productTranslationSchema = z.object({
+locale: z.enum(LOCALES),
+title: z.string().min(1),
+description: optionalString(),
+metaTitle: optionalString(),
+metaDescription: optionalString(),
 });
 
 /* ================= MAIN PRODUCT ================= */
 
-export const ProductSchema = productBaseSchema
-  .superRefine((data, ctx) => {
-    const defaults = data.variants.filter((v) => v.isDefault);
+export const productSchema = z
+.object({
+title: z.string().min(1),
 
-    if (defaults.length !== 1) {
+
+slug: optionalString(), // slug backend generate करेगा
+
+sku: optionalString(),
+barcode: optionalString(),
+productCode: optionalString(),
+
+price: requiredNumber("Price required", 0),
+salePrice: optionalNumber(),
+costPrice: optionalNumber(),
+
+stock: optionalNumber(),
+
+currency: z.enum(CURRENCIES).default("INR"),
+
+image: optionalString(),
+images: z.array(productImageSchema).max(10).default([]),
+
+isActive: z.boolean().default(true),
+isWholesale: z.boolean().default(false),
+
+categoryId: z.string().min(1),
+subCategoryId: optionalString(),
+userId: z.string().min(1),
+hsnCodeId: optionalString(),
+
+variants: z.array(productVariantSchema).min(1),
+translations: z.array(productTranslationSchema).min(1),
+
+
+})
+
+/* ================= VALIDATIONS ================= */
+
+.superRefine((data, ctx) => {
+const defaults = data.variants.filter((v) => v.isDefault);
+
+
+if (defaults.length !== 1) {
+  ctx.addIssue({
+    code: "custom",
+    path: ["variants"],
+    message: "Exactly one default variant required",
+  });
+}
+
+data.variants.forEach((variant, index) => {
+  if (
+    typeof variant.salePrice === "number" &&
+    variant.salePrice > variant.price
+  ) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["variants", index, "salePrice"],
+      message: "Sale price must be <= price",
+    });
+  }
+
+  const set = new Set<number>();
+
+  variant.wholesalePricing.forEach((p, i) => {
+    if (set.has(p.minQty)) {
       ctx.addIssue({
         code: "custom",
-        path: ["variants"],
-        message: "Exactly one default variant required",
+        path: ["variants", index, "wholesalePricing", i, "minQty"],
+        message: "Duplicate minQty",
       });
     }
-  })
-  .transform((data) => ({
-    ...data,
-    slug: data.slug || generateSlug(data.title),
-  }));
+    set.add(p.minQty);
+  });
+});
 
-/* ================= CREATE / UPDATE ================= */
+const localeSet = new Set<string>();
 
-export const createProductSchema = productSchema;
+data.translations.forEach((t, i) => {
+  if (localeSet.has(t.locale)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["translations", i, "locale"],
+      message: "Duplicate locale",
+    });
+  }
+  localeSet.add(t.locale);
+});
 
-// ✅ FINAL FIX (IMPORTANT)
-export const updateProductSchema = productBaseSchema.safeExtend({
-  id: z.string().min(1),
+const primaryImages = data.images.filter((img) => img.isPrimary);
+
+if (data.images.length > 0 && primaryImages.length === 0) {
+  ctx.addIssue({
+    code: "custom",
+    path: ["images"],
+    message: "One primary image required",
+  });
+}
+
+if (primaryImages.length > 1) {
+  ctx.addIssue({
+    code: "custom",
+    path: ["images"],
+    message: "Only one primary image allowed",
+  });
+}
+
+
+});
+
+/* ================= UPDATE ================= */
+
+export const updateProductSchema = productSchema.extend({
+id: z.string().min(1),
 });
 
 /* ================= TYPES ================= */
 
 export type ProductInput = z.infer<typeof productSchema>;
-export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 
 /* ================= VALIDATOR ================= */
 
 export const validateProduct = (data: unknown) => {
-  const result = productSchema.safeParse(data);
+const result = productSchema.safeParse(data);
 
-  if (!result.success) {
-    return {
-      success: false,
-      errors: result.error.flatten(),
-    };
-  }
+if (!result.success) {
+return {
+success: false,
+errors: result.error.flatten(),
+};
+}
 
-  return {
-    success: true,
-    data: result.data,
-  };
+return {
+success: true,
+data: result.data,
+};
 };
