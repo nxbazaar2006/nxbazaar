@@ -15,6 +15,7 @@ import {
 } from "@/hooks/useCategory";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 
@@ -39,8 +40,11 @@ export default function CategoryForm({ initialData }: Props) {
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory(id ?? "");
 
+  const [imageUrl, setImageUrl] = useState<string>(
+    initialData?.imageUrl ?? ""
+  );
+
   const {
-    control,
     register,
     handleSubmit,
     formState: { errors },
@@ -56,7 +60,10 @@ export default function CategoryForm({ initialData }: Props) {
   });
 
   const onSubmit = async (data: CategoryInput) => {
-    const payload: CategoryInput = data;
+    const payload: CategoryInput = {
+      ...data,
+      imageUrl: imageUrl || "",
+    };
 
     try {
       if (id) {
@@ -124,9 +131,9 @@ export default function CategoryForm({ initialData }: Props) {
             errors={errors}
           />
 
-          <ImageInput<CategoryInput>
-            name="imageUrl"
-            control={control}
+          <ImageInput
+            imageUrl={imageUrl}
+            setImageUrl={setImageUrl}
             endpoint="categoryImageUploader"
             label="Category Image"
           />
