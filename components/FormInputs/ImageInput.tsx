@@ -7,10 +7,10 @@ import { UploadButton, UploadDropzone } from "@/lib/uploadthing";
 import { Loader2 } from "lucide-react";
 
 import {
+  Control,
   FieldValues,
   Path,
   useController,
-  useFormContext,
 } from "react-hook-form";
 
 /* ================= TYPES ================= */
@@ -18,6 +18,7 @@ import {
 type Props<T extends FieldValues> = {
   label: string;
   name: Path<T>;
+  control: Control<T>;
   endpoint: keyof OurFileRouter;
   previewSize?: number;
 };
@@ -27,15 +28,10 @@ type Props<T extends FieldValues> = {
 export default function ImageInput<T extends FieldValues>({
   label,
   name,
+  control,
   endpoint,
   previewSize = 160,
 }: Props<T>) {
-
-  const { control } = useFormContext();
-
-  if (!control) {
-    throw new Error("ImageInput must be used inside FormProvider");
-  }
 
   const { field } = useController({
     name,
