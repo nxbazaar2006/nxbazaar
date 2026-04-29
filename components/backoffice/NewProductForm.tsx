@@ -36,12 +36,26 @@ type HsnOption = {
   gstRate: number;
 };
 
+<<<<<<< HEAD
 type SubCategoryOption = {
   id: string;
   title: string;
   categoryId: string;
   hsnCode?: HsnOption | null;
 };
+=======
+
+const randomCode = (length: number) =>
+  Math.random()
+    .toString(36)
+    .replace(/[^a-z0-9]/gi, "")
+    .toUpperCase()
+    .slice(0, length)
+    .padEnd(length, "0");
+
+const generateSku = () => `SKU-${randomCode(8)}`;
+const generateProductCode = () => `PC-${randomCode(10)}`;
+>>>>>>> 5cea87c5237b5e7bbd98e5f2766d0573faa130c1
 
 type Props = {
   userId: string;
@@ -81,6 +95,7 @@ export default function NewProductForm({
   } = useForm<ProductInput>({
     resolver: zodResolver(productSchema),
     defaultValues: {
+<<<<<<< HEAD
       title: updateData.title ?? "",
       slug: updateData.slug ?? "",
       tags: updateData.tags ?? [],
@@ -122,6 +137,74 @@ export default function NewProductForm({
           wholesalePricing: [],
         },
       ],
+=======
+      title: updateData?.title ?? "",
+      slug: updateData?.slug ?? "",
+      imageUrl: updateData?.imageUrl ?? "",
+
+      unit: updateData?.unit ?? "",
+      tags: updateData?.tags ?? [],
+
+      currency: updateData?.currency ?? "INR",
+
+      isActive: updateData?.isActive ?? true,
+      isWholesale:
+        updateData?.isWholesale ?? false,
+
+      categoryId:
+        updateData?.categoryId ?? "",
+
+      subCategoryId:
+        updateData?.subCategoryId ?? "",
+
+      hsnCodeId: updateData?.hsnCodeId ?? "",
+      gstRate: updateData?.gstRate ?? updateData?.hsnCode?.gstRate ?? undefined,
+
+      images:
+        updateData?.images ?? [],
+
+      translations:
+        updateData?.translations ?? [
+          {
+            locale: "en",
+            title: "",
+            description: "",
+          },
+        ],
+
+      variants:
+        updateData?.variants ?? [
+          {
+            title: "Default Variant",
+            sku: generateSku(),
+            barcode: generateBarcode(),
+            productCode: generateProductCode(),
+
+            price: 0,
+            salePrice: 0,
+            costPrice: 0,
+
+            stock: 0,
+            image: "",
+
+            isDefault: true,
+
+            attributes: [
+              {
+                name: "Size",
+                value: "",
+              },
+            ],
+
+            wholesalePricing: [
+              {
+                minQty: 1,
+                price: 0,
+              },
+            ],
+          },
+        ],
+>>>>>>> 5cea87c5237b5e7bbd98e5f2766d0573faa130c1
     },
   });
 
@@ -399,12 +482,29 @@ export default function NewProductForm({
                 errors={errors}
               />
 
+<<<<<<< HEAD
               <TextInput
                 label="SKU"
                 name={`variants.${index}.sku`}
                 register={register}
                 errors={errors}
               />
+=======
+                <TextInput
+                  label="Product Code"
+                  name={`variants.${index}.productCode`}
+                  register={register}
+                  errors={errors}
+                />
+
+                <TextInput
+                  label="Price"
+                  name={`variants.${index}.price`}
+                  type="number"
+                  register={register}
+                  errors={errors}
+                />
+>>>>>>> 5cea87c5237b5e7bbd98e5f2766d0573faa130c1
 
               <TextInput
                 label="Barcode"
@@ -429,6 +529,7 @@ export default function NewProductForm({
                 errors={errors}
               />
 
+<<<<<<< HEAD
               <TextInput
                 label="Cost Price"
                 name={`variants.${index}.costPrice`}
@@ -462,6 +563,31 @@ export default function NewProductForm({
               </button>
             </div>
           ))}
+=======
+          <button
+            type="button"
+            onClick={() =>
+              appendVariant({
+                title: "",
+                sku: generateSku(),
+                barcode:
+                  generateBarcode(),
+                productCode: generateProductCode(),
+                price: 0,
+                salePrice: 0,
+                costPrice: 0,
+                stock: 0,
+                image: "",
+                isDefault: false,
+                attributes: [],
+                wholesalePricing: [],
+              })
+            }
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+          >
+            Add Variant
+          </button>
+>>>>>>> 5cea87c5237b5e7bbd98e5f2766d0573faa130c1
         </div>
 
         <SubmitButton
