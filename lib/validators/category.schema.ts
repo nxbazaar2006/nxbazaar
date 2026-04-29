@@ -1,5 +1,9 @@
 // lib/validators/category.schema.ts
+
 import { z } from "zod";
+import { Language } from "@prisma/client";
+
+/* ================= HELPERS ================= */
 
 const emptyToUndefined = (value: unknown) => {
   if (typeof value !== "string") return value;
@@ -7,32 +11,66 @@ const emptyToUndefined = (value: unknown) => {
   return trimmed.length === 0 ? undefined : trimmed;
 };
 
-const localeSchema = z.preprocess((value) => {
-  if (typeof value !== "string") return value;
-  return value.toUpperCase();
-}, z.nativeEnum(Language));
+/* ================= LOCALE ================= */
 
-export const categoryTranslationSchema = z.object({
+const localeSchema = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") return value;
+    return value.toUpperCase();
+  },
+  z.nativeEnum(Language)
+);
+
+/* ================= TRANSLATION ================= */
+
+export const CategoryTranslationSchema = z.object({
   locale: localeSchema,
-  slug: z.preprocess(emptyToUndefined, z.string().trim().min(2).optional()),
-  title: z.string().trim().min(2, "Title must be at least 2 characters"),
-  description: z.preprocess(
-    emptyToUndefined,
-    z.string().trim().min(2).optional()
-  ),
-});
 
-export const categorySchema = z.object({
   slug: z.preprocess(
     emptyToUndefined,
     z.string().trim().min(2).optional()
   ),
+
+  title: z.string().trim().min(2, "Title must be at least 2 characters"),
+
+  description: z.preprocess(
+    emptyToUndefined,
+    z.string().trim().optional()
+  ),
+});
+
+/* ================= BASE ================= */
+
+export const CategorySchema = z.object({
+  slug: z.preprocess(
+    emptyToUndefined,
+    z.string().trim().min(2)
+  ),
+
   imageUrl: z.preprocess(
     emptyToUndefined,
-    z.string().trim().url("Image URL must be a valid URL").optional()
+    z.string().url("Image URL must be a valid URL").optional()
   ),
+
   isActive: z.boolean().default(true),
-  locale: z.enum(["EN", "HI", "MA"]), // 👈 Language enum match
+
+  // ✅ IMPORTANT
+  translations: z
+    .array(CategoryTranslationSchema)
+    .min(1, "At least one translation is required")
+    .superRefine((translations, ctx) => {
+      const locales = translations.map((t) => t.locale);
+      const unique = new Set(locales);
+
+      if (locales.length !== unique.size) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Duplicate locales are not allowed",
+        });
+      }
+    }),
 });
+
+/* ================= TYPES ================= */
 
 export type CategoryInput = z.infer<typeof CategorySchema>;

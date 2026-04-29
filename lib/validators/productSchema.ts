@@ -47,12 +47,6 @@ export const productTranslationSchema = z.object({
 
 export const productSchema = z
   .object({
-<<<<<<< HEAD
-    title: z.string().min(2, "Title required"),
-    slug: z.string().optional(),
-    tags: z.array(z.string()).default([]),
-    unit: z.string().optional(),
-=======
     title: z.string().min(1),
 
     sku: optionalString(),
@@ -67,7 +61,6 @@ export const productSchema = z
     image: optionalString(),
 
     isDefault: z.boolean().default(false),
->>>>>>> 5cea87c5237b5e7bbd98e5f2766d0573faa130c1
     isActive: z.boolean().default(true),
     isWholesale: z.boolean().default(false),
     currency: z.enum(CURRENCIES).default("INR"),
@@ -172,9 +165,6 @@ export const productSchema = z
     }
   });
 
-<<<<<<< HEAD
-export type ProductInput = z.infer<typeof productSchema>;
-=======
 /* ================= TRANSLATION ================= */
 
 export const translationSchema = z.object({
@@ -269,7 +259,7 @@ const productBaseSchema = withGSTValidation.extend({
 
 /* ================= MAIN PRODUCT ================= */
 
-export const productSchema = productBaseSchema
+export const ProductSchema = productBaseSchema
   .superRefine((data, ctx) => {
     const defaults = data.variants.filter((v) => v.isDefault);
 
@@ -318,4 +308,3 @@ export const validateProduct = (data: unknown) => {
     data: result.data,
   };
 };
->>>>>>> 5cea87c5237b5e7bbd98e5f2766d0573faa130c1

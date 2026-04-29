@@ -7,10 +7,10 @@ import { UploadButton, UploadDropzone } from "@/lib/uploadthing";
 import { Loader2 } from "lucide-react";
 
 import {
-  Control,
   FieldValues,
   Path,
   useController,
+  useFormContext,
 } from "react-hook-form";
 
 /* ================= TYPES ================= */
@@ -18,9 +18,8 @@ import {
 type Props<T extends FieldValues> = {
   label: string;
   name: Path<T>;
-  control: Control<T>;
   endpoint: keyof OurFileRouter;
-  previewSize?: number; // ✅ reusable
+  previewSize?: number;
 };
 
 /* ================= COMPONENT ================= */
@@ -28,15 +27,19 @@ type Props<T extends FieldValues> = {
 export default function ImageInput<T extends FieldValues>({
   label,
   name,
-  control,
   endpoint,
   previewSize = 160,
 }: Props<T>) {
 
+  const { control } = useFormContext();
+
+  if (!control) {
+    throw new Error("ImageInput must be used inside FormProvider");
+  }
+
   const { field } = useController({
     name,
     control,
-    defaultValue: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -57,7 +60,8 @@ export default function ImageInput<T extends FieldValues>({
       res?.[0]?.ufsUrl ??
       "";
 
-    if (uploadedUrl) {
+    // ✅ prevent unnecessary re-render
+    if (uploadedUrl && uploadedUrl !== imageUrl) {
       field.onChange(uploadedUrl);
       setUploadError("");
     }
@@ -125,23 +129,29 @@ export default function ImageInput<T extends FieldValues>({
           }}
         >
 
-          <Image
-            src={imageUrl}
-            alt="preview"
-            fill
-            className="object-cover rounded"
-          />
+          {/* ✅ safe render */}
+          {imageUrl && (
+            <Image
+              src={imageUrl}
+              alt="preview"
+              fill
+              className="object-cover rounded"
+            />
+          )}
 
           {/* REMOVE */}
           <button
             type="button"
-            onClick={() => field.onChange("")}
+            onClick={() => {
+              field.onChange("");
+              setUploadError("");
+            }}
             className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100"
           >
             Remove
           </button>
 
-          {/* REPLACE BUTTON */}
+          {/* REPLACE */}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition">
             <UploadButton
               endpoint={endpoint}
@@ -164,7 +174,7 @@ export default function ImageInput<T extends FieldValues>({
             />
           </div>
 
-          {/* LOADER OVERLAY */}
+          {/* LOADER */}
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded">
               <Loader2 className="h-4 w-4 animate-spin" />
