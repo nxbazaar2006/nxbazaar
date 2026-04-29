@@ -10,6 +10,7 @@ import {
   FieldValues,
   Path,
   useController,
+  useFormContext,
 } from "react-hook-form";
 
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
@@ -24,7 +25,7 @@ type UploadResponseItem = {
 type Props<T extends FieldValues> = {
   label: string;
   name: Path<T>;
-  control: Control<T>;
+  control?: Control<T>;
   endpoint: keyof OurFileRouter;
   previewSize?: number;
 };
@@ -38,9 +39,16 @@ export default function ImageInput<T extends FieldValues>({
   endpoint,
   previewSize = 160,
 }: Props<T>) {
+  const { control: contextControl } = useFormContext<T>();
+  const resolvedControl = control ?? contextControl;
+
+  if (!resolvedControl) {
+    throw new Error(`ImageInput "${String(name)}" must receive a react-hook-form control prop or be used within FormProvider.`);
+  }
+
   const { field } = useController({
     name,
-    control,
+    control: resolvedControl,
   });
 
   const [loading, setLoading] = useState(false);
