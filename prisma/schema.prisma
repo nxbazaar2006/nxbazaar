@@ -54,6 +54,7 @@ model User {
   password      String
   emailVerified Boolean  @default(false)
   blogs         Blog[]
+  vlogs         Vlog[]
   role          UserRole @default(USER)
   plan          String?
   status        Boolean  @default(true)
@@ -391,6 +392,34 @@ model ProductTranslation {
   @@unique([productId, locale])
   @@unique([locale, slug])
   @@index([locale, slug])
+}
+
+
+model Vlog {
+  id           String            @id @default(uuid())
+  title        String
+  productId    String?
+  product      Product?          @relation(fields: [productId], references: [id])
+  translations VlogTranslation[]
+  userId       String?
+  user         User?             @relation(fields: [userId], references: [id])
+  blogId       String?
+  blog         Blog?             @relation(fields: [blogId], references: [id])
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+model VlogTranslation {
+  id        String   @id @default(uuid())
+  title     String
+  slug      String
+  locale    Language
+  vlogId    String
+  vlog      Vlog     @relation(fields: [vlogId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([slug, locale])
 }
 
 // ================= ORDER =================
