@@ -32,6 +32,7 @@ const requiredString = (field: string, min = 2) =>
 
 export const subCategoryTranslationSchema = z.object({
   locale: localeEnum,
+  slug: optionalString(),
 
   title: requiredString("Title", 2),
 

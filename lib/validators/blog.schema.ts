@@ -25,6 +25,7 @@ export const blogSchema = z.object({
           typeof value === "string" ? value.toLowerCase() : value,
         z.enum(["en", "hi", "mr"])
       ),
+      slug: z.preprocess(emptyToUndefined, z.string().min(2).optional()),
       title: z.string().min(3),
       description: z.preprocess(emptyToUndefined, z.string().optional()),
       metaTitle: z.preprocess(emptyToUndefined, z.string().optional()),

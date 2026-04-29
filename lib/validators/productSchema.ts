@@ -106,6 +106,7 @@ export const variantSchema = z
 
 export const translationSchema = z.object({
   locale: z.enum(LOCALES),
+  slug: optionalString(),
   title: z.string().min(2),
   description: optionalString(),
 });

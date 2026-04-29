@@ -14,6 +14,7 @@ const localeSchema = z.preprocess((value) => {
 
 export const categoryTranslationSchema = z.object({
   locale: localeSchema,
+  slug: z.preprocess(emptyToUndefined, z.string().trim().min(2).optional()),
   title: z.string().trim().min(2, "Title must be at least 2 characters"),
   description: z.preprocess(
     emptyToUndefined,
