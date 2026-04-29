@@ -6,11 +6,11 @@ import { Loader2 } from "lucide-react";
 import { UploadButton, UploadDropzone } from "@/lib/uploadthing";
 
 import {
-  Control,
+  
   FieldValues,
   Path,
   useController,
-  useFormContext,
+  
 } from "react-hook-form";
 
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
@@ -38,7 +38,6 @@ export default function ImageInput<T extends FieldValues>({
   endpoint,
   previewSize = 160,
 }: Props<T>) {
-
   const { field } = useController({
     name,
     control,
@@ -72,12 +71,10 @@ export default function ImageInput<T extends FieldValues>({
 
   return (
     <div className="space-y-3">
-
       <label className="text-sm font-medium block">{label}</label>
 
       {!imageUrl && (
         <div className="border rounded-xl p-6 text-center">
-
           <UploadDropzone
             endpoint={endpoint}
             disabled={loading}
