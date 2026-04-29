@@ -1,303 +1,246 @@
 "use client";
 
-<<<<<<< HEAD
-import React, { useMemo, useState } from "react";
-import {
-  useFieldArray,
-  useForm,
-  useWatch,
-  type FieldErrors,
-} from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-
-=======
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
->>>>>>> cfe7124 (update)
-import {
-  subCategorySchema,
-  SubCategoryInput,
-} from "@/lib/validators/subcategory.schema";
+import { z } from "zod";
+import { generateSlug } from "@/lib/generateSlug";
+import { toast } from "sonner";
+import { useState } from "react";
 
-<<<<<<< HEAD
+import {
+  useUpdateSubCategory,
+  useCreateSubCategory,
+} from "@/hooks/useSubCategory";
+
 import TextInput from "@/components/FormInputs/TextInput";
 import TextareaInput from "@/components/FormInputs/TextAreaInput";
-import ImageInput from "@/components/FormInputs/ImageInput";
+import SelectInput from "@/components/FormInputs/SelectInput";
 import ToggleInput from "@/components/FormInputs/ToggleInput";
 import SubmitButton from "@/components/FormInputs/SubmitButton";
-import SelectInput from "@/components/FormInputs/SelectInput";
-import HsnSearchSelect from "@/components/FormInputs/HsnSearchSelect";
+import SearchSelectInput from "@/components/FormInputs/SearchSelectInput";
+import ImageInput from "@/components/FormInputs/ImageInput";
 
-import { subCategorySchema } from "@/lib/validators/subcategory.schema";
-import { generateSlug } from "@/lib/utils/Slug";
-import type { SubCategory, SubCategoryFormData } from "@/types/subcategory";
+import {
+  Option,
+  SubCategory,
+  SubCategoryFormValues,
+} from "@/types/subcategory";
 
-type CategoryOption = {
-  id: string;
-  title: string;
+import { IdSchema, OptionalString } from "@/lib/validators/common";
+
+type Props = {
+  updateData?: SubCategory;
+  categories?: Option[];
 };
 
-type HsnCode = {
+type ApiError = {
+  message?: string;
+};
+
+type HsnOption = {
   id: string;
   code: string;
   title: string;
   gstRate: number;
 };
 
-interface Props {
-  categories: CategoryOption[];
-  hsnCodes: HsnCode[];
-  updateData?: SubCategory;
-}
+const subCategoryFormSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: OptionalString,
+  categoryId: IdSchema,
+  hsnCodeId: IdSchema.optional().or(z.literal("")),
+  imageUrl: OptionalString,
+  isActive: z.boolean().default(true),
+});
 
-const LOCALES = ["en", "hi", "mr"] as const;
-
-type Locale = (typeof LOCALES)[number];
-
-export default function SubCategoryForm({ categories, hsnCodes, updateData }: Props) {
+export default function SubCategoryForm({
+  updateData,
+  categories = [],
+}: Props) {
   const router = useRouter();
-  const id = updateData?.id;
 
-  const [activeTab, setActiveTab] = useState<Locale>("en");
-  const [imageUrl, setImageUrl] = useState(updateData?.imageUrl ?? "");
-
-  const defaultTranslations = useMemo(
-    () =>
-      LOCALES.map((locale) => ({
-        locale,
-        title:
-          updateData?.translations.find((item) => item.locale === locale)?.title ??
-          "",
-        description:
-          updateData?.translations.find((item) => item.locale === locale)?.description ??
-          "",
-      })),
-    [updateData]
-  );
-
-  const [selectedHsn, setSelectedHsn] = useState<HsnCode | null>(
-    updateData?.hsnCodeId
-      ? hsnCodes.find((item) => item.id === updateData.hsnCodeId) ?? null
-      : null
-  );
+  const translation = updateData?.translations?.[0];
 
   const {
     register,
-    control,
     handleSubmit,
     reset,
     setValue,
+    control,
     formState: { errors },
-  } = useForm<SubCategoryFormData>({
-    resolver: zodResolver(subCategorySchema),
+  } = useForm<SubCategoryFormValues>({
+    resolver: zodResolver(subCategoryFormSchema),
     defaultValues: {
+      title: translation?.title ?? "",
+      description: translation?.description ?? "",
       categoryId: updateData?.categoryId ?? "",
-      imageUrl: updateData?.imageUrl ?? "",
+      hsnCodeId: updateData?.hsnCodeId ?? "",
       isActive: updateData?.isActive ?? true,
-      hsnCodeId: updateData?.hsnCodeId ?? undefined,
-      slug: updateData?.slug ?? "",
-      translations: defaultTranslations,
+      imageUrl: updateData?.imageUrl ?? "",
     },
-  });
-
-  const { fields } = useFieldArray({
-    control,
-    name: "translations",
-  });
-
-  const watchedTranslations = useWatch({
-    control,
-    name: "translations",
-    defaultValue: defaultTranslations,
   });
 
   const createMutation = useCreateSubCategory();
   const updateMutation = useUpdateSubCategory();
 
-  const categoryOptions = categories.map((category) => ({
-    label: category.title,
-    value: category.id,
+  const categoryOptions = categories.map((cat) => ({
+    id: cat.id,
+    title: cat.title,
   }));
 
-  async function onSubmit(data: SubCategoryFormData) {
-    try {
-      const englishTitle =
-        data.translations.find((item) => item.locale === "en")?.title ??
-        data.translations[0]?.title ??
-        "";
-
-      const payload = {
-        ...data,
-        imageUrl,
-        slug: data.slug || generateSlug(englishTitle),
-        hsnCodeId: data.hsnCodeId || undefined,
-      };
-
-      const res = id
-        ? await updateMutation.mutateAsync({ id, data: payload })
-        : await createMutation.mutateAsync(payload);
-
-      if (!res?.success) {
-        toast.error(res?.message ?? "Failed to save subcategory");
-        return;
-      }
-
-      toast.success(res.message ?? "Saved successfully");
-
-      if (!id) {
-        reset({
-          categoryId: "",
-          imageUrl: "",
-          isActive: true,
-          hsnCodeId: undefined,
-          slug: "",
-          translations: LOCALES.map((locale) => ({
-            locale,
-            title: "",
-            description: "",
-          })),
-        });
-        setImageUrl("");
-        setSelectedHsn(null);
-      }
-
-      router.push("/dashboard/subcategories");
-      router.refresh();
-    } catch {
-      toast.error("Server error");
-    }
-  }
-
-  function onInvalid(formErrors: FieldErrors<SubCategoryFormData>) {
-    const translationErrors = formErrors.translations;
-
-    if (Array.isArray(translationErrors)) {
-      const firstInvalidIndex = translationErrors.findIndex(Boolean);
-
-      if (firstInvalidIndex >= 0) {
-        setActiveTab(fields[firstInvalidIndex]?.locale as Locale);
-      }
-    }
-
-    toast.error("Please fill required fields");
-  }
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
-      <SelectInput
-        label="Category"
-        name="categoryId"
-        register={register}
-        errors={errors}
-        options={categoryOptions}
-      />
-
-      <div className="flex gap-2 rounded-lg border p-1 w-fit">
-        {LOCALES.map((locale) => (
-          <button
-            key={locale}
-            type="button"
-            onClick={() => setActiveTab(locale)}
-            className={`rounded-md px-3 py-1.5 text-sm transition ${
-              activeTab === locale
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-muted"
-            }`}
-          >
-            {locale.toUpperCase()}
-          </button>
-        ))}
-      </div>
-
-      {fields.map((field, index) => {
-        if (field.locale !== activeTab) return null;
-
-        const current = watchedTranslations?.[index];
-
-        return (
-          <div key={field.id} className="space-y-4">
-            <TextInput
-              label={`Title (${field.locale.toUpperCase()})`}
-              name={`translations.${index}.title`}
-              register={register}
-              errors={errors}
-              required
-            />
-
-            <TextareaInput
-              label={`Description (${field.locale.toUpperCase()})`}
-              name={`translations.${index}.description`}
-              register={register}
-              errors={errors}
-            />
-
-            <div className="text-sm text-muted-foreground">
-              Slug: <span className="font-mono">/subcategory/{generateSlug(current?.title || "")}</span>
-            </div>
-          </div>
-        );
-      })}
-
-      <div>
-        <label className="text-sm font-medium">HSN Code</label>
-        <HsnSearchSelect
-          value={selectedHsn}
-          onChange={(value) => {
-            setSelectedHsn(value);
-            setValue("hsnCodeId", value?.id ?? undefined, {
-              shouldDirty: true,
-              shouldValidate: true,
-            });
-          }}
-        />
-      </div>
-
-      <ImageInput
-        imageUrl={imageUrl}
-        setImageUrl={setImageUrl}
-        endpoint="subcategoryImageUploader"
-        label="Image"
-      />
-
-      <ToggleInput label="Active" name="isActive" register={register} />
-
-      <SubmitButton
-        isLoading={createMutation.isPending || updateMutation.isPending}
-        buttonTitle={id ? "Update SubCategory" : "Create SubCategory"}
-        loadingButtonTitle={id ? "Updating..." : "Creating..."}
-      />
-=======
-type Props = {
-  initialData?: SubCategoryInput;
-  onSubmit: (data: SubCategoryInput) => Promise<void>;
-};
-
-export default function SubCategoryForm({
-  initialData,
-  onSubmit,
-}: Props) {
-  const form = useForm<SubCategoryInput>({
-    resolver: zodResolver(subCategorySchema),
-    defaultValues: initialData,
+  // ✅ SAFE WATCH
+  const imageUrl = useWatch({
+    control,
+    name: "imageUrl",
   });
 
+  const hsnCodeId = useWatch({
+    control,
+    name: "hsnCodeId",
+  });
+
+  // ✅ HSN STATE
+  const [selectedHsnData, setSelectedHsnData] =
+    useState<HsnOption | null>(null);
+
+  // ✅ EDIT MODE SUPPORT
+  const selectedHsn =
+    updateData?.hsnCode && !selectedHsnData && !hsnCodeId
+      ? {
+          id: updateData.hsnCode.id,
+          code: updateData.hsnCode.code,
+          title: updateData.hsnCode.title,
+          gstRate: updateData.hsnCode.gstRate,
+        }
+      : null;
+
+  // ✅ SUBMIT
+  const onSubmit = (data: SubCategoryFormValues) => {
+    const payload = {
+      slug: generateSlug(data.title),
+      imageUrl: data.imageUrl || "",
+      isActive: data.isActive,
+      categoryId: data.categoryId,
+      hsnCodeId: data.hsnCodeId || null,
+      translations: [
+        {
+          locale: "en" as const,
+          title: data.title,
+          description: data.description,
+        },
+      ],
+    };
+
+    if (updateData?.id) {
+      updateMutation.mutate(
+        { id: updateData.id, data: payload },
+        {
+          onSuccess: () => {
+            toast.success("SubCategory Updated Successfully");
+            reset();
+            router.push("/dashboard/subcategories");
+            router.refresh();
+          },
+          onError: (error: ApiError) => {
+            toast.error(error?.message ?? "Something went wrong");
+          },
+        }
+      );
+
+      return;
+    }
+
+    createMutation.mutate(payload, {
+      onSuccess: () => {
+        toast.success("SubCategory Created Successfully");
+        reset();
+        router.push("/dashboard/subcategories");
+        router.refresh();
+      },
+      onError: (error: ApiError) => {
+        toast.error(error?.message ?? "Something went wrong");
+      },
+    });
+  };
+
+  const isLoading =
+    createMutation.isPending || updateMutation.isPending;
+
   return (
-    <form
-      onSubmit={form.handleSubmit(onSubmit)}
-      className="space-y-4"
-    >
-      <input {...form.register("slug")} placeholder="Slug" />
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      
+      {/* CATEGORY */}
+      <SelectInput<SubCategoryFormValues>
+        label="Category"
+        name="categoryId"
+        options={categoryOptions}
+        register={register}
+        error={errors.categoryId}
+      />
 
-      <input {...form.register("imageUrl")} placeholder="Image URL" />
+      {/* TITLE */}
+      <TextInput
+        label="Title"
+        name="title"
+        register={register}
+        errors={errors}
+      />
 
-      <select {...form.register("categoryId")}>
-        <option value="">Select Category</option>
-      </select>
+      {/* DESCRIPTION */}
+      <TextareaInput
+        label="Description"
+        name="description"
+        register={register}
+        errors={errors}
+      />
 
-      <button type="submit">Save</button>
->>>>>>> cfe7124 (update)
+      {/* ✅ IMAGE (FIXED WITH ENDPOINT) */}
+      <ImageInput
+        label="Image"
+        endpoint="subcategoryImageUploader"
+        imageUrl={imageUrl ?? ""}
+        setImageUrl={(url) =>
+          setValue("imageUrl", url, {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
+        }
+      />
+
+      {/* ✅ HSN (FULL FIX) */}
+      <SearchSelectInput
+        value={selectedHsnData ?? selectedHsn ?? null}
+        onChange={(val: HsnOption | null) => {
+          setSelectedHsnData(val);
+
+          setValue("hsnCodeId", val?.id ?? "", {
+            shouldValidate: true,
+            shouldDirty: true,
+            shouldTouch: true,
+          });
+        }}
+      />
+
+      {/* STATUS */}
+      <ToggleInput
+        name="isActive"
+        label="Status"
+        register={register}
+      />
+
+      {/* SUBMIT */}
+      <SubmitButton
+        isLoading={isLoading}
+        buttonTitle={
+          updateData
+            ? "Update SubCategory"
+            : "Create SubCategory"
+        }
+        loadingButtonTitle={
+          updateData ? "Updating..." : "Creating..."
+        }
+      />
     </form>
   );
 }

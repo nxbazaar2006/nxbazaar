@@ -1,21 +1,21 @@
-import PageHeader from "@/components/backoffice/PageHeader";
 import CategoriesClient from "./CategoriesClient";
 import { getCategories } from "@/actions/category";
 
-
 export default async function CategoriesPage() {
-  const categoriesData = await getCategories();
-  const categories = Array.isArray(categoriesData) ? categoriesData : [];
+  const res = await getCategories();
+
+  // ✅ unwrap + normalize
+  const categories = (res.data ?? []).map((cat) => ({
+    id: cat.id,
+    imageUrl: cat.imageUrl ?? null,
+    isActive: cat.isActive,
+    createdAt: cat.createdAt,
+    translations: cat.translations ?? [],
+  }));
 
   return (
-    <div className="space-y-4">
-      <PageHeader
-        heading="Categories"
-        href="/dashboard/categories/new"
-        linkTitle="Add Category"
-      />
-
-      <CategoriesClient initialData={categories ?? []} />
+    <div className="p-6 space-y-6">
+      <CategoriesClient initialData={categories} />
     </div>
   );
 }

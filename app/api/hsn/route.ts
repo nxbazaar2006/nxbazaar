@@ -1,50 +1,23 @@
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
 
-export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const search = searchParams.get("search")?.trim() || "";
+export async function GET(req: NextRequest) {
+  const search = req.nextUrl.searchParams.get("search") || "";
+  const page = Number(req.nextUrl.searchParams.get("page") || 1);
+  const limit = 10;
 
-    const hsn = await db.hsnCode.findMany({
-      where: search
-        ? {
-            OR: [
-              {
-                code: {
-                  contains: search,
-                  mode: "insensitive",
-                },
-              },
-              {
-                title: {
-                  contains: search,
-                  mode: "insensitive",
-                },
-              },
-            ],
-          }
-        : {},
-      select: {
-        id: true,
-        code: true,
-        title: true,     // ✅ include title
-        gstRate: true,
-      },
-      
-      orderBy: {
-        code: "asc", // ✅ sorted
-      },
-    });
+  const results = await db.hsnCode.findMany({
+    where: search
+      ? {
+          OR: [
+            { code: { contains: search, mode: "insensitive" } },
+            { title: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {},
+    take: limit,
+    skip: (page - 1) * limit,
+  });
 
-    return NextResponse.json(hsn, { status: 200 });
-
-  } catch (error) {
-    console.error("HSN API Error:", error);
-
-    return NextResponse.json(
-      { message: "Something went wrong" },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(results);
 }

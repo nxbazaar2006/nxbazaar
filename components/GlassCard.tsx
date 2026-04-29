@@ -1,8 +1,17 @@
 "use client";
 
 import { motion } from "framer-motion";
+import type { ReactNode } from "react";
 
-export default function GlassCard({ children, className }: any) {
+type GlassCardProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+export default function GlassCard({
+  children,
+  className = "",
+}: GlassCardProps) {
   return (
     <motion.div
       whileHover={{ y: -2 }}

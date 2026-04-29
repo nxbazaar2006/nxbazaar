@@ -1,66 +1,51 @@
-"use client";
-
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/axios";
+// hooks/useCategory.ts
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createCategory,
-  deleteCategory,
   updateCategory,
+  deleteCategory,
 } from "@/actions/category";
-import type { Category, CategoryFormData } from "@/types/category";
-import type { ActionResponse } from "@/types/action-response";
-
-const CATEGORIES_QUERY_KEY = ["categories"] as const;
-
-async function fetchCategories(locale?: string): Promise<Category[]> {
-  const query = locale ? `?locale=${locale}` : "";
-  const { data } = await api.get<Category[]>(`/categories${query}`);
-  return data;
-}
+import type { CategoryInput } from "@/lib/validators/category.schema";
 
 export function useCreateCategory() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
 
-  return useMutation<ActionResponse<Category>, Error, CategoryFormData>({
-    mutationFn: createCategory,
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
+  return useMutation({
+    mutationFn: async (data: CategoryInput) => {
+      const res = await createCategory(data);
+      if ("error" in res) throw res.error;
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 }
 
-type UpdateCategoryVariables = {
-  id: string;
-  data: CategoryFormData;
-};
+export function useUpdateCategory(id: string) {
+  const qc = useQueryClient();
 
-export function useUpdateCategory() {
-  const queryClient = useQueryClient();
-
-  return useMutation<ActionResponse<Category>, Error, UpdateCategoryVariables>({
-    mutationFn: ({ id, data }) => updateCategory(id, data),
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
+  return useMutation({
+    mutationFn: async (data: CategoryInput) => {
+      const res = await updateCategory(id, data);
+      if ("error" in res) throw res.error;
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 }
 
 export function useDeleteCategory() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
 
-  return useMutation<ActionResponse, Error, string>({
-    mutationFn: deleteCategory,
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return deleteCategory(id);
     },
-  });
-}
-
-export function useCategories(locale?: string, initialData?: Category[]) {
-  return useQuery<Category[]>({
-    queryKey: [...CATEGORIES_QUERY_KEY, locale],
-    queryFn: () => fetchCategories(locale),
-    initialData,
-    staleTime: 1000 * 60 * 5,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["categories"] });
+    },
   });
 }

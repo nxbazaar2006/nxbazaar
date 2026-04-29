@@ -1,29 +1,32 @@
-import NewCategoryForm from "@/components/backoffice/Forms/NewCategoryForm";
 import { getCategoryById } from "@/actions/category";
-import FormHeader from "@/components/backoffice/FormHeader";
-import { notFound } from "next/navigation";
+import NewCategoryForm from "@/components/backoffice/forms/NewCategoryForm";
 
-interface Props {
-  params: Promise<{
-    id: string;
-  }>;
-}
-
-export default async function UpdateCategoryPage({
+export default async function UpdatePage({
   params,
-}: Props) {
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
 
-  const category = await getCategoryById(id);
-
-  if (!category) {
-    return notFound();
+  if (!id) {
+    throw new Error("ID not found");
   }
 
-  return (
-    <div className="space-y-4">
-      <FormHeader title="Update Category" />
-      <NewCategoryForm updateData={category} />
-    </div>
-  );
+  const res = await getCategoryById(id);
+  const category = res.data; // ✅ FIX
+
+  const translation =
+    category.translations?.find((t) => t.locale === "en") ||
+    category.translations?.[0];
+
+  const initialData = {
+    id: category.id,
+    title: translation?.title ?? "",
+    description: translation?.description ?? "",
+    imageUrl: category.imageUrl ?? "",
+    isActive: category.isActive,
+    locale: translation?.locale ?? "en", // ✅ FIX
+  };
+
+  return <NewCategoryForm initialData={initialData} />;
 }

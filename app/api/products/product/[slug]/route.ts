@@ -1,14 +1,16 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
-export async function GET(
-  req: Request,
-  context: { params: Promise<{ slug: string }> }
-) {
-  try {
-    const { slug } = await context.params;
+type Params = {
+  params: {
+    slug: string;
+    locale?: string;
+  };
+};
 
-    /* ================= VALIDATE ================= */
+export async function GET(_req: Request, { params }: Params) {
+  try {
+    const { slug, locale } = params;
 
     if (!slug) {
       return NextResponse.json(
@@ -17,45 +19,38 @@ export async function GET(
       );
     }
 
-    /* ================= FETCH PRODUCT ================= */
+    /* ================= SLUG BUILD ================= */
+
+    const finalSlug =
+      locale && locale !== "en" ? `${locale}/${slug}` : slug;
+
+    /* ================= QUERY ================= */
 
     const product = await db.product.findUnique({
-      where: { slug },
+      where: { slug: finalSlug },
 
       include: {
-        /* relations */
         category: true,
         subCategory: true,
         user: true,
         hsnCode: true,
 
-        /* gallery */
         images: {
-          orderBy: {
-            isPrimary: "desc",
-          },
+          orderBy: { isPrimary: "desc" },
         },
 
-        /* variants */
         variants: {
           include: {
             attributes: true,
             wholesalePricing: {
-              orderBy: {
-                minQty: "asc",
-              },
+              orderBy: { minQty: "asc" },
             },
           },
-
-          orderBy: {
-            isDefault: "desc",
-          },
+          orderBy: { isDefault: "desc" },
         },
 
-        /* multilingual */
         translations: true,
 
-        /* blogs linked */
         blogs: {
           select: {
             id: true,
@@ -66,21 +61,40 @@ export async function GET(
       },
     });
 
-    /* ================= NOT FOUND ================= */
+    /* ================= FALLBACK (TRANSLATION) ================= */
 
     if (!product) {
-      return NextResponse.json(
-        { message: "Product not found" },
-        { status: 404 }
-      );
+      // try fallback by base slug (English)
+      const fallback = await db.product.findFirst({
+        where: {
+          OR: [
+            { slug }, // english
+            {
+              translations: {
+                some: {
+                  slug: finalSlug,
+                },
+              },
+            },
+          ],
+        },
+        include: {
+          translations: true,
+        },
+      });
+
+      if (!fallback) {
+        return NextResponse.json(
+          { message: "Product not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json(fallback);
     }
 
-    /* ================= SUCCESS ================= */
-
     return NextResponse.json(product);
-  } catch (error) {
-    console.error("PRODUCT DETAIL API ERROR ❌", error);
-
+  } catch {
     return NextResponse.json(
       { message: "Internal Server Error" },
       { status: 500 }

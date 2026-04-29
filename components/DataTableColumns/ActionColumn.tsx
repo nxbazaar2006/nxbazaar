@@ -37,27 +37,54 @@ export default function ActionColumn<T extends { id: string }>({
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="h-8 w-8 p-0 hover:bg-white/10 rounded-md transition"
+            className="
+              h-8 w-8 p-0 
+              rounded-md
+              hover:bg-white/10 
+              transition
+            "
           >
             <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
+            <MoreHorizontal className="h-4 w-4 text-white/80" />
           </Button>
         </DropdownMenuTrigger>
 
-        {/* 🔥 Content (PRO VERSION) */}
+        {/* 🔥 Glass Dropdown */}
         <DropdownMenuContent
           align="end"
-          sideOffset={6}
+          sideOffset={8}
           className="
-            z-50 min-w-[160px]
-            bg-gray-800/90 backdrop-blur-md
+            relative
+            z-50 min-w-[180px]
+
+            /* 🌫️ Glass */
+            bg-white/10 backdrop-blur-xl
+
+            /* 🌈 Border */
+            border border-white/20
+
+            /* 🎨 Text */
             text-white
-            border-2 border-white/50
-            shadow-xl rounded-xl
+
+            /* 💎 Depth */
+            shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]
+
+            /* 🧊 Shape */
+            rounded-xl
+
+            /* ✨ Animation */
             animate-in fade-in zoom-in-95
+
+            /* 🌟 Light Reflection */
+            before:absolute before:inset-0
+            before:rounded-xl
+            before:bg-gradient-to-br
+            before:from-white/20 before:to-transparent
+            before:opacity-30
+            before:pointer-events-none
           "
         >
-          <DropdownMenuLabel className="text-white/80">
+          <DropdownMenuLabel className="text-white/70">
             Actions
           </DropdownMenuLabel>
 
@@ -65,9 +92,13 @@ export default function ActionColumn<T extends { id: string }>({
 
           {/* 🔴 Delete */}
           <DropdownMenuItem
-            className="flex items-center gap-2 hover:bg-red-500/20 rounded-md transition"
+            className="
+              flex items-center gap-2 
+              hover:bg-red-500/30 
+              rounded-md transition
+            "
           >
-            <Trash className="h-4 w-4" />
+            <Trash className="h-4 w-4 text-red-400" />
             <DeleteBtn
               id={id}
               title={title}
@@ -77,9 +108,13 @@ export default function ActionColumn<T extends { id: string }>({
 
           {/* ✏️ Edit */}
           <DropdownMenuItem
-            className="flex items-center gap-2 hover:bg-white/10 rounded-md transition"
+            className="
+              flex items-center gap-2 
+              hover:bg-white/20 
+              rounded-md transition
+            "
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-4 w-4 text-white/80" />
             <EditBtn
               title={title}
               editEndpoint={editEndpoint}

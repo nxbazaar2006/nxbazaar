@@ -3,99 +3,49 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import ActionColumn from "@/components/DataTableColumns/ActionColumn";
-<<<<<<< HEAD
-import type { SubCategory } from "@/types/subcategory";
-=======
 
 export type SubCategory = {
   id: string;
-  title: string;
   slug: string;
-  imageUrl: string | null;
   isActive: boolean;
-  category?: {
-    id?: string;
-    title?: string;
-  };
+  category: { title: string };
+  hsnCode?: { code: string };
+  translations: { title: string }[];
   createdAt: string;
 };
->>>>>>> cfe7124 (update)
 
 export const columns: ColumnDef<SubCategory>[] = [
   {
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(Boolean(value))}
-        aria-label="Select all"
+        checked={table.getIsAllPageRowsSelected()}
+        onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)}
       />
     ),
     cell: ({ row }) => (
       <Checkbox
         checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(Boolean(value))}
-        aria-label="Select row"
+        onCheckedChange={(v) => row.toggleSelected(!!v)}
       />
     ),
-    enableSorting: false,
-    enableHiding: false,
   },
-
   {
-    accessorKey: "title",
-    header: "Title",
+    accessorFn: (row) => row.translations?.[0]?.title,
+    header: "SubCategory Title",
   },
-
-  // ✅ FIXED CATEGORY COLUMN
   {
-<<<<<<< HEAD
-    accessorKey: "categoryTitle",
-=======
-    id: "category",
->>>>>>> cfe7124 (update)
+    accessorFn: (row) => row.category?.title,
     header: "Category",
-    cell: ({ row }) => (
-      <span>
-        {row.original.category?.title || "N/A"}
-      </span>
-    ),
   },
-
   {
-    accessorKey: "hsnCode.code",
+    accessorFn: (row) => row.hsnCode?.code,
     header: "HSN",
-    cell: ({ row }) => row.original.hsnCode?.code ?? "-",
   },
   {
     accessorKey: "isActive",
-    header: "Status",
-<<<<<<< HEAD
-    cell: ({ row }) => (row.original.isActive ? "Active" : "Inactive"),
-=======
-    cell: ({ row }) => (
-      <span
-        className={
-          row.original.isActive
-            ? "text-green-600"
-            : "text-red-500"
-        }
-      >
-        {row.original.isActive ? "Active" : "Inactive"}
-      </span>
-    ),
->>>>>>> cfe7124 (update)
+    header: "Active",
   },
-
-  {
-    accessorKey: "createdAt",
-    header: "Created",
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
-  },
-
   {
     id: "actions",
     cell: ({ row }) => (
@@ -107,8 +57,4 @@ export const columns: ColumnDef<SubCategory>[] = [
       />
     ),
   },
-<<<<<<< HEAD
 ];
-=======
-];
->>>>>>> cfe7124 (update)

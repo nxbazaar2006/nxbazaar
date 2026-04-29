@@ -1,4 +1,5 @@
 "use client";
+"use no memo";
 
 import * as React from "react";
 import {
@@ -6,10 +7,9 @@ import {
   ColumnFiltersState,
   SortingState,
   VisibilityState,
+  RowSelectionState,
   flexRender,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
@@ -25,30 +25,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { Button } from "@/components/ui/button";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
 
-interface DataTableProps<
-  TData extends { id: string }
-> {
+interface DataTableProps<TData extends { id: string }> {
   columns: ColumnDef<TData>[];
   data: TData[];
-  filterKeys?: (keyof TData)[];
-  endpoint?: string;
-  queryKey?: readonly unknown[];
+
+  // ✅ generic delete
+  onDeleteMany?: (ids: string[]) => void;
+  isDeleting?: boolean;
 }
 
-export default function DataTable<
-  TData extends { id: string }
->({
+export default function DataTable<TData extends { id: string }>({
   columns,
   data,
-  filterKeys = [],
-  endpoint = "",
-  queryKey = [],
+  onDeleteMany,
+  isDeleting,
 }: DataTableProps<TData>) {
   const [rowSelection, setRowSelection] =
-    React.useState({});
+    React.useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] =
@@ -74,80 +71,76 @@ export default function DataTable<
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues:
-      getFacetedUniqueValues(),
   });
+
+  const selectedRows = table.getFilteredSelectedRowModel().rows;
+
+  const selectedIds = selectedRows.map((row) => row.original.id);
+
+  function handleDelete() {
+    if (!selectedIds.length || !onDeleteMany) return;
+
+    const confirmDelete = confirm(
+      `Delete ${selectedIds.length} items?`
+    );
+
+    if (!confirmDelete) return;
+
+    onDeleteMany(selectedIds);
+    table.resetRowSelection();
+  }
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar<TData>
-        table={table}
-        endpoint={endpoint}
-        queryKey={queryKey}
-      />
+
+      <div className="flex justify-between items-center">
+        <DataTableToolbar table={table} />
+
+        {selectedIds.length > 0 && onDeleteMany && (
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            Delete ({selectedIds.length})
+          </Button>
+        )}
+      </div>
 
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table
-              .getHeaderGroups()
-              .map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map(
-                    (header) => (
-                      <TableHead
-                        key={header.id}
-                        colSpan={header.colSpan}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column
-                                .columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    )
-                  )}
-                </TableRow>
-              ))}
+            {table.getHeaderGroups().map((hg) => (
+              <TableRow key={hg.id}>
+                {hg.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
           </TableHeader>
 
           <TableBody>
             {table.getRowModel().rows.length ? (
-              table
-                .getRowModel()
-                .rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={
-                      row.getIsSelected()
-                        ? "selected"
-                        : undefined
-                    }
-                  >
-                    {row
-                      .getVisibleCells()
-                      .map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                        >
-                          {flexRender(
-                            cell.column
-                              .columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                  </TableRow>
-                ))
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={columns.length}>
                   No results.
                 </TableCell>
               </TableRow>
@@ -156,9 +149,7 @@ export default function DataTable<
         </Table>
       </div>
 
-      <DataTablePagination<TData>
-        table={table}
-      />
+      <DataTablePagination table={table} />
     </div>
   );
 }

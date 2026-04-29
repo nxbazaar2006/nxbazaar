@@ -13,5 +13,5 @@ export function generateSlug(text?: string): string {
     .replace(/--+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-  return slug || "item"; // 👈 empty slug fix
+  return slug || "item";
 }

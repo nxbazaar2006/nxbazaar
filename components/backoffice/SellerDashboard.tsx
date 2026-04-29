@@ -1,7 +1,7 @@
 import React from "react";
 import OverviewCards from "./Seller/OverviewCards";
 import { auth } from "@/auth";
-import { getProducts } from "@/actions/products";
+import { getProducts } from "@/actions/product";
 import { getSales } from "@/actions/sales";
 
 import { Info } from "lucide-react";

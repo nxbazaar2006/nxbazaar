@@ -1,40 +1,15 @@
-import { db } from "@/lib/db";
-import { getSafeTranslation } from "@/lib/getTranslation";
+import db from "@/lib/db";
+import { localeToLanguage } from "@/lib/i18n/languageMapper";
 
-interface Props {
-  params: {
-    locale: string;
-    slug: string;
-  };
-}
+export default async function Page({ params }: any) {
+  const language = localeToLanguage(params.locale);
 
-export default async function ProductPage({ params }: Props) {
-  const { locale, slug } = params;
-
-  const product = await db.product.findFirst({
-    where: { slug },
-    include: {
-      translations: true,
-      category: true,
-      subCategory: true,
-      market: true,
+  const data = await db.productTranslation.findFirst({
+    where: {
+      slug: params.slug,
+      language,
     },
   });
 
-  if (!product) return <div>Product not found</div>;
-
-  const t = getSafeTranslation(product.translations, locale);
-
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">{t?.name ?? "Product"}</h1>
-      <p className="text-gray-600 mt-2">
-        {t?.description ?? "No description"}
-      </p>
-
-      <div className="mt-4 text-sm text-gray-500">
-        Category: {product.category?.slug}
-      </div>
-    </div>
-  );
+  return <div>{data?.title}</div>;
 }

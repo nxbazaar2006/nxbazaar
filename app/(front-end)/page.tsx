@@ -16,17 +16,22 @@ interface Category {
 }
 
 export default async function Home(): Promise<JSX.Element> {
-
   const [categoriesData, session] = await Promise.all([
     getCategories(),
     auth(),
   ]);
 
-  const categories = categoriesData.filter((category: Category) => {
-    return category.products.length > 3;
-  });
+  // ✅ Normalize data (handles object / array दोनों cases)
+  const categoriesArray: Category[] = Array.isArray(categoriesData)
+    ? categoriesData
+    : categoriesData?.data || categoriesData?.categories || [];
 
-  console.log(session?.user);
+  // ✅ Filter safely
+  const categories = categoriesArray.filter(
+    (category) => (category.products?.length ?? 0) > 3
+  );
+
+  console.log("SESSION:", session?.user);
 
   return (
     <div className="min-h-screen">

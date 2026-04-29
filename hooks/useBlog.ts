@@ -1,38 +1,65 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/apiRequest";
-import { BlogInput } from "@/lib/validators/blog.schema";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  createBlog,
+  updateBlog,
+  deleteBlog,
+  getBlogs,
+  getBlogById,
+} from "@/lib/actions/blog.actions";
 
-export const useBlogs = () =>
-  useQuery({
+// ✅ GET ALL
+export function useBlogs() {
+  return useQuery({
     queryKey: ["blogs"],
-    queryFn: () => apiClient.get("/blogs"),
+    queryFn: getBlogs,
   });
+}
 
-export const useCreateBlog = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: BlogInput) =>
-      apiClient.post("/blogs", data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["blogs"] }),
+// ✅ GET SINGLE
+export function useBlog(id: string) {
+  return useQuery({
+    queryKey: ["blog", id],
+    queryFn: () => getBlogById(id),
+    enabled: !!id,
   });
-};
+}
 
-export const useUpdateBlog = () => {
+// ✅ CREATE
+export function useCreateBlog() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: BlogInput }) =>
-      apiClient.put(`/blogs/${id}`, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["blogs"] }),
-  });
-};
 
-export const useDeleteBlog = () => {
-  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      apiClient.delete(`/blogs/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["blogs"] }),
+    mutationFn: createBlog,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["blogs"] });
+    },
   });
-};
+}
+
+// ✅ UPDATE
+export function useUpdateBlog() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
+      updateBlog(id, data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ["blogs"] });
+      qc.invalidateQueries({ queryKey: ["blog", variables.id] });
+    },
+  });
+}
+
+// ✅ DELETE
+export function useDeleteBlog() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteBlog,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["blogs"] });
+    },
+  });
+}

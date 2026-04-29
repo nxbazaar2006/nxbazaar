@@ -26,7 +26,13 @@ export default function MultipleImageInput({
     const updated = imageUrls.filter((_, i) => i !== index);
 
     setImageUrls(updated);
-    setValue("productImages", updated); // ✅ sync form
+    setValue(
+      "images",
+      updated.map((url, imageIndex) => ({
+        url,
+        isPrimary: imageIndex === 0,
+      }))
+    );
   }
 
   return (
@@ -65,7 +71,13 @@ export default function MultipleImageInput({
           const updated = [...imageUrls, ...urls];
 
           setImageUrls(updated);
-          setValue("productImages", updated); // ✅ MOST IMPORTANT
+          setValue(
+            "images",
+            updated.map((url, imageIndex) => ({
+              url,
+              isPrimary: imageIndex === 0,
+            }))
+          );
         }}
         onUploadError={(error: Error) => {
           alert(`Upload failed: ${error.message}`);

@@ -2,52 +2,31 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  useForm,
-  useFieldArray,
-} from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import FormHeader from "@/components/backoffice/FormHeader";
-import TextInput from "@/components/FormInputs/TextInput";
-import TextareaInput from "@/components/FormInputs/TextAreaInput";
-import SelectInput from "@/components/FormInputs/SelectInput";
-import ToggleInput from "@/components/FormInputs/ToggleInput";
 import ArrayItemsInput from "@/components/FormInputs/ArrayItemsInput";
 import MultipleImageInput from "@/components/FormInputs/MultipleImageInput";
+import SearchSelectInput from "@/components/FormInputs/SearchSelectInput";
+import SelectInput from "@/components/FormInputs/SelectInput";
 import SubmitButton from "@/components/FormInputs/SubmitButton";
-import HsnSearchSelect from "@/components/FormInputs/HsnSearchSelect";
+import TextInput from "@/components/FormInputs/TextInput";
+import TextareaInput from "@/components/FormInputs/TextAreaInput";
+import ToggleInput from "@/components/FormInputs/ToggleInput";
 
 import {
+  LOCALES,
   productSchema,
-  ProductInput,
+  type ProductInput,
 } from "@/lib/validators/productSchema";
-
-import { generateSlug } from "@/lib/generateSlug";
 import { generateBarcode } from "@/lib/generateBarcode";
-
-import {
-  useCreateProduct,
-  useUpdateProduct,
-} from "@/hooks/useProducts";
-
-/* ================= TYPES ================= */
+import { generateSlug } from "@/lib/generateSlug";
+import { useCreateProduct, useUpdateProduct } from "@/hooks/useProduct";
 
 type SelectOption = {
   id: string;
   title: string;
-};
-
-type SubCategoryOption = {
-  id: string;
-  title: string;
-  categoryId: string;
-  hsnCode?: {
-    id: string;
-    code: string;
-    title: string;
-    gstRate: number;
-  } | null;
 };
 
 type HsnOption = {
@@ -57,7 +36,15 @@ type HsnOption = {
   gstRate: number;
 };
 
+type SubCategoryOption = {
+  id: string;
+  title: string;
+  categoryId: string;
+  hsnCode?: HsnOption | null;
+};
+
 type Props = {
+  userId: string;
   categories?: SelectOption[];
   subCategories?: SubCategoryOption[];
   updateData?: Partial<ProductInput> & {
@@ -66,30 +53,23 @@ type Props = {
   };
 };
 
-/* ================= COMPONENT ================= */
-
 export default function NewProductForm({
+  userId,
   categories = [],
   subCategories = [],
   updateData = {},
 }: Props) {
   const router = useRouter();
-
-  const [tags, setTags] = useState<string[]>(
-    updateData?.tags ?? []
-  );
-
-  const [imageUrls, setImageUrls] = useState<string[]>(
-    updateData?.images?.map((img) => img.url) ?? []
-  );
-
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
-  const [selectedHsn, setSelectedHsn] = useState<HsnOption | null>(
-    updateData?.hsnCode ?? null
-  );
 
-  /* ================= FORM ================= */
+  const [tags, setTags] = useState<string[]>(updateData.tags ?? []);
+  const [imageUrls, setImageUrls] = useState<string[]>(
+    updateData.images?.map((img) => img.url) ?? []
+  );
+  const [selectedHsn, setSelectedHsn] = useState<HsnOption | null>(
+    updateData.hsnCode ?? null
+  );
 
   const {
     register,
@@ -100,77 +80,50 @@ export default function NewProductForm({
     formState: { errors },
   } = useForm<ProductInput>({
     resolver: zodResolver(productSchema),
-
     defaultValues: {
-      title: updateData?.title ?? "",
-      slug: updateData?.slug ?? "",
-      imageUrl: updateData?.imageUrl ?? "",
-
-      unit: updateData?.unit ?? "",
-      tags: updateData?.tags ?? [],
-
-      currency: updateData?.currency ?? "INR",
-
-      isActive: updateData?.isActive ?? true,
-      isWholesale:
-        updateData?.isWholesale ?? false,
-
-      categoryId:
-        updateData?.categoryId ?? "",
-
-      subCategoryId:
-        updateData?.subCategoryId ?? "",
-
-      hsnCodeId: updateData?.hsnCodeId ?? "",
-      gstRate: updateData?.gstRate ?? updateData?.hsnCode?.gstRate ?? undefined,
-
-      images:
-        updateData?.images ?? [],
-
-      translations:
-        updateData?.translations ?? [
-          {
-            locale: "en",
-            title: "",
-            description: "",
-          },
-        ],
-
-      variants:
-        updateData?.variants ?? [
-          {
-            title: "Default Variant",
-            sku: "",
-            barcode: generateBarcode(),
-
-            price: 0,
-            salePrice: 0,
-            costPrice: 0,
-
-            stock: 0,
-            image: "",
-
-            isDefault: true,
-
-            attributes: [
-              {
-                name: "Size",
-                value: "",
-              },
-            ],
-
-            wholesalePricing: [
-              {
-                minQty: 1,
-                price: 0,
-              },
-            ],
-          },
-        ],
+      title: updateData.title ?? "",
+      slug: updateData.slug ?? "",
+      tags: updateData.tags ?? [],
+      unit: updateData.unit ?? "",
+      isActive: updateData.isActive ?? true,
+      isWholesale: updateData.isWholesale ?? false,
+      currency: updateData.currency ?? "INR",
+      categoryId: updateData.categoryId ?? "",
+      subCategoryId: updateData.subCategoryId ?? "",
+      userId: updateData.userId ?? userId,
+      hsnCodeId: updateData.hsnCodeId ?? "",
+      images: updateData.images ?? [],
+      translations: updateData.translations ?? [
+        {
+          locale: "EN",
+          title: "",
+          description: "",
+          metaTitle: "",
+          metaDescription: "",
+        },
+      ],
+      variants: updateData.variants ?? [
+        {
+          title: "Default Variant",
+          sku: "",
+          barcode: generateBarcode(),
+          price: 0,
+          salePrice: 0,
+          costPrice: 0,
+          currency: updateData.currency ?? "INR",
+          stock: 0,
+          reservedStock: 0,
+          lowStockAlert: 0,
+          trackInventory: true,
+          image: "",
+          isActive: true,
+          isDefault: true,
+          attributes: [],
+          wholesalePricing: [],
+        },
+      ],
     },
   });
-
-  /* ================= FIELD ARRAYS ================= */
 
   const {
     fields: variantFields,
@@ -181,122 +134,82 @@ export default function NewProductForm({
     name: "variants",
   });
 
-  /* ================= WATCH ================= */
+  const {
+    fields: translationFields,
+    append: appendTranslation,
+    remove: removeTranslation,
+  } = useFieldArray({
+    control,
+    name: "translations",
+  });
 
-  const selectedCategoryId =
-    watch("categoryId");
+  const selectedCategoryId = watch("categoryId");
   const selectedSubCategoryId = watch("subCategoryId");
 
-  /* ================= FILTER SUBCATEGORY ================= */
-
-  const filteredSubCategories =
-    useMemo(() => {
-      return subCategories.filter(
-        (sub) =>
-          sub.categoryId ===
-          selectedCategoryId
-      );
-    }, [
-      subCategories,
-      selectedCategoryId,
-    ]);
+  const filteredSubCategories = useMemo(
+    () =>
+      subCategories.filter((sub) => sub.categoryId === selectedCategoryId),
+    [selectedCategoryId, subCategories]
+  );
 
   const selectedSubCategory = useMemo(
-    () =>
-      filteredSubCategories.find(
-        (sub) => sub.id === selectedSubCategoryId
-      ),
+    () => filteredSubCategories.find((sub) => sub.id === selectedSubCategoryId),
     [filteredSubCategories, selectedSubCategoryId]
   );
 
   useEffect(() => {
     if (selectedSubCategory?.hsnCode) {
       setSelectedHsn(selectedSubCategory.hsnCode);
-      setValue("hsnCodeId", selectedSubCategory.hsnCode.id, {
-        shouldValidate: true,
-      });
-      setValue("gstRate", selectedSubCategory.hsnCode.gstRate);
+      setValue("hsnCodeId", selectedSubCategory.hsnCode.id);
       return;
     }
 
     setSelectedHsn(null);
     setValue("hsnCodeId", "");
-    setValue("gstRate", undefined);
   }, [selectedSubCategory, setValue]);
 
-  /* ================= SUBMIT ================= */
+  const onSubmit = async (data: ProductInput) => {
+    const payload: ProductInput = {
+      ...data,
+      slug: data.slug?.trim() || generateSlug(data.title),
+      userId: updateData.userId ?? userId,
+      tags,
+      images: imageUrls.map((url, index) => ({
+        url,
+        isPrimary: index === 0,
+      })),
+    };
 
-  const onSubmit = async (
-    data: ProductInput
-  ) => {
     try {
-      const payload: ProductInput = {
-        ...data,
-
-        slug: updateData?.id
-          ? data.slug ??
-            updateData.slug
-          : generateSlug(data.title),
-
-        tags,
-
-        images: imageUrls.map(
-          (url, index) => ({
-            url,
-            isPrimary: index === 0,
-          })
-        ),
-
-        imageUrl:
-          imageUrls?.[0] ?? "",
-      };
-
-      if (updateData?.id) {
+      if (updateData.id) {
         await updateProduct.mutateAsync({
           id: updateData.id,
           data: payload,
         });
       } else {
-        await createProduct.mutateAsync(
-          payload
-        );
+        await createProduct.mutateAsync(payload);
       }
 
-      router.push(
-        "/dashboard/products"
-      );
+      router.push("/dashboard/products");
     } catch (error) {
-      console.log(
-        "PRODUCT SAVE ERROR ❌",
-        error
-      );
+      console.error("PRODUCT_SAVE_ERROR", error);
       alert("Save failed");
     }
   };
 
-  /* ================= UI ================= */
-
   return (
     <div className="space-y-6">
       <FormHeader
-        title={
-          updateData?.id
-            ? "Update Product"
-            : "Create Product"
-        }
+        title={updateData.id ? "Update Product" : "Create Product"}
       />
 
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="max-w-6xl mx-auto p-6 rounded-xl shadow bg-orange-400/20 backdrop-blur border border-orange-300/30 space-y-8"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <input type="hidden" {...register("userId")} />
         <input type="hidden" {...register("hsnCodeId")} />
-        <input type="hidden" {...register("gstRate")} />
 
-        {/* ================= BASIC ================= */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <TextInput
-            label="Product Title"
+            label="Title"
             name="title"
             register={register}
             errors={errors}
@@ -313,196 +226,248 @@ export default function NewProductForm({
             label="Category"
             name="categoryId"
             register={register}
-            errors={errors}
-            options={categories.map(
-              (cat) => ({
-                label: cat.title,
-                value: cat.id,
-              })
-            )}
+            error={errors.categoryId}
+            options={categories.map((category) => ({
+              label: category.title,
+              value: category.id,
+            }))}
           />
 
           <SelectInput
-            label="Sub Category"
+            label="SubCategory"
             name="subCategoryId"
             register={register}
-            errors={errors}
-            options={filteredSubCategories.map(
-              (sub) => ({
-                label: sub.title,
-                value: sub.id,
-              })
-            )}
+            error={errors.subCategoryId}
+            options={filteredSubCategories.map((subCategory) => ({
+              label: subCategory.title,
+              value: subCategory.id,
+            }))}
           />
 
-          <div className="space-y-2">
-            <label className="block mb-2 text-sm font-medium">
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-foreground">
               HSN Code
             </label>
-            <HsnSearchSelect
+            <SearchSelectInput
               value={selectedHsn}
               onChange={(value) => {
                 setSelectedHsn(value);
-                setValue("hsnCodeId", value.id, {
-                  shouldValidate: true,
-                });
-                setValue("gstRate", value.gstRate);
+                setValue("hsnCodeId", value?.id ?? "");
               }}
             />
           </div>
 
-          <TextInput
-            label="GST Rate (%)"
-            name="gstRate"
-            type="number"
+          <SelectInput
+            label="Currency"
+            name="currency"
             register={register}
-            errors={errors}
-            disabled
+            error={errors.currency}
+            options={[
+              { label: "INR", value: "INR" },
+              { label: "USD", value: "USD" },
+            ]}
           />
 
           <ToggleInput
-            label="Publish Product"
+            label="Status"
             name="isActive"
             register={register}
+            trueTitle="Active"
+            falseTitle="Inactive"
           />
 
           <ToggleInput
             label="Wholesale"
             name="isWholesale"
             register={register}
+            trueTitle="Yes"
+            falseTitle="No"
           />
         </div>
 
-        {/* ================= TAGS ================= */}
-        <ArrayItemsInput
-          items={tags}
-          setItems={setTags}
-          itemTitle="Tag"
-        />
+        <ArrayItemsInput label="Tags" items={tags} setItems={setTags} />
 
-        {/* ================= IMAGES ================= */}
         <MultipleImageInput
           imageUrls={imageUrls}
           setImageUrls={setImageUrls}
           endpoint="multipleProductsUploader"
-          label="Product Images"
+          label="Images"
           setValue={setValue}
         />
 
-        {/* ================= TRANSLATION ================= */}
-        <TextareaInput
-          label="Description"
-          name="translations.0.description"
-          register={register}
-          errors={errors}
-        />
-
-        {/* ================= VARIANTS ================= */}
         <div className="space-y-6">
-          <h2 className="text-xl font-bold">
-            Product Variants
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Translations</h2>
+            <button
+              type="button"
+              className="rounded bg-blue-500 px-4 py-2 text-white"
+              onClick={() =>
+                appendTranslation({
+                  locale: "EN",
+                  title: "",
+                  description: "",
+                  metaTitle: "",
+                  metaDescription: "",
+                })
+              }
+            >
+              Add Language
+            </button>
+          </div>
 
-          {variantFields.map(
-            (field, index) => (
-              <div
-                key={field.id}
-                className="grid grid-cols-2 gap-4 border p-4 rounded-lg"
+          {translationFields.map((field, index) => (
+            <div
+              key={field.id}
+              className="grid grid-cols-1 gap-4 rounded-lg border p-4 md:grid-cols-2"
+            >
+              <SelectInput
+                label="Language"
+                name={`translations.${index}.locale`}
+                register={register}
+                error={errors.translations?.[index]?.locale}
+                options={LOCALES.map((locale) => ({
+                  label: locale,
+                  value: locale,
+                }))}
+              />
+
+              <TextInput
+                label="Title"
+                name={`translations.${index}.title`}
+                register={register}
+                errors={errors}
+              />
+
+              <TextareaInput
+                label="Description"
+                name={`translations.${index}.description`}
+                register={register}
+                errors={errors}
+              />
+
+              <button
+                type="button"
+                className="self-end text-red-500"
+                onClick={() => removeTranslation(index)}
               >
-                <TextInput
-                  label="Variant Title"
-                  name={`variants.${index}.title`}
-                  register={register}
-                  errors={errors}
-                />
-
-                <TextInput
-                  label="SKU"
-                  name={`variants.${index}.sku`}
-                  register={register}
-                  errors={errors}
-                />
-
-                <TextInput
-                  label="Barcode"
-                  name={`variants.${index}.barcode`}
-                  register={register}
-                  errors={errors}
-                />
-
-                <TextInput
-                  label="Price"
-                  name={`variants.${index}.price`}
-                  type="number"
-                  register={register}
-                  errors={errors}
-                />
-
-                <TextInput
-                  label="Sale Price"
-                  name={`variants.${index}.salePrice`}
-                  type="number"
-                  register={register}
-                  errors={errors}
-                />
-
-                <TextInput
-                  label="Stock"
-                  name={`variants.${index}.stock`}
-                  type="number"
-                  register={register}
-                  errors={errors}
-                />
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    removeVariant(index)
-                  }
-                  className="text-red-500"
-                >
-                  Remove Variant
-                </button>
-              </div>
-            )
-          )}
-
-          <button
-            type="button"
-            onClick={() =>
-              appendVariant({
-                title: "",
-                sku: "",
-                barcode:
-                  generateBarcode(),
-                price: 0,
-                salePrice: 0,
-                costPrice: 0,
-                stock: 0,
-                image: "",
-                isDefault: false,
-                attributes: [],
-                wholesalePricing: [],
-              })
-            }
-            className="px-4 py-2 bg-blue-500 text-white rounded"
-          >
-            Add Variant
-          </button>
+                Remove
+              </button>
+            </div>
+          ))}
         </div>
 
-        {/* ================= SUBMIT ================= */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Variants</h2>
+            <button
+              type="button"
+              className="rounded bg-blue-500 px-4 py-2 text-white"
+              onClick={() =>
+                appendVariant({
+                  title: "",
+                  sku: "",
+                  barcode: generateBarcode(),
+                  price: 0,
+                  salePrice: 0,
+                  costPrice: 0,
+                  currency: watch("currency") ?? "INR",
+                  stock: 0,
+                  reservedStock: 0,
+                  lowStockAlert: 0,
+                  trackInventory: true,
+                  image: "",
+                  isActive: true,
+                  isDefault: false,
+                  attributes: [],
+                  wholesalePricing: [],
+                })
+              }
+            >
+              Add Variant
+            </button>
+          </div>
+
+          {variantFields.map((field, index) => (
+            <div
+              key={field.id}
+              className="grid grid-cols-1 gap-4 rounded-lg border p-4 md:grid-cols-2"
+            >
+              <TextInput
+                label="Title"
+                name={`variants.${index}.title`}
+                register={register}
+                errors={errors}
+              />
+
+              <TextInput
+                label="SKU"
+                name={`variants.${index}.sku`}
+                register={register}
+                errors={errors}
+              />
+
+              <TextInput
+                label="Barcode"
+                name={`variants.${index}.barcode`}
+                register={register}
+                errors={errors}
+              />
+
+              <TextInput
+                label="Price"
+                name={`variants.${index}.price`}
+                type="number"
+                register={register}
+                errors={errors}
+              />
+
+              <TextInput
+                label="Sale Price"
+                name={`variants.${index}.salePrice`}
+                type="number"
+                register={register}
+                errors={errors}
+              />
+
+              <TextInput
+                label="Cost Price"
+                name={`variants.${index}.costPrice`}
+                type="number"
+                register={register}
+                errors={errors}
+              />
+
+              <TextInput
+                label="Stock"
+                name={`variants.${index}.stock`}
+                type="number"
+                register={register}
+                errors={errors}
+              />
+
+              <ToggleInput
+                label="Default Variant"
+                name={`variants.${index}.isDefault`}
+                register={register}
+                trueTitle="Default"
+                falseTitle="Normal"
+              />
+
+              <button
+                type="button"
+                className="self-end text-red-500"
+                onClick={() => removeVariant(index)}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+
         <SubmitButton
-          isLoading={
-            createProduct.isPending ||
-            updateProduct.isPending
-          }
-          buttonTitle={
-            updateData?.id
-              ? "Update Product"
-              : "Create Product"
-          }
-          loadingButtonTitle="Please wait..."
+          isLoading={createProduct.isPending || updateProduct.isPending}
+          buttonTitle={updateData.id ? "Update product" : "Create product"}
+          loadingButtonTitle="Saving..."
         />
       </form>
     </div>

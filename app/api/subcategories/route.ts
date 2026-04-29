@@ -1,148 +1,139 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { subCategorySchema } from "@/lib/validators/subcategory.schema";
 import { generateUniqueSlug } from "@/lib/utils/generateUniqueSlug";
+import { ZodError } from "zod";
+import { Language } from "@prisma/client";
 
-/* ================= TYPES ================= */
-
-type SubCategoryInput = {
-  title: string;
-  description?: string;
-  imageUrl?: string;
-  isActive: boolean;
-  categoryId: string;
-  hsnCodeId?: string;
-};
-
-/* ================= CREATE ================= */
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const data: SubCategoryInput = subCategorySchema.parse(body);
+    const data = subCategorySchema.parse(body);
 
-    // ✅ Unique slug
-    const slug = await generateUniqueSlug(data.title, "subCategory");
+    // ✅ Safe title extract
+    const title = data.translations?.[0]?.title;
 
-    // ✅ Category check
-    const categoryExists = await db.category.findUnique({
-      where: { id: data.categoryId },
-    });
-
-    if (!categoryExists) {
+    if (!title) {
       return NextResponse.json(
-        { message: "Parent category not found" },
+        { message: "Title is required for slug" },
         { status: 400 }
       );
     }
 
-    // ✅ Create
+    const translations = data.translations.map((translation) => ({
+      ...translation,
+      locale: translation.locale.toUpperCase() as Language,
+    }));
+
+    // `generateUniqueSlug` in this repo currently works with a single title arg.
+    const slug = await generateUniqueSlug(title);
+
     const subCategory = await db.subCategory.create({
       data: {
-        title: data.title,
-        description: data.description,
+        slug,
         imageUrl: data.imageUrl,
         isActive: data.isActive,
-        slug,
-
-        category: {
-          connect: { id: data.categoryId },
+        categoryId: data.categoryId,
+        hsnCodeId: data.hsnCodeId,
+        translations: {
+          create: translations,
         },
-
-        hsnCode:
-          data.hsnCodeId && data.hsnCodeId !== ""
-            ? { connect: { id: data.hsnCodeId } }
-            : undefined,
       },
       include: {
+        translations: true,
         category: true,
         hsnCode: true,
       },
     });
 
     return NextResponse.json(subCategory, { status: 201 });
-
-  } catch (error: any) {
-    console.error("POST ERROR:", error);
-
-    return NextResponse.json(
-      { message: error.message || "Failed to create subcategory" },
-      { status: 500 }
-    );
-  }
-}
-
-/* ================= GET ================= */
-
-export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-
-    const categoryId = searchParams.get("categoryId");
-    const search = searchParams.get("search");
-
-    const subCategories = await db.subCategory.findMany({
-      where: {
-        ...(categoryId ? { categoryId } : {}),
-        ...(search
-          ? {
-              title: {
-                contains: search,
-                mode: "insensitive",
-              },
-            }
-          : {}),
-      },
-      include: {
-        category: true,
-        hsnCode: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return NextResponse.json(subCategories);
-
   } catch (error) {
-    console.error("GET ERROR:", error);
+    console.error("SUBCATEGORY CREATE ERROR:", error);
 
-    return NextResponse.json(
-      { message: "Error fetching subcategories" },
-      { status: 500 }
-    );
-  }
-}
-
-/* ================= DELETE ================= */
-
-export async function DELETE(req: Request) {
-  try {
-    const body: { ids: string[] } = await req.json();
-
-    if (!Array.isArray(body.ids) || body.ids.length === 0) {
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { message: "Invalid or empty IDs" },
+        {
+          message:
+            error.issues[0]?.message ?? "Invalid subcategory payload",
+        },
         { status: 400 }
       );
     }
 
-    await db.subCategory.deleteMany({
-      where: {
-        id: { in: body.ids },
-      },
-    });
-
-    return NextResponse.json({
-      message: "Selected subcategories deleted",
-    });
-
-  } catch (error) {
-    console.error("DELETE ERROR:", error);
-
     return NextResponse.json(
-      { message: "Bulk delete failed" },
+      { message: "Create failed" },
       { status: 500 }
     );
   }
+}
+export async function GET(req: NextRequest) {
+  const locale = req.nextUrl.searchParams.get("locale")?.toUpperCase() || "EN";
+
+  const data = await db.subCategory.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      translations: {
+        where: {
+          locale: {
+            in: [locale, "EN"],
+          },
+        },
+      },
+      category: {
+        include: {
+          translations: true,
+        },
+      },
+      hsnCode: true,
+    },
+  });
+
+  const formattedData = data.map((item) => {
+    const translation =
+      item.translations.find((t) => t.locale === locale) ??
+      item.translations[0] ??
+      null;
+    const categoryTranslation =
+      item.category.translations.find((t) => t.locale === locale) ??
+      item.category.translations.find((t) => t.locale === "EN") ??
+      item.category.translations[0] ??
+      null;
+
+    return {
+      id: item.id,
+      slug: item.slug,
+      imageUrl: item.imageUrl,
+      isActive: item.isActive,
+      categoryId: item.categoryId,
+      category: item.category
+        ? {
+            id: item.category.id,
+            title: categoryTranslation?.title ?? item.category.slug,
+          }
+        : null,
+      hsnCodeId: item.hsnCodeId ?? null,
+      hsnCode: item.hsnCode
+        ? {
+            id: item.hsnCode.id,
+            code: item.hsnCode.code,
+            title: item.hsnCode.title,
+            gstRate: item.hsnCode.gstRate,
+          }
+        : null,
+      translations: translation
+        ? [
+            {
+              id: translation.id,
+              locale: translation.locale.toLowerCase(),
+              title: translation.title,
+              description: translation.description,
+            },
+          ]
+        : [],
+      createdAt: item.createdAt.toISOString(),
+      updatedAt: item.updatedAt.toISOString(),
+    };
+  });
+
+  return NextResponse.json(formattedData);
 }

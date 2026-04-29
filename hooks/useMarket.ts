@@ -1,68 +1,65 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  useApiGet,
-  useApiPost,
-  useApiPut,
-  useApiDelete,
-  useApiBulkDelete,
-} from "@/lib/apiRequest";
+  createMarket,
+  updateMarket,
+  deleteMarket,
+  getMarkets,
+  getMarketById,
+} from "@/lib/actions/market.actions";
 
-import { Market } from "@/types/market";
-import { MarketInput } from "@/schemas/market";
-
-export const MARKET_QUERY_KEY = ["markets"] as const;
-
-/* ================================
-   GET ALL
-================================ */
+// ✅ GET ALL
 export function useMarkets() {
-  return useApiGet<Market[]>("/markets", MARKET_QUERY_KEY);
+  return useQuery({
+    queryKey: ["markets"],
+    queryFn: getMarkets,
+  });
 }
 
-/* ================================
-   GET SINGLE
-================================ */
-export function useMarketById(id: string) {
-  return useApiGet<Market>(`/markets/${id}`, ["markets", id]);
+// ✅ GET SINGLE
+export function useMarket(id: string) {
+  return useQuery({
+    queryKey: ["market", id],
+    queryFn: () => getMarketById(id),
+    enabled: !!id,
+  });
 }
 
-/* ================================
-   CREATE
-================================ */
-export function useCreateMarketApi() {
-  return useApiPost<Market, MarketInput>(
-    "/markets",
-    MARKET_QUERY_KEY
-  );
+// ✅ CREATE
+export function useCreateMarket() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: createMarket,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["markets"] });
+    },
+  });
 }
 
-/* ================================
-   UPDATE
-================================ */
-export function useUpdateMarketApi() {
-  return useApiPut<Market, { id: string; data: MarketInput }>(
-    "/markets",
-    MARKET_QUERY_KEY
-  );
+// ✅ UPDATE
+export function useUpdateMarket() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
+      updateMarket(id, data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ["markets"] });
+      qc.invalidateQueries({ queryKey: ["market", variables.id] });
+    },
+  });
 }
 
-/* ================================
-   DELETE
-================================ */
+// ✅ DELETE
 export function useDeleteMarket() {
-  return useApiDelete<Market>(
-    "/markets",
-    MARKET_QUERY_KEY
-  );
-}
+  const qc = useQueryClient();
 
-/* ================================
-   BULK DELETE
-================================ */
-export function useBulkDeleteMarket() {
-  return useApiBulkDelete<Market>(
-    "/markets",
-    MARKET_QUERY_KEY
-  );
+  return useMutation({
+    mutationFn: deleteMarket,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["markets"] });
+    },
+  });
 }

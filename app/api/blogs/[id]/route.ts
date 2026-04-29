@@ -1,176 +1,114 @@
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
 import { blogSchema } from "@/lib/validators/blog.schema";
-import { generateUniqueSlug } from "@/lib/utils/generateSlug";
-import { auth } from "@/auth";
+import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
 
-/* ================================
-   GET SINGLE BLOG
-================================ */
+type Params = {
+  params: { id: string };
+};
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// ================= GET SINGLE =================
+export async function GET(_: NextRequest, { params }: Params) {
   try {
-    const { id } = await params;
     const blog = await db.blog.findUnique({
-      where: { id },
+      where: { id: params.id },
       include: {
         translations: true,
         category: true,
         relatedProducts: true,
+        user: true,
       },
     });
 
     if (!blog) {
       return NextResponse.json(
-        { success: false, message: "Blog not found" },
+        { message: "Blog not found" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Blog fetched successfully",
-      data: blog,
-    });
-  } catch (error) {
-    console.error("BLOG_SINGLE_ERROR:", error);
-
+    return NextResponse.json(blog);
+  } catch {
     return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch blog",
-      },
+      { message: "Error fetching blog" },
       { status: 500 }
     );
   }
 }
 
-/* ================================
-   UPDATE BLOG
-================================ */
-
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// ================= UPDATE =================
+export async function PUT(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth();
-    const { id } = await params;
-    const body = await req.json();
-    const validated = blogSchema.parse(body);
+    const body: unknown = await req.json();
+    const data = blogSchema.parse(body);
 
-    const existing = await db.blog.findUnique({
-      where: { id },
-      select: { slug: true, userId: true },
-    });
+    const title = data.translations[0]?.title;
 
-    if (!existing) {
+    if (!title) {
       return NextResponse.json(
-        { success: false, message: "Blog not found" },
-        { status: 404 }
+        { message: "Title required" },
+        { status: 400 }
       );
     }
 
-    const userId = validated.userId || session?.user?.id || existing.userId;
+    const slug = await generateUniqueSlug(
+      "blog",
+      title,
+      params.id
+    );
 
-    let slug = validated.slug;
-
-    if (validated.slug !== existing.slug) {
-      slug = await generateUniqueSlug(validated.slug);
-    }
-
-    const blog = await db.blog.update({
-      where: { id },
+    const updated = await db.blog.update({
+      where: { id: params.id },
       data: {
         slug,
-        imageUrl: validated.imageUrl,
-        isActive: validated.isActive,
-        isFeatured: validated.isFeatured,
-        content: validated.content,
-        userId,
-        category: validated.categoryId
-          ? {
-              connect: { id: validated.categoryId },
-            }
-          : {
-              disconnect: true,
-            },
+        imageUrl: data.imageUrl,
+        isActive: data.isActive,
+        isFeatured: data.isFeatured,
+        content: data.content,
+        categoryId: data.categoryId,
+        publishedAt: data.publishedAt,
 
         translations: {
           deleteMany: {},
-          create: validated.translations.map((translation) => ({
-            ...translation,
-            locale: translation.locale.toUpperCase() as any,
+          create: data.translations,
+        },
+
+        // 🔥 reset relations
+        relatedProducts: {
+          set: data.relatedProductIds?.map((id: string) => ({
+            id,
           })),
         },
       },
       include: {
         translations: true,
-        category: true,
+        relatedProducts: true,
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      message: "Blog updated successfully",
-      data: blog,
-    });
-  } catch (error) {
-    console.error("BLOG_UPDATE_ERROR:", error);
-
+    return NextResponse.json(updated);
+  } catch {
     return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to update blog",
-      },
-      { status: 400 }
+      { message: "Update failed" },
+      { status: 500 }
     );
   }
 }
 
-/* ================================
-   DELETE BLOG
-================================ */
-
-export async function DELETE(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// ================= DELETE =================
+export async function DELETE(_: NextRequest, { params }: Params) {
   try {
-    const { id } = await params;
-    const existing = await db.blog.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-
-    if (!existing) {
-      return NextResponse.json(
-        { success: false, message: "Blog not found" },
-        { status: 404 }
-      );
-    }
-
     await db.blog.delete({
-      where: { id },
+      where: { id: params.id },
     });
 
     return NextResponse.json({
-      success: true,
-      message: "Blog deleted successfully",
-      data: null,
+      message: "Blog deleted",
     });
-  } catch (error) {
-    console.error("BLOG_DELETE_ERROR:", error);
-
+  } catch {
     return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to delete blog",
-      },
-      { status: 400 }
+      { message: "Delete failed" },
+      { status: 500 }
     );
   }
 }

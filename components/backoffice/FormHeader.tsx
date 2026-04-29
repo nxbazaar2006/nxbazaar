@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
-import Card from "@/components/ui/card";
+import GlassCard from "@/components/GlassCard"; 
 
 interface Props {
   title: string;
@@ -13,14 +13,14 @@ export default function FormHeader({ title, description }: Props) {
   const router = useRouter();
 
   return (
-    <Card className="flex items-center justify-between px-5 py-4">
+    <GlassCard className="flex items-center justify-between px-5 py-4">
       <div className="space-y-0.5">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h2 className="text-lg font-semibold text-white">
           {title}
         </h2>
 
         {description && (
-          <p>
+          <p className="text-sm text-gray-300">
             {description}
           </p>
         )}
@@ -32,15 +32,16 @@ export default function FormHeader({ title, description }: Props) {
           w-9 h-9 flex items-center justify-center
           rounded-full
 
-          bg-gray-100 dark:bg-slate-800
-          text-gray-700 dark:text-white
+          bg-white/20 border border-white/30
+          text-white
 
-          hover:bg-gray-200 dark:hover:bg-slate-700
+          hover:bg-white/30
+          backdrop-blur-md
           transition-all
         "
       >
         <X className="w-4 h-4" />
       </button>
-    </Card>
+    </GlassCard>
   );
 }

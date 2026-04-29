@@ -1,7 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
   provider = "prisma-client-js"
@@ -10,6 +7,13 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+
+
+
+
+
+
 // ================= ENUMS =================
 
 enum UserRole {
@@ -27,12 +31,7 @@ enum OrderStatus {
   CANCELED
 }
 
-enum SlugModel {
-  PRODUCT
-  CATEGORY
-  SUBCATEGORY
-  MARKET
-}
+
 
 enum Language {
   EN
@@ -58,7 +57,7 @@ model User {
   status Boolean  @default(true)
 
   verificationToken String?
-
+ vlogs Vlog[]
   products Product[]
   coupons  Coupon[]
   orders   Order[]
@@ -129,7 +128,7 @@ model SellerProfile {
 
 model Category {
   id       String  @id @default(uuid())
-  slug     String  @unique
+ 
   imageUrl String?
   isActive Boolean @default(true)
 
@@ -150,7 +149,7 @@ model CategoryTranslation {
   locale      Language
   title       String
   description String?
-
+slug     String  @unique
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
@@ -161,7 +160,7 @@ model CategoryTranslation {
 
 model SubCategory {
   id       String  @id @default(uuid())
-  slug     String  @unique
+ 
   imageUrl String?
   isActive Boolean @default(true)
 
@@ -186,7 +185,7 @@ model SubCategoryTranslation {
   locale      Language
   title       String
   description String?
-
+slug     String  @unique
   subCategoryId String
   subCategory   SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
 
@@ -197,7 +196,7 @@ model SubCategoryTranslation {
 
 model Market {
   id          String  @id @default(uuid())
-  slug        String  @unique
+ 
   title       String
   description String?
   logoUrl     String?
@@ -216,7 +215,7 @@ model MarketTranslation {
   locale      String   // en, hi, mr
   title       String
   description String?
-
+slug     String  @unique
   marketId String
   market   Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
 
@@ -247,9 +246,8 @@ model HsnCode {
 model Product {
   id       String @id @default(uuid())
   title    String
-  slug     String @unique
-  imageUrl String?
-
+ 
+ vlogs Vlog[]
   tags String[]
   unit String?
 
@@ -257,6 +255,9 @@ model Product {
   isWholesale Boolean @default(false)
 
   currency String @default("INR")
+
+  // 🔥 GST fallback (if no HSN)
+  gstRate Float?
 
   images       ProductImage[]
   variants     ProductVariant[]
@@ -276,7 +277,8 @@ model Product {
 
   orderItems OrderItem[]
   sales      Sale[]
-  blogs Blog[] @relation("BlogProducts")
+  blogs      Blog[] @relation("BlogProducts")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -284,20 +286,6 @@ model Product {
   @@index([categoryId])
   @@index([userId])
 }
-
-// ================= PRODUCT IMAGE =================
-
-model ProductImage {
-  id        String @id @default(uuid())
-  url       String
-  isPrimary Boolean @default(false)
-
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([productId])
-}
-
 // ================= VARIANT =================
 
 model ProductVariant {
@@ -308,15 +296,19 @@ model ProductVariant {
 
   title String
 
-  sku     String? @unique
-  barcode String? @unique
+  // 🔥 CORE IDENTIFIERS (REQUIRED)
+  sku         String @unique
+  barcode     String @unique
+  productCode String @unique
 
+  // 💰 Pricing
   price     Float
   salePrice Float?
   costPrice Float?
 
   currency String @default("INR")
 
+  // 📦 Inventory
   stock          Int?
   reservedStock  Int @default(0)
   lowStockAlert  Int?
@@ -329,6 +321,10 @@ model ProductVariant {
 
   attributes       VariantAttribute[]
   wholesalePricing WholesalePricing[]
+
+  // relations
+  orderItems OrderItem[]
+  sales      Sale[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -344,8 +340,8 @@ model VariantAttribute {
 
   variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
-  name  String
-  value String
+  name  String  // size, color
+  value String  // M, Black
 }
 
 // ================= WHOLESALE =================
@@ -369,7 +365,7 @@ model ProductTranslation {
   locale      Language
   title       String
   description String?
-
+slug     String  @unique
   metaTitle       String?
   metaDescription String?
 
@@ -377,6 +373,17 @@ model ProductTranslation {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, locale])
+}
+
+model ProductImage {
+  id        String @id @default(uuid())
+  url       String
+  isPrimary Boolean @default(false)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
 }
 
 // ================= ORDER =================
@@ -408,10 +415,13 @@ model Order {
   orderItems OrderItem[]
   sales      Sale[]
 
+  // 🔥 QR CODE (Order level)
+  qrCodeUrl String?   // image URL (S3/UploadThing)
+  qrData    String?   // URL जैसे: /order/{id}
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
 // ================= ORDER ITEM =================
 
 model OrderItem {
@@ -424,12 +434,19 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
 
   vendorId String
-
+ productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
   title    String?
   imageUrl String?
 
   quantity Int
   price    Float
+
+  // 🔥 QR CODE (Item level)
+  qrCodeUrl String?
+  qrData    String?
+
+  createdAt DateTime @default(now())
 }
 
 // ================= SALE =================
@@ -442,7 +459,8 @@ model Sale {
   vendorId  String
 
   total Float
-
+ productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
   order   Order   @relation(fields: [orderId], references: [id])
   product Product @relation(fields: [productId], references: [id])
   vendor  User    @relation(fields: [vendorId], references: [id])
@@ -477,10 +495,10 @@ model Banner {
 
 model Blog {
   id       String @id @default(uuid())
-  slug     String @unique
+ 
 
   imageUrl String?
-
+ vlogs Vlog[]
   isActive Boolean @default(true)
   isFeatured Boolean @default(false)
 
@@ -508,7 +526,7 @@ model Blog {
 model BlogTranslation {
   id          String   @id @default(uuid())
   locale      Language
-
+slug     String  @unique
   title       String
   description String?
 
@@ -528,4 +546,40 @@ model BlogCategory {
   title String
 
   blogs Blog[]
+}
+
+model Vlog {
+  id        String   @id @default(uuid())
+
+  title     String
+ 
+
+  // Relations
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+ translations VlogTranslation[]
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  blogId    String?
+  blog      Blog?    @relation(fields: [blogId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VlogTranslation {
+  id     String @id @default(uuid())
+
+  title  String
+  slug   String
+  locale String
+
+  vlogId String
+  vlog   Vlog @relation(fields: [vlogId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([slug, locale])
 }

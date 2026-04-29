@@ -1,66 +1,74 @@
-<<<<<<< HEAD
-import { notFound } from "next/navigation";
-
+import FormHeader from "@/components/backoffice/FormHeader";
 import SubCategoryForm from "@/components/backoffice/Forms/SubCategoryForm";
-import { getCategories } from "@/actions/category";
-import { getSubCategoryById } from "@/actions/subcategory";
-import { getHsnCodes } from "@/actions/hsnCode";
-=======
 import { db } from "@/lib/db";
-import SubCategoryForm from "@/components/forms/SubCategoryForm";
-import { updateSubCategory } from "@/lib/actions/subcategory";
-import { redirect } from "next/navigation";
-import { SubCategoryInput } from "@/lib/validators/subcategory.schema";
->>>>>>> cfe7124 (update)
+import { notFound } from "next/navigation";
+import { Prisma } from "@prisma/client";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
+  searchParams: Promise<{
+    locale?: string;
+  }>;
 };
 
-export default async function Page({ params }: PageProps) {
-  const subCategory = await db.subCategory.findUnique({
-    where: { id: params.id },
-    include: { translations: true },
-  });
+type CategoryWithTranslations = Prisma.CategoryGetPayload<{
+  include: { translations: true };
+}>;
 
-  // 🔥 transform DB → form type (IMPORTANT)
-  const initialData: SubCategoryInput | undefined = subCategory
-    ? {
-        slug: subCategory.slug,
-        imageUrl: subCategory.imageUrl ?? undefined,
-        isActive: subCategory.isActive,
-        categoryId: subCategory.categoryId,
-        hsnCodeId: subCategory.hsnCodeId ?? undefined,
-        translations: subCategory.translations.map((t) => ({
-          locale: t.locale,
-          title: t.title,
-          description: t.description ?? undefined,
-        })),
-      }
-    : undefined;
+export default async function UpdateSubCategoryPage({
+  params,
+  searchParams,
+}: PageProps) {
+  const { id } = await params;
+  const { locale = "EN" } = await searchParams;
+  const upperLocale = locale.toUpperCase();
 
-  async function onSubmit(data: SubCategoryInput) {
-    "use server";
-    await updateSubCategory(params.id, data);
-    redirect("/dashboard/subcategories");
-  }
+  const [subCategory, categories] = await Promise.all([
+    db.subCategory.findUnique({
+      where: { id },
+      include: {
+        translations: true,
+        category: true,
+        hsnCode: true,
+      },
+    }),
+    db.category.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        translations: true,
+      },
+    }),
+  ]);
 
   if (!subCategory) {
-    return notFound();
+    notFound();
   }
 
+  const formattedCategories = categories.map((item: CategoryWithTranslations) => {
+    const translation =
+      item.translations.find((t) => t.locale === upperLocale) ??
+      item.translations.find((t) => t.locale === "EN") ??
+      item.translations[0];
+
+    return {
+      id: item.id,
+      title: translation?.title?.trim() || "Untitled",
+    };
+  });
+
+  const uniqueCategories = Array.from(
+    new Map(formattedCategories.map((category) => [category.id, category])).values()
+  );
+
   return (
-    <SubCategoryForm
-<<<<<<< HEAD
-      categories={Array.isArray(categories) ? categories : []}
-      hsnCodes={hsnCodes}
-      updateData={subCategory}
-=======
-      initialData={initialData}
-      onSubmit={onSubmit}
->>>>>>> cfe7124 (update)
-    />
+    <div className="space-y-4">
+      <FormHeader title="Update SubCategory" />
+      <SubCategoryForm
+        updateData={subCategory}
+        categories={uniqueCategories}
+      />
+    </div>
   );
 }

@@ -7,7 +7,7 @@ import UserDashboard from "@/components/backoffice/UserDashboard";
 import { auth } from "@/auth";
 
 import { getOrders } from "@/actions/orders";
-import { getProducts } from "@/actions/products";
+import { getProducts } from "@/actions/product";
 import { getSales } from "@/actions/sales";
 
 export default async function Page() {

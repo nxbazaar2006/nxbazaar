@@ -1,58 +1,19 @@
-export interface ProductRequest {
-  id: string
+import type { Prisma } from "@prisma/client";
 
-  title: string
-  slug: string
-  description?: string
+export type Product = Prisma.ProductGetPayload<{
+  include: {
+    category: true;
+    subCategory: true;
+    hsnCode: true;
+    images: true;
+    variants: {
+      include: {
+        attributes: true;
+        wholesalePricing: true;
+      };
+    };
+    translations: true;
+  };
+}>;
 
-  barcode?: string
-  sku?: string
-  productCode?: string
-
-  categoryId: string
-  sellerId: string
-
-  productPrice: number
-  salePrice: number
-
-  wholesalePrice?: number
-  wholesaleQty?: number
-
-  productStock: number
-  
-
-  unit?: string
-  tags: string[]
-
-  imageUrl?: string
-  productImages: string[]
-
-  isActive: boolean
-  isWholesale: boolean
-
-  hsnCodeId?: string
-
-  createdAt: Date
-  updatedAt: Date
-}
-
-
-/* CREATE PRODUCT */
-
-export type CreateProductInput = Omit<
-  ProductRequest,
-  "id" | "createdAt" | "updatedAt"
->
-
-
-/* UPDATE PRODUCT */
-
-export type UpdateProductInput = Partial<CreateProductInput>
-
-
-/* SELECT OPTIONS */
-
-export type SelectOption = {
-  label: string
-  value: string
-}
+export type ProductWithRelations = Product;

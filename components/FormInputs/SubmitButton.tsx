@@ -1,58 +1,77 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type Props = {
   isLoading: boolean;
   buttonTitle: string;
   loadingButtonTitle: string;
+  className?: string;
 };
 
 export default function SubmitButton({
   isLoading,
   buttonTitle,
   loadingButtonTitle,
+  className,
 }: Props) {
   return (
-    <Button
-      type="submit"
-      disabled={isLoading}
-      className="
-        w-full py-3 rounded-2xl
+    <div className="relative w-full group">
+      {/* 🔥 Soft Glow (subtle for forms) */}
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 opacity-20 blur-md group-hover:opacity-30 transition" />
 
-        font-medium tracking-tight text-white
+      <Button
+        type="submit"
+        disabled={isLoading}
+        className={cn(
+          `
+          relative w-full py-3 rounded-2xl overflow-hidden
 
-        /* 🔥 Gradient */
-        bg-gradient-to-r from-orange-500 to-orange-600
-        dark:from-orange-600 dark:to-orange-700
+          font-medium tracking-tight text-white
 
-        /* 🍎 Smooth UI */
-        transition-all duration-300 ease-in-out
+          /* 🧊 Glass Effect */
+          bg-white/10 backdrop-blur-md
+          border border-white/20
 
-        /* ✨ Hover */
-        hover:from-orange-600 hover:to-orange-700
-        dark:hover:from-orange-500 dark:hover:to-orange-600
+          /* ✨ Smooth UI */
+          transition-all duration-300 ease-in-out
 
-        /* 💎 Shadow */
-        shadow-md hover:shadow-lg
+          /* 🚀 Hover */
+          hover:bg-white/20 hover:scale-[1.01]
 
-        /* ⚡ Animation */
-        hover:scale-[1.01]
-        active:scale-[0.97]
+          /* ⚡ Click */
+          active:scale-[0.97]
 
-        /* 🚫 Disabled */
-        disabled:opacity-60 disabled:cursor-not-allowed
-      "
-    >
-      {isLoading ? (
-        <span className="flex items-center justify-center gap-2">
-          {/* 🔄 Spinner */}
-          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          {loadingButtonTitle}
-        </span>
-      ) : (
-        buttonTitle
-      )}
-    </Button>
+          /* 💎 Shadow */
+          shadow-lg
+
+          /* 🚫 Disabled */
+          disabled:opacity-60 disabled:cursor-not-allowed
+        `,
+          className
+        )}
+      >
+        {isLoading ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            {loadingButtonTitle}
+          </span>
+        ) : (
+          <span className="relative z-10">{buttonTitle}</span>
+        )}
+
+        {/* ✨ Shine Effect */}
+        <span
+          className="
+            absolute inset-0
+            bg-gradient-to-r from-transparent via-white/40 to-transparent
+            translate-x-[-100%]
+            group-hover:translate-x-[100%]
+            transition-transform duration-700
+          "
+        />
+      </Button>
+    </div>
   );
 }

@@ -2,21 +2,35 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
+import DateColumn from "@/components/DataTableColumns/DateColumn";
+import ImageColumn from "@/components/DataTableColumns/ImageColumn";
+import SortableColumn from "@/components/DataTableColumns/SortableColumn";
 import ActionColumn from "@/components/DataTableColumns/ActionColumn";
-import { Category } from "@/types/category";
 
-export const columns: ColumnDef<Category>[] = [
+// ✅ Type FIX (translations optional)
+export type CategoryColumn = {
+  id: string;
+  imageUrl?: string | null;
+  isActive: boolean;
+  translations?: {
+    title: string;
+    locale?: string;
+  }[];
+  createdAt: string;
+};
+
+// ✅ Columns
+export const columns: ColumnDef<CategoryColumn>[] = [
   {
     id: "select",
     header: ({ table }) => (
       <Checkbox
         checked={
           table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() &&
-            "indeterminate")
+          (table.getIsSomePageRowsSelected() && "indeterminate")
         }
         onCheckedChange={(value) =>
-          table.toggleAllPageRowsSelected(Boolean(value))
+          table.toggleAllPageRowsSelected(!!value)
         }
         aria-label="Select all"
       />
@@ -25,7 +39,7 @@ export const columns: ColumnDef<Category>[] = [
       <Checkbox
         checked={row.getIsSelected()}
         onCheckedChange={(value) =>
-          row.toggleSelected(Boolean(value))
+          row.toggleSelected(!!value)
         }
         aria-label="Select row"
       />
@@ -33,36 +47,74 @@ export const columns: ColumnDef<Category>[] = [
     enableSorting: false,
     enableHiding: false,
   },
+
+  // ✅ FIXED TITLE COLUMN (SAFE + SMART)
   {
-    accessorKey: "title",
-    header: "Title",
+    accessorKey: "translations",
+    header: ({ column }) => (
+      <SortableColumn column={column} title="Title" />
+    ),
+    cell: ({ row }) => {
+      const translations = row.original.translations;
+
+      // fallback handling
+      if (!translations || translations.length === 0) return "—";
+
+      // 👉 optional: specific locale (recommended)
+      const preferred =
+        translations.find((t) => t.locale === "en") || translations[0];
+
+      return preferred?.title || "—";
+    },
   },
+
   {
-    accessorKey: "description",
-    header: "Description",
-    cell: ({ row }) => row.original.description ?? "-",
+    accessorKey: "imageUrl",
+    header: "Category Image",
+    cell: ({ row }) => (
+      <ImageColumn row={row} accessorKey="imageUrl" />
+    ),
   },
+
   {
     accessorKey: "isActive",
-    header: "Status",
-    cell: ({ row }) =>
-      row.original.isActive ? "Active" : "Inactive",
+    header: "Active",
+    cell: ({ row }) => (
+      <span
+        className={`px-2 py-1 rounded text-xs ${
+          row.original.isActive
+            ? "bg-green-100 text-green-700"
+            : "bg-red-100 text-red-700"
+        }`}
+      >
+        {row.original.isActive ? "Active" : "Inactive"}
+      </span>
+    ),
   },
+
   {
     accessorKey: "createdAt",
-    header: "Created At",
-    cell: ({ row }) =>
-      new Date(row.original.createdAt).toLocaleDateString(),
+    header: ({ column }) => (
+      <SortableColumn column={column} title="Date Created" />
+    ),
+    cell: ({ row }) => (
+      <DateColumn row={row} accessorKey="createdAt" />
+    ),
   },
+
   {
     id: "actions",
-    cell: ({ row }) => (
-      <ActionColumn
-        row={row}
-        title="Category"
-        editEndpoint={`categories/update/${row.original.id}`}
-        endpoint={`categories/${row.original.id}`}
-      />
-    ),
+    cell: ({ row }) => {
+      const category = row.original;
+
+      return (
+        <ActionColumn
+          row={row}
+          title="Category"
+          editEndpoint={`categories/update/${category.id}`}
+          endpoint={`categories/${category.id}`}
+        />
+      );
+    },
   },
 ];

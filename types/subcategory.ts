@@ -1,9 +1,18 @@
-<<<<<<< HEAD
 import type { Language } from "@prisma/client";
 
-export const LOCALES = ["en", "hi", "mr"] as const;
-
 export type LocaleCode = Lowercase<`${Language}`>;
+
+export interface Option {
+  id: string;
+  title: string;
+}
+
+export interface HsnCodeOption {
+  id: string;
+  code: string;
+  title: string;
+  gstRate: number;
+}
 
 export interface SubCategoryTranslation {
   id?: string;
@@ -18,58 +27,37 @@ export interface SubCategory {
   imageUrl?: string | null;
   isActive: boolean;
   categoryId: string;
-  categoryTitle?: string;
   hsnCodeId?: string | null;
-  hsnCode?: {
-    id: string;
-    code: string;
-    title: string;
-    gstRate: number;
-  } | null;
-  title: string;
-  description?: string | null;
   translations: SubCategoryTranslation[];
-  createdAt: string;
-  updatedAt: string;
+  category?: Option | null;
+  hsnCode?: HsnCodeOption | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface SubCategoryPayload {
+export interface SubCategoryFormValues {
+  title: string;
+  description?: string;
+  categoryId: string;
+  hsnCodeId?: string;
+  imageUrl?: string;
+  isActive: boolean;
+}
+
+export interface SubCategoryInput {
   slug?: string;
   imageUrl?: string;
   isActive: boolean;
   categoryId: string;
   hsnCodeId?: string | null;
-  translations: Array<{
-    locale: LocaleCode;
+  translations: {
     title: string;
     description?: string;
-  }>;
+    locale: LocaleCode;
+  }[];
 }
 
-export type SubCategoryFormData = SubCategoryPayload;
-=======
-export type SubCategory = {
+export interface UpdateSubCategoryPayload {
   id: string;
-  title: string;
-  description: string;
-  slug: string;
-  imageUrl?: string;
-  isActive: boolean;
-
-  categoryId: string;
-
-  // ✅ ADD THIS
-  category?: {
-    id: string;
-    title: string;
-  };
-
-  hsnCodeId?: string;
-
-  createdAt: string;
-  updatedAt: string;
-
-  metaTitle?: string;
-  metaDescription?: string;
-};
->>>>>>> cfe7124 (update)
+  data: SubCategoryInput;
+}
