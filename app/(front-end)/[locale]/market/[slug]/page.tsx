@@ -1,3 +1,4 @@
+import { findEntityByTranslationSlug } from "@/lib/slug/translationSlug.service";
 import { db } from "@/lib/db";
 import { getSafeTranslation } from "@/lib/getTranslation";
 
@@ -11,28 +12,32 @@ interface Props {
 export default async function MarketPage({ params }: Props) {
   const { locale, slug } = params;
 
-  const market = await db.market.findFirst({
-    where: { slug },
-    include: {
-      translations: true,
-      products: {
-        include: {
-          translations: true,
+  const market = await findEntityByTranslationSlug("market", locale, slug);
+
+  const marketData =
+    market ??
+    (await db.market.findFirst({
+      where: { slug },
+      include: {
+        translations: true,
+        products: {
+          include: {
+            translations: true,
+          },
         },
       },
-    },
-  });
+    }));
 
-  if (!market) return <div>Market not found</div>;
+  if (!marketData) return <div>Market not found</div>;
 
-  const t = getSafeTranslation(market.translations, locale);
+  const t = getSafeTranslation(marketData.translations, locale);
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold">{t?.name ?? "Market"}</h1>
 
       <div className="grid grid-cols-2 gap-4 mt-4">
-        {market.products.map((product) => {
+        {marketData.products.map((product) => {
           const pt = getSafeTranslation(product.translations, locale);
 
           return (
