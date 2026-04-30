@@ -4,10 +4,8 @@ import GlassCard from "@/components/GlassCard";
 import FormHeader from "@/components/backoffice/FormHeader";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  CategorySchema,
-  CategoryInput,
-} from "@/lib/validators/category.schema";
+import { z } from "zod";
+import { CategoryInput } from "@/lib/validators/category.schema";
 import { useToast } from "@/components/ui/use-toast";
 import {
   useCreateCategory,
@@ -30,6 +28,17 @@ type Props = {
   };
 };
 
+const CategoryFormSchema = z.object({
+  slug: z.string().trim().min(2, "Slug must be at least 2 characters"),
+  title: z.string().trim().min(2, "Title must be at least 2 characters"),
+  description: z.string().optional(),
+  imageUrl: z.string().url("Image URL must be a valid URL").optional().or(z.literal("")),
+  isActive: z.boolean(),
+  locale: z.enum(["EN", "HI"]),
+});
+
+type CategoryFormValues = z.infer<typeof CategoryFormSchema>;
+
 export default function CategoryForm({ initialData }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient(); 
@@ -45,24 +54,33 @@ export default function CategoryForm({ initialData }: Props) {
   );
 
   const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<CategoryInput>({
-    resolver: zodResolver(CategorySchema),
-    defaultValues: {
-      title: initialData?.title ?? "",
-      description: initialData?.description ?? "",
-      imageUrl: initialData?.imageUrl ?? "",
-      isActive: initialData?.isActive ?? true,
-      locale: initialData?.locale ?? "EN",
-    },
-  });
-
-  const onSubmit = async (data: CategoryInput) => {
+  register,
+  handleSubmit,
+  control, // ✅ यही use करो
+  formState: { errors },
+} = useForm<CategoryFormValues>({
+  resolver: zodResolver(CategoryFormSchema),
+  defaultValues: {
+    slug: initialData?.slug ?? "",
+    title: initialData?.translations?.[0]?.title ?? "",
+    description: initialData?.translations?.[0]?.description ?? "",
+    imageUrl: initialData?.imageUrl ?? "",
+    isActive: initialData?.isActive ?? true,
+    locale: initialData?.translations?.[0]?.locale ?? "EN",
+  },
+});
+  const onSubmit = async (data: CategoryFormValues) => {
     const payload: CategoryInput = {
-      ...data,
-      imageUrl: imageUrl || "",
+      slug: data.slug,
+      imageUrl: data.imageUrl,
+      isActive: data.isActive,
+      translations: [
+        {
+          locale: data.locale,
+          title: data.title,
+          description: data.description,
+        },
+      ],
     };
 
     try {
@@ -118,22 +136,29 @@ export default function CategoryForm({ initialData }: Props) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           
           <TextInput
+            label="Slug"
+            name="slug"
+            register={register}
+            errors={errors}
+          />
+
+          <TextInput
             label="Category Title"
             name="title"
             register={register}
             errors={errors}
           />
 
-          <TextareaInput
+          <TextareaInput<CategoryFormValues>
             label="Description"
             name="description"
             register={register}
             errors={errors}
           />
 
-          <ImageInput
-            imageUrl={imageUrl}
-            setImageUrl={setImageUrl}
+          <ImageInput<CategoryFormValues>
+            name="imageUrl"
+            control={control}
             endpoint="categoryImageUploader"
             label="Category Image"
           />

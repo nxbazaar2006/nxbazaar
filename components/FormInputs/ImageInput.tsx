@@ -6,11 +6,11 @@ import { Loader2 } from "lucide-react";
 import { UploadButton, UploadDropzone } from "@/lib/uploadthing";
 
 import {
-  
   FieldValues,
   Path,
+  Control,
   useController,
-  
+  useFormContext,
 } from "react-hook-form";
 
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
@@ -25,6 +25,7 @@ type UploadResponseItem = {
 type Props<T extends FieldValues> = {
   label: string;
   name: Path<T>;
+  control?: Control<T>;
   endpoint: keyof OurFileRouter;
   previewSize?: number;
 };
@@ -38,9 +39,23 @@ export default function ImageInput<T extends FieldValues>({
   endpoint,
   previewSize = 160,
 }: Props<T>) {
+
+  // ✅ SAFE: context optional रखो
+  const methods = useFormContext<T>();
+  const resolvedControl = control ?? methods?.control;
+
+  // ❌ अगर दोनों नहीं मिले → clear error
+  if (!resolvedControl) {
+    throw new Error(
+      `ImageInput "${String(
+        name
+      )}" must receive control or be inside FormProvider`
+    );
+  }
+
   const { field } = useController({
     name,
-    control,
+    control: resolvedControl,
   });
 
   const [loading, setLoading] = useState(false);
@@ -73,6 +88,7 @@ export default function ImageInput<T extends FieldValues>({
     <div className="space-y-3">
       <label className="text-sm font-medium block">{label}</label>
 
+      {/* ================= UPLOAD ================= */}
       {!imageUrl && (
         <div className="border rounded-xl p-6 text-center">
           <UploadDropzone
@@ -101,6 +117,7 @@ export default function ImageInput<T extends FieldValues>({
         </div>
       )}
 
+      {/* ================= PREVIEW ================= */}
       {imageUrl && (
         <div
           className="relative"
@@ -113,6 +130,7 @@ export default function ImageInput<T extends FieldValues>({
             className="object-cover rounded"
           />
 
+          {/* Remove */}
           <button
             type="button"
             onClick={() => field.onChange("")}
@@ -121,6 +139,7 @@ export default function ImageInput<T extends FieldValues>({
             Remove
           </button>
 
+          {/* Replace */}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
             <UploadButton
               endpoint={endpoint}
