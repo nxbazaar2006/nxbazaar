@@ -25,18 +25,6 @@ enum OrderStatus {
   CANCELED
 }
 
-
-
-enum Language {
-  EN
-  HI
-  MR
-  TA
-  TE
-  KN
-  GU
-}
-
 // ================= USER =================
 
 model User {

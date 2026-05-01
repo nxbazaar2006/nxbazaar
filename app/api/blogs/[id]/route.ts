@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { blogSchema } from "@/lib/validators/blog.schema";
 import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
+import { Language } from "@prisma/client";
 
 type Params = {
   params: { id: string };
@@ -28,7 +29,9 @@ export async function GET(_: NextRequest, { params }: Params) {
     }
 
     return NextResponse.json(blog);
-  } catch {
+  } catch (error) {
+    console.error("GET_BLOG_ERROR:", error);
+
     return NextResponse.json(
       { message: "Error fetching blog" },
       { status: 500 }
@@ -42,25 +45,22 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const body: unknown = await req.json();
     const data = blogSchema.parse(body);
 
-    const title = data.translations[0]?.title;
-
-    if (!title) {
-      return NextResponse.json(
-        { message: "Title required" },
-        { status: 400 }
-      );
-    }
-
-    const slug = await generateUniqueSlug(
-      "blog",
-      title,
-      params.id
+    // 🔥 generate slug per translation
+    const translationsWithSlug = await Promise.all(
+      data.translations.map(async (t) => ({
+        ...t,
+        locale: t.locale.toUpperCase() as Language,
+        slug: await generateUniqueSlug(
+          "blog",
+          t.locale,
+          t.slug ?? t.title
+        ),
+      }))
     );
 
     const updated = await db.blog.update({
       where: { id: params.id },
       data: {
-        slug,
         imageUrl: data.imageUrl,
         isActive: data.isActive,
         isFeatured: data.isFeatured,
@@ -70,14 +70,14 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
         translations: {
           deleteMany: {},
-          create: data.translations,
+          create: translationsWithSlug,
         },
 
-        // 🔥 reset relations
         relatedProducts: {
-          set: data.relatedProductIds?.map((id: string) => ({
-            id,
-          })),
+          set:
+            data.relatedProductIds?.map((id: string) => ({
+              id,
+            })) ?? [],
         },
       },
       include: {
@@ -87,9 +87,16 @@ export async function PUT(req: NextRequest, { params }: Params) {
     });
 
     return NextResponse.json(updated);
-  } catch {
+  } catch (error) {
+    console.error("UPDATE_BLOG_ERROR:", error);
+
     return NextResponse.json(
-      { message: "Update failed" },
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Update failed",
+      },
       { status: 500 }
     );
   }
@@ -105,7 +112,9 @@ export async function DELETE(_: NextRequest, { params }: Params) {
     return NextResponse.json({
       message: "Blog deleted",
     });
-  } catch {
+  } catch (error) {
+    console.error("DELETE_BLOG_ERROR:", error);
+
     return NextResponse.json(
       { message: "Delete failed" },
       { status: 500 }

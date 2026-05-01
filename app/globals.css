@@ -1,77 +1,21 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-/* ================= ORANGE GLASS THEME ================= */
-/* 🌫️ APPLE BACKGROUND */
-body {
-  background: linear-gradient(
-    180deg,
-    #dc754a86 0%,
-    #e89f0d 40%,
-    #b03838 80%
-  );
-  color: white;
-}
 
-/* 🧊 APPLE GLASS */
-.apple-glass {
-  background: rgba(255, 255, 255, 0);
-  backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.69);
-}
-
-/* 🧊 STRONG GLASS */
-.apple-glass-strong {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(32px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* 🌈 SOFT BORDER */
-.apple-border {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* 🌑 DEPTH SHADOW (VERY IMPORTANT) */
-.apple-shadow {
-  box-shadow: 
-    0 8px 24px rgba(0,0,0,0.4),
-    inset 0 1px 0 rgba(255,255,255,0.04);
-}
-
-/* ✨ HOVER EFFECT */
-.apple-hover {
-  transition: all 0.25s ease;
-}
-
-.apple-hover:hover {
-  background: rgba(255,255,255,0.06);
-}
-
-/* 🔥 ACTIVE STATE */
-.apple-active {
-  background: rgba(255,255,255,0.08);
-  border-left: 3px solid #6366f1;
-}
-
-/* 🔥 Hide Scrollbar (All Browsers) */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;  /* IE & Edge */
-  scrollbar-width: none;     /* Firefox */
-}
-
-/* ===== ULTRA BASE ===== */
+/* ================= BASE ================= */
 
 /* Smooth scroll */
 html {
   scroll-behavior: smooth;
 }
 
-/* Hide Scrollbar */
+/* Body (NO STATIC GRADIENT) */
+body {
+  color: white;
+}
+
+/* ================= SCROLL ================= */
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -80,77 +24,93 @@ html {
   scrollbar-width: none;
 }
 
-/* Glass Effect */
+/* ================= ANIMATED GRADIENT ================= */
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.dark-gradient {
+  background: linear-gradient(
+    270deg,
+    #f56e07,
+    #be5a12,
+    #ed1b0c,
+    #6a11cb,
+    #2575fc
+  );
+  background-size: 600% 600%;
+  animation: gradientMove 15s ease infinite;
+}
+
+/* ================= GLASS UI ================= */
+
 .glass {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255,255,255,0.1);
 }
 
-/* Apple Hover */
+.apple-glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.apple-glass-strong {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ================= SHADOW ================= */
+
+.apple-shadow {
+  box-shadow: 
+    0 8px 24px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.neon {
+  box-shadow: 0 0 20px rgba(106, 17, 203, 0.6);
+}
+
+/* ================= HOVER ================= */
+
 .apple-hover {
   transition: all 0.25s ease;
 }
+
 .apple-hover:hover {
   background: rgba(255,255,255,0.08);
-  transform: scale(1.03);
+  transform: translateY(-3px) scale(1.02);
 }
 
-/* Fade animation */
+/* ================= INPUT ================= */
+
+.apple-input {
+  @apply w-full px-4 py-3 rounded-2xl 
+  bg-white dark:bg-black
+  border border-gray-900 dark:border-white
+  text-gray-900 dark:text-white
+  placeholder:text-gray-400
+  outline-none transition-all duration-300
+  focus:ring-2 focus:ring-gray-900/10
+  dark:focus:ring-white/20
+  shadow-sm hover:shadow-md;
+}
+
+/* ================= ANIMATION ================= */
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Apple Glass */
-.glass-apple {
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1);
-}
+/* ================= GLOBAL SMOOTH ================= */
 
-/* Smooth */
 * {
   transition: all 0.25s ease;
-}
-
-/* Scroll */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.apple-input {
-  @apply w-full px-4 py-3 rounded-2xl 
-  bg-white dark:bg-black
-
-  border border-gray-900 dark:border-white
-
-  text-gray-900 dark:text-white
-  placeholder:text-gray-400
-
-  outline-none transition-all duration-300
-
-  focus:ring-2 focus:ring-gray-900/10
-  dark:focus:ring-white/20
-
-  shadow-sm hover:shadow-md;
-}
-
-
-.apple-glass {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.apple-shadow {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }

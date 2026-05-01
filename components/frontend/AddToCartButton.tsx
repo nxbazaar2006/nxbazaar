@@ -12,9 +12,18 @@ import type { AppDispatch } from "@/redux/store";
 type Product = {
   id: string;
   title: string;
+  userId?: string;
   salePrice?: number;
   price?: number;
   imageUrl?: string;
+  images?: { url: string; isPrimary?: boolean }[];
+  variants?: {
+    id: string;
+    price: number;
+    salePrice?: number | null;
+    image?: string | null;
+    isDefault?: boolean;
+  }[];
   createdAt?: string | Date;
   updatedAt?: string | Date;
 };
@@ -27,17 +36,26 @@ export default function AddToCartButton({ product }: { product: Product }) {
   function handleAddToCart() {
     if (!product) return;
 
-    // ✅ minimal cart item (no Date issue)
+    const variant =
+      product.variants?.find((item) => item.isDefault) ??
+      product.variants?.[0];
+    const primaryImage =
+      product.images?.find((image) => image.isPrimary)?.url ??
+      product.images?.[0]?.url;
+
     const cartItem = {
       id: product.id,
+      productVariantId: variant?.id,
       title: product.title,
-      price: product.salePrice ?? product.price ?? 0,
-      image: product.imageUrl ?? "",
-      qty: 1,
+      salePrice: Number(
+        variant?.salePrice ?? variant?.price ?? product.salePrice ?? product.price ?? 0
+      ),
+      imageUrl: variant?.image ?? product.imageUrl ?? primaryImage ?? "",
+      vendorId: product.userId,
     };
 
     dispatch(addToCart(cartItem));
-    toast.success("Item added successfully 🚀");
+    toast.success("Item added successfully");
   }
 
   return (

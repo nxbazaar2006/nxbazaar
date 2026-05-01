@@ -1,24 +1,35 @@
+import type { Prisma } from "@prisma/client";
+
+export type Order = Prisma.OrderGetPayload<{
+  include: {
+    orderItems: true;
+  };
+}>;
+
 export interface CheckoutFormData {
   city: string;
   country: string;
-  district: string;
+  district?: string;
   email: string;
   firstName: string;
   lastName: string;
   paymentMethod: string;
   phone: string;
   shippingCost: string | number;
+  state?: string;
   streetAddress: string;
-  userId: string;
+  userId?: string;
+  zip?: string;
 }
 
 export interface OrderItemInput {
   id: string;
+  productVariantId?: string;
   title: string;
   imageUrl: string;
   qty: string | number;
-  salePrice: string | number;
-  vendorId: string;
+  salePrice?: string | number;
+  vendorId?: string;
 }
 
 export interface CreateOrderPayload {

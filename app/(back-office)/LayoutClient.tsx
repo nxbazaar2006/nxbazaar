@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useState } from "react";
@@ -18,7 +16,8 @@ export default function DashboardLayoutClient({
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
 
   return (
-    <div className="flex min-h-screen relative">
+    // 🔥 YAHI CHANGE HAI (dark-gradient add kiya)
+    <div className="dark-gradient flex min-h-screen relative text-white">
       
       {/* GLOBAL */}
       <TopLoader />

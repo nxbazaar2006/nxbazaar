@@ -21,42 +21,37 @@ export async function createSubCategory(
   try {
     const parsed = subCategorySchema.parse(data);
 
-    const title = parsed.translations[0]?.title;
+    // 🔥 slug per translation
+    const translationsWithSlug = await Promise.all(
+      parsed.translations.map(async (t) => ({
+        ...t,
+        slug: await generateUniqueSlug(
+          "subcategory",
+          t.locale,
+          t.slug ?? t.title
+        ),
+      }))
+    );
 
-    if (!title) {
-      return errorResponse("Title required");
-    }
+    const result = await db.subCategory.create({
+      data: {
+        imageUrl: parsed.imageUrl ?? null,
+        isActive: parsed.isActive ?? true,
+        categoryId: parsed.categoryId,
+        hsnCodeId: parsed.hsnCodeId ?? null,
 
-    const slug = parsed.slug
-      ? parsed.slug
-      : await generateUniqueSlug(title);
-
-    const result = await db.$transaction(async (tx) => {
-      const exists = await tx.subCategory.findUnique({
-        where: { slug },
-      });
-
-      if (exists) throw new Error("Slug already exists");
-
-      return tx.subCategory.create({
-        data: {
-          slug,
-          imageUrl: parsed.imageUrl ?? null,
-          isActive: parsed.isActive ?? true,
-          categoryId: parsed.categoryId,
-          hsnCodeId: parsed.hsnCodeId ?? null,
-          translations: {
-            create: parsed.translations,
-          },
-          metaTitle: parsed.metaTitle ?? null,
-          metaDescription: parsed.metaDescription ?? null,
+        translations: {
+          create: translationsWithSlug,
         },
-        include: {
-          translations: true,
-          category: true,
-          hsnCode: true,
-        },
-      });
+
+        metaTitle: parsed.metaTitle ?? null,
+        metaDescription: parsed.metaDescription ?? null,
+      },
+      include: {
+        translations: true,
+        category: true,
+        hsnCode: true,
+      },
     });
 
     return successResponse(result);
@@ -75,23 +70,18 @@ export async function updateSubCategory(
   try {
     const parsed = subCategorySchema.parse(data);
 
-    const title = parsed.translations[0]?.title;
-
-    if (!title) {
-      return errorResponse("Title required");
-    }
-
-    const slug = parsed.slug
-      ? parsed.slug
-      : await generateUniqueSlug(title);
+    const translationsWithSlug = await Promise.all(
+      parsed.translations.map(async (t) => ({
+        ...t,
+        slug: await generateUniqueSlug(
+          "subcategory",
+          t.locale,
+          t.slug ?? t.title
+        ),
+      }))
+    );
 
     const result = await db.$transaction(async (tx) => {
-      const exists = await tx.subCategory.findFirst({
-        where: { slug, NOT: { id } },
-      });
-
-      if (exists) throw new Error("Slug already exists");
-
       await tx.subCategoryTranslation.deleteMany({
         where: { subCategoryId: id },
       });
@@ -99,19 +89,22 @@ export async function updateSubCategory(
       return tx.subCategory.update({
         where: { id },
         data: {
-          slug,
           imageUrl: parsed.imageUrl ?? null,
           isActive: parsed.isActive ?? true,
           categoryId: parsed.categoryId,
           hsnCodeId: parsed.hsnCodeId ?? null,
+
           translations: {
-            create: parsed.translations,
+            create: translationsWithSlug,
           },
+
           metaTitle: parsed.metaTitle ?? null,
           metaDescription: parsed.metaDescription ?? null,
         },
         include: {
           translations: true,
+          category: true,
+          hsnCode: true,
         },
       });
     });
@@ -119,7 +112,7 @@ export async function updateSubCategory(
     return successResponse(result);
   } catch (error: unknown) {
     const err = handleError(error);
-    return errorResponse(err.message);
+    return errorResponse(err.message, err.errors);
   }
 }
 
@@ -129,7 +122,12 @@ export async function deleteSubCategory(
   id: string
 ): Promise<ApiResponse<boolean>> {
   try {
-    await db.subCategory.delete({ where: { id } });
+    // 🔥 soft delete (recommended)
+    await db.subCategory.update({
+      where: { id },
+      data: { isActive: false },
+    });
+
     return successResponse(true);
   } catch (error: unknown) {
     const err = handleError(error);
@@ -137,8 +135,11 @@ export async function deleteSubCategory(
   }
 }
 
+/* ================= GET ================= */
 
-export async function getSubCategories() {
+export async function getSubCategories(): Promise<
+  ApiResponse<unknown>
+> {
   try {
     const subCategories = await db.subCategory.findMany({
       include: {
@@ -151,9 +152,9 @@ export async function getSubCategories() {
       },
     });
 
-    return subCategories;
-  } catch (error) {
-    console.error("Error fetching subcategories:", error);
-    return [];
+    return successResponse(subCategories);
+  } catch (error: unknown) {
+    const err = handleError(error);
+    return errorResponse(err.message);
   }
 }

@@ -7,19 +7,34 @@ import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
 export async function createMarket(data: unknown) {
   const parsed = marketSchema.parse(data);
 
-  const slug = await generateUniqueSlug("market", parsed.title);
+  // 🔥 generate slug per translation
+  const translationsWithSlug = await Promise.all(
+    parsed.translations.map(async (t) => ({
+      ...t,
+      slug: await generateUniqueSlug(
+        "market",
+        t.locale,
+        t.slug ?? t.title
+      ),
+    }))
+  );
 
-  return db.market.create({
+  const market = await db.market.create({
     data: {
-      slug,
-      title: parsed.title,
-      description: parsed.description,
       logoUrl: parsed.logoUrl,
-      translations: { create: parsed.translations },
+      isActive: parsed.isActive,
+
+      translations: {
+        create: translationsWithSlug,
+      },
 
       categories: {
-        connect: parsed.categoryIds?.map((id) => ({ id })),
+        connect: parsed.categoryIds?.map((id) => ({
+          id,
+        })),
       },
     },
   });
+
+  return market;
 }

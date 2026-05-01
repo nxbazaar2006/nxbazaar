@@ -1,28 +1,28 @@
-"use client"
+"use client";
 
-import { Trash2 } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
-import toast from "react-hot-toast"
-import Swal from "sweetalert2"
+import { Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 
 interface DeleteBtnProps {
-  id: string
-  title: string
-  endpoint: string
+  id: string;
+  title: string;
+  endpoint: string;
+  onDelete?: (id: string) => void; // 🔥 optimistic
 }
 
 export default function DeleteBtn({
   id,
   title,
   endpoint,
+  onDelete,
 }: DeleteBtnProps) {
-
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function handleDelete() {
-
     const result = await Swal.fire({
       title: "Are you sure?",
       text: `Delete this ${title}?`,
@@ -30,33 +30,39 @@ export default function DeleteBtn({
       showCancelButton: true,
       confirmButtonColor: "#d33",
       confirmButtonText: "Yes, delete it!",
-    })
+    });
 
-    if (!result.isConfirmed) return
+    if (!result.isConfirmed) return;
 
     try {
-      setLoading(true)
+      setLoading(true);
 
-      const res = await fetch(`/api/${endpoint}`, {
+      // 🔥 Optimistic UI (row तुरंत हटे)
+      onDelete?.(id);
+
+      const res = await fetch(`/api${endpoint}`, {
         method: "DELETE",
-      })
+      });
 
       if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.message || "Delete failed")
+        throw new Error("Delete failed");
       }
 
-      toast.success(`${title} deleted successfully`)
-      router.refresh()
+      toast.success(`${title} deleted successfully`);
+
+      // 🔁 server sync (safe)
+      router.refresh();
 
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error("Something went wrong")
-      }
+      console.error(error);
+
+      toast.error("Delete failed");
+
+      // ❗ rollback (data वापस लाओ)
+      router.refresh();
+
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -64,7 +70,7 @@ export default function DeleteBtn({
     <button
       onClick={handleDelete}
       disabled={loading}
-      className="font-medium text-red-600 flex items-center space-x-1"
+      className="font-medium text-red-600 flex items-center space-x-1 disabled:opacity-50"
     >
       {loading ? (
         <span>Deleting...</span>
@@ -75,5 +81,5 @@ export default function DeleteBtn({
         </>
       )}
     </button>
-  )
+  );
 }

@@ -108,12 +108,12 @@ export const columns: ColumnDef<CategoryColumn>[] = [
       const category = row.original;
 
       return (
-        <ActionColumn
-          row={row}
-          title="Category"
-          editEndpoint={`categories/update/${category.id}`}
-          endpoint={`categories/${category.id}`}
-        />
+      <ActionColumn
+  row={row}
+  title="Category"
+  editEndpoint={`/categories/update/${category.id}`} // ✅ full path
+  endpoint={`/categories/${category.id}`}
+/>
       );
     },
   },

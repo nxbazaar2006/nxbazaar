@@ -1,64 +1,84 @@
 "use client";
 
-import type { SubCategory } from "@/types/subcategory";
 import {
   useQuery,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
-import api  from "@/lib/axios";
+
 import type {
+  SubCategory,
   SubCategoryInput,
   UpdateSubCategoryPayload,
 } from "@/types/subcategory";
 
-// ✅ CREATE
+import api from "@/lib/axios";
+import { apiRequest } from "@/lib/api-client";
+
+/* ================= KEYS ================= */
+export const subCategoryKeys = {
+  all: ["subcategories"] as const,
+};
+
+/* ================= CREATE ================= */
 export function useCreateSubCategory() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (data: SubCategoryInput) => {
-      const res = await api.post("/subcategories", data);
-      return res.data;
-    },
+  return useMutation<SubCategory, Error, SubCategoryInput>({
+    mutationFn: (data) =>
+      apiRequest(api.post("/subcategories", data)),
+
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subcategories"] });
+      qc.invalidateQueries({ queryKey: subCategoryKeys.all });
+      toast.success("SubCategory created");
     },
-    onError: () => {
-      toast.error("Create failed");
+
+    onError: (err) => {
+      toast.error(err.message || "Create failed");
     },
   });
 }
 
-// ✅ UPDATE
+/* ================= UPDATE ================= */
 export function useUpdateSubCategory() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({ id, data }: UpdateSubCategoryPayload) => {
-      const res = await api.put(`/subcategories/${id}`, data);
-      return res.data;
+  return useMutation<
+    SubCategory,
+    Error,
+    UpdateSubCategoryPayload
+  >({
+    mutationFn: ({ id, data }) =>
+      apiRequest(api.put(`/subcategories/${id}`, data)),
+
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: subCategoryKeys.all });
+      qc.invalidateQueries({
+        queryKey: ["subcategory", variables.id],
+      });
+
+      toast.success("Updated successfully");
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subcategories"] });
-    },
-    onError: () => {
-      toast.error("Update failed");
+
+    onError: (err) => {
+      toast.error(err.message || "Update failed");
     },
   });
 }
 
-// ✅ GET ALL
+/* ================= GET ================= */
 export function useSubCategories(initialData?: SubCategory[]) {
-  return useQuery({
-    queryKey: ["subcategories"],
-    queryFn: async (): Promise<SubCategory[]> => {
-      const res = await api.get("/subcategories?locale=en");
-      return res.data;
-    },
+  return useQuery<SubCategory[]>({
+    queryKey: subCategoryKeys.all,
+
+    queryFn: () =>
+      apiRequest<SubCategory[]>(
+        api.get("/subcategories?locale=EN")
+      ),
+
     initialData,
-    staleTime: 1000 * 60 * 5, // 🔥 cache 5 min
+    staleTime: 1000 * 60 * 5,
     retry: 1,
   });
 }

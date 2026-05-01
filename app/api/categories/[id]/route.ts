@@ -1,41 +1,51 @@
 import { NextResponse } from "next/server";
 import { updateCategory } from "@/actions/category";
-import { generateUniqueSlug } from "@/lib/utils/generateUniqueSlug";
 import { db } from "@/lib/db";
+import { CategorySchema } from "@/lib/validators/category.schema";
+
+/* ---------------------------------- */
+/* ✅ ERROR HELPER */
+/* ---------------------------------- */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return "Something went wrong";
+}
+
+/* ---------------------------------- */
+/* ✅ PUT (UPDATE) */
+/* ---------------------------------- */
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const body = await req.json();
+    const { id } = await params; // ✅ FIX
 
-    const slug = await generateUniqueSlug(
-      "category",
-      body.title,
-      params.id
-    );
+    const body: unknown = await req.json();
+    const parsed = CategorySchema.parse(body);
 
-    const result = await updateCategory(params.id, {
-      ...body,
-      slug,
-    });
+    const result = await updateCategory(id, parsed);
 
     return NextResponse.json(result);
-  } catch (error) {
-    console.error(error);
+  } catch (error: unknown) {
+    console.error("PUT ERROR:", error);
+
     return NextResponse.json(
-      { error: "Update failed" },
-      { status: 500 }
+      { error: getErrorMessage(error) },
+      { status: 400 }
     );
   }
 }
 
+/* ---------------------------------- */
+/* ✅ GET (SINGLE) */
+/* ---------------------------------- */
 export async function GET(
-  req: NextRequest,
-  { params }: { params: Params }
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await params; // ✅ FIX
 
     const category = await db.category.findUnique({
       where: { id },
@@ -52,28 +62,29 @@ export async function GET(
     }
 
     return NextResponse.json(category);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("GET ERROR:", error);
 
     return NextResponse.json(
-      { message: "Fetch failed" },
+      { message: getErrorMessage(error) },
       { status: 500 }
     );
   }
 }
 
-
-// ✅ DELETE CATEGORY
+/* ---------------------------------- */
+/* ✅ DELETE */
+/* ---------------------------------- */
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Params }
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await params; // ✅ FIX
 
     if (!id) {
       return NextResponse.json(
-        { message: "ID is required" },
+        { message: "Invalid ID" },
         { status: 400 }
       );
     }
@@ -85,11 +96,11 @@ export async function DELETE(
     return NextResponse.json({
       message: "Deleted successfully",
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("DELETE ERROR:", error);
 
     return NextResponse.json(
-      { message: "Delete failed" },
+      { message: getErrorMessage(error) },
       { status: 500 }
     );
   }

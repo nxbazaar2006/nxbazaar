@@ -1,21 +1,26 @@
 import { z } from "zod";
-import { LanguageEnum, OptionalString, IdSchema } from "./common";
+import {
+  LanguageEnum,
+  OptionalString,
+  IdSchema,
+  requiredString,
+} from "./common";
 
+/* ---------------------------------- */
+/* ✅ TRANSLATION SCHEMA */
+/* ---------------------------------- */
 export const subCategoryTranslationSchema = z.object({
-<<<<<<< HEAD
   locale: LanguageEnum,
-  title: z.string().min(1),
-  description: OptionalString,
-=======
-  locale: localeEnum,
-  slug: optionalString(),
+  slug: OptionalString,
 
   title: requiredString("Title", 2),
 
-  description: optionalString(),
->>>>>>> 5cea87c5237b5e7bbd98e5f2766d0573faa130c1
+  description: OptionalString,
 });
 
+/* ---------------------------------- */
+/* ✅ MAIN SCHEMA */
+/* ---------------------------------- */
 export const subCategorySchema = z.object({
   slug: OptionalString,
   imageUrl: OptionalString,
@@ -26,12 +31,12 @@ export const subCategorySchema = z.object({
 
   translations: z.array(subCategoryTranslationSchema).min(1),
 });
-<<<<<<< HEAD
-=======
 
+/* ---------------------------------- */
+/* ✅ TYPES */
+/* ---------------------------------- */
 export type SubCategoryInput = z.infer<typeof subCategorySchema>;
 
 export type SubCategoryTranslationInput = z.infer<
   typeof subCategoryTranslationSchema
 >;
->>>>>>> 5cea87c5237b5e7bbd98e5f2766d0573faa130c1

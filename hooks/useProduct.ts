@@ -16,16 +16,24 @@ import {
 
 import type { ProductInput } from "@/lib/validators/productSchema";
 import type { ProductWithRelations } from "@/types/product";
+import { unwrap } from "@/lib/api-helper";
+
+/* ================= QUERY KEYS ================= */
+export const productKeys = {
+  all: ["products"] as const,
+};
 
 /* ================= GET ================= */
 export const useProducts = () => {
   return useQuery<ProductWithRelations[]>({
-    queryKey: ["products"],
+    queryKey: productKeys.all,
     queryFn: async () => {
-      const res = await getProducts();
-      if (!res.success) throw new Error(res.error);
-      return res.data.data;
+      const data = await unwrap<{ data: ProductWithRelations[] }>(
+        getProducts()
+      );
+      return data.data;
     },
+    staleTime: 1000 * 60 * 5,
   });
 };
 
@@ -34,13 +42,10 @@ export const useCreateProduct = () => {
   const qc = useQueryClient();
 
   return useMutation<ProductWithRelations, Error, ProductInput>({
-    mutationFn: async (data) => {
-      const res = await createProduct(data);
-      if (!res.success) throw new Error(res.error);
-      return res.data;
-    },
+    mutationFn: (data) => unwrap(createProduct(data)),
+
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: productKeys.all });
     },
   });
 };
@@ -54,43 +59,77 @@ export const useUpdateProduct = () => {
     Error,
     { id: string; data: ProductInput }
   >({
-    mutationFn: async ({ id, data }) => {
-      const res = await updateProduct(id, data);
-      if (!res.success) throw new Error(res.error);
-      return res.data;
-    },
+    mutationFn: ({ id, data }) =>
+      unwrap(updateProduct(id, data)),
+
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: productKeys.all });
     },
   });
 };
 
-/* ================= DELETE ================= */
+/* ================= DELETE (Optimistic) ================= */
 export const useDeleteProduct = () => {
   const qc = useQueryClient();
 
   return useMutation<void, Error, string>({
-    mutationFn: async (id) => {
-      const res = await deleteProduct(id);
-      if (!res.success) throw new Error(res.error);
+    mutationFn: (id) => unwrap(deleteProduct(id)),
+
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: productKeys.all });
+
+      const prev = qc.getQueryData<ProductWithRelations[]>(
+        productKeys.all
+      );
+
+      qc.setQueryData<ProductWithRelations[]>(productKeys.all, (old = []) =>
+        old.filter((p) => p.id !== id)
+      );
+
+      return { prev };
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
+
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) {
+        qc.setQueryData(productKeys.all, ctx.prev);
+      }
+    },
+
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: productKeys.all });
     },
   });
 };
 
-/* ================= BULK DELETE ================= */
+/* ================= BULK DELETE (Optimistic) ================= */
 export const useBulkDeleteProducts = () => {
   const qc = useQueryClient();
 
   return useMutation<void, Error, string[]>({
-    mutationFn: async (ids) => {
-      const res = await bulkDeleteProduct(ids);
-      if (!res.success) throw new Error(res.error);
+    mutationFn: (ids) => unwrap(bulkDeleteProduct(ids)),
+
+    onMutate: async (ids) => {
+      await qc.cancelQueries({ queryKey: productKeys.all });
+
+      const prev = qc.getQueryData<ProductWithRelations[]>(
+        productKeys.all
+      );
+
+      qc.setQueryData<ProductWithRelations[]>(productKeys.all, (old = []) =>
+        old.filter((p) => !ids.includes(p.id))
+      );
+
+      return { prev };
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
+
+    onError: (_err, _ids, ctx) => {
+      if (ctx?.prev) {
+        qc.setQueryData(productKeys.all, ctx.prev);
+      }
+    },
+
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: productKeys.all });
     },
   });
 };

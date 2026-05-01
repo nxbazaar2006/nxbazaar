@@ -8,43 +8,66 @@ import {
   getBlogs,
   getBlogById,
 } from "@/lib/actions/blog.actions";
+import { BlogInput } from "@/lib/validators/blog.schema";
 
-// ✅ GET ALL
+/* ✅ Blog Type */
+type BlogWithRelations = {
+  id: string;
+  translations?: {
+    id: string;
+    title: string;
+    slug: string;
+    locale: string;
+  }[];
+};
+
+/* ---------------------------------- */
+/* ✅ GET ALL */
+/* ---------------------------------- */
 export function useBlogs() {
-  return useQuery({
+  return useQuery<BlogWithRelations[]>({
     queryKey: ["blogs"],
     queryFn: getBlogs,
+    staleTime: 1000 * 60 * 5,
   });
 }
 
-// ✅ GET SINGLE
+/* ---------------------------------- */
+/* ✅ GET SINGLE */
+/* ---------------------------------- */
 export function useBlog(id: string) {
-  return useQuery({
+  return useQuery<BlogWithRelations>({
     queryKey: ["blog", id],
     queryFn: () => getBlogById(id),
     enabled: !!id,
+    staleTime: 1000 * 60 * 5,
   });
 }
 
-// ✅ CREATE
+/* ---------------------------------- */
+/* ✅ CREATE */
+/* ---------------------------------- */
 export function useCreateBlog() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: createBlog,
+    mutationFn: (data: BlogInput) => createBlog(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["blogs"] });
     },
   });
 }
 
-// ✅ UPDATE
+/* ---------------------------------- */
+/* ✅ UPDATE */
+/* ---------------------------------- */
 export function useUpdateBlog() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: unknown }) =>
+    mutationFn: ({ id, data }: { id: string; data: BlogInput }) =>
       updateBlog(id, data),
+
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ["blogs"] });
       qc.invalidateQueries({ queryKey: ["blog", variables.id] });
@@ -52,13 +75,34 @@ export function useUpdateBlog() {
   });
 }
 
-// ✅ DELETE
+/* ---------------------------------- */
+/* ✅ DELETE */
+/* ---------------------------------- */
 export function useDeleteBlog() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: deleteBlog,
-    onSuccess: () => {
+    mutationFn: (id: string) => deleteBlog(id),
+
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["blogs"] });
+
+      const previousBlogs = qc.getQueryData<BlogWithRelations[]>(["blogs"]);
+
+      qc.setQueryData<BlogWithRelations[]>(["blogs"], (old = []) =>
+        old.filter((blog) => blog.id !== id)
+      );
+
+      return { previousBlogs };
+    },
+
+    onError: (_err, _id, context) => {
+      if (context?.previousBlogs) {
+        qc.setQueryData(["blogs"], context.previousBlogs);
+      }
+    },
+
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["blogs"] });
     },
   });

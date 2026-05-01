@@ -2,18 +2,17 @@
 
 import { db } from "@/lib/db";
 import { CategorySchema } from "@/lib/validators/category.schema";
-import { generateUniqueSlug } from "@/lib/slug/generateUniqueSlug";
+import {
+  generateUniqueSlug,
+  createTranslationWithSlug,
+} from "@/lib/slug/translationSlug";
 import { revalidatePath } from "next/cache";
-import { Language } from "@prisma/client";
 
-// ✅ locale mapper (FIX)
-function mapLocale(locale: string): Language {
-  return locale.toUpperCase() as Language;
-}
 
-// =====================
-// ✅ CREATE
-// =====================
+
+/* ---------------------------------- */
+/* ✅ CREATE */
+/* ---------------------------------- */
 export async function createCategory(data: unknown) {
   const parsed = CategorySchema.safeParse(data);
 
@@ -21,39 +20,44 @@ export async function createCategory(data: unknown) {
     return { error: parsed.error.flatten() };
   }
 
-  const { title, description, imageUrl, isActive, locale } =
-    parsed.data;
+  const { imageUrl, isActive, translations } = parsed.data;
 
-  const normalizedLocale = mapLocale(locale);
+  const baseTitle = translations[0].title;
+  const slug = await generateUniqueSlug("category", "EN", baseTitle);
 
-  const slug = await generateUniqueSlug(title);
-
+  // ✅ पहले category create करो
   const category = await db.category.create({
     data: {
       slug,
       imageUrl,
       isActive,
-      translations: {
-        create: [
-          {
-            title,
-            description,
-            locale: normalizedLocale,
-          },
-        ],
-      },
     },
+  });
+
+  // ✅ फिर translations create करो (IMPORTANT FIX)
+  for (const t of translations) {
+    await createTranslationWithSlug({
+      entity: "category",
+      parentId: category.id,
+      locale: t.locale,
+      title: t.title,
+      description: t.description,
+    });
+  }
+
+  const result = await db.category.findUnique({
+    where: { id: category.id },
     include: { translations: true },
   });
 
   revalidatePath("/dashboard/categories");
 
-  return { data: category };
+  return { data: result };
 }
 
-// =====================
-// ✅ UPDATE
-// =====================
+/* ---------------------------------- */
+/* ✅ UPDATE */
+/* ---------------------------------- */
 export async function updateCategory(id: string, data: unknown) {
   const parsed = CategorySchema.safeParse(data);
 
@@ -61,12 +65,8 @@ export async function updateCategory(id: string, data: unknown) {
     return { error: parsed.error.flatten() };
   }
 
-  const { title, description, imageUrl, isActive, locale } =
-    parsed.data;
+  const { imageUrl, isActive, translations } = parsed.data;
 
-  const normalizedLocale = mapLocale(locale);
-
-  // 🔍 existing category
   const existing = await db.category.findUnique({
     where: { id },
     include: { translations: true },
@@ -76,37 +76,44 @@ export async function updateCategory(id: string, data: unknown) {
     return { error: "Category not found" };
   }
 
-  // ✅ correct locale-wise title
-  const oldTranslation = existing.translations?.find(
-    (t) => t.locale === normalizedLocale
-  );
-
-  const oldTitle = oldTranslation?.title;
-
+  // ✅ slug logic (EN based)
+  const newTitle = translations.find((t) => t.locale === "EN")?.title;
   let slug = existing.slug;
 
-  // ✅ slug update only if title changed
-  if (title !== oldTitle) {
-    slug = await generateUniqueSlug(title);
+  if (
+    newTitle &&
+    newTitle !==
+      existing.translations.find((t) => t.locale === "EN")?.title
+  ) {
+    slug = await generateUniqueSlug("category", "EN", newTitle);
   }
 
-  const updated = await db.category.update({
+  // ✅ update category
+  await db.category.update({
     where: { id },
     data: {
       slug,
       imageUrl,
       isActive,
       translations: {
-        deleteMany: { locale: normalizedLocale },
-        create: [
-          {
-            title,
-            description,
-            locale: normalizedLocale,
-          },
-        ],
+        deleteMany: {}, // साफ करो
       },
     },
+  });
+
+  // ✅ फिर translations recreate करो
+  for (const t of translations) {
+    await createTranslationWithSlug({
+      entity: "category",
+      parentId: id,
+      locale: t.locale,
+      title: t.title,
+      description: t.description,
+    });
+  }
+
+  const updated = await db.category.findUnique({
+    where: { id },
     include: { translations: true },
   });
 
@@ -115,17 +122,20 @@ export async function updateCategory(id: string, data: unknown) {
   return { data: updated };
 }
 
-// =====================
-// ✅ DELETE
-// =====================
+/* ---------------------------------- */
+/* ✅ DELETE */
+/* ---------------------------------- */
 export async function deleteCategory(id: string) {
   await db.category.delete({ where: { id } });
+
+  revalidatePath("/dashboard/categories");
+
   return { success: true };
 }
 
-// =====================
-// ✅ GET ONE
-// =====================
+/* ---------------------------------- */
+/* ✅ GET ONE */
+/* ---------------------------------- */
 export async function getCategoryById(id: string) {
   if (!id) throw new Error("Invalid ID");
 
@@ -139,19 +149,17 @@ export async function getCategoryById(id: string) {
   return { data: category };
 }
 
-// =====================
-// ✅ GET ALL
-// =====================
+/* ---------------------------------- */
+/* ✅ GET ALL */
+/* ---------------------------------- */
 export async function getCategories() {
   try {
-    const categories = await db.category.findMany({
+    return await db.category.findMany({
       orderBy: { createdAt: "desc" },
       include: { translations: true },
     });
-
-    return categories; // ✅ direct array
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching categories:", error);
-    return []; // ✅ always array
+    return [];
   }
 }

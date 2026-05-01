@@ -7,19 +7,35 @@ import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
 export async function createBlog(data: unknown) {
   const parsed = blogSchema.parse(data);
 
-  const title = parsed.translations[0]?.title;
-  const slug = await generateUniqueSlug("blog", title);
+  // 🔥 generate slug per translation
+  const translationsWithSlug = await Promise.all(
+    parsed.translations.map(async (t) => ({
+      ...t,
+      slug: await generateUniqueSlug(
+        "blog",
+        t.locale,
+        t.slug ?? t.title
+      ),
+    }))
+  );
 
-  return db.blog.create({
+  const blog = await db.blog.create({
     data: {
-      slug,
       content: parsed.content,
       userId: parsed.userId,
       categoryId: parsed.categoryId,
-      translations: { create: parsed.translations },
+
+      translations: {
+        create: translationsWithSlug,
+      },
+
       relatedProducts: {
-        connect: parsed.relatedProductIds?.map((id) => ({ id })),
+        connect: parsed.relatedProductIds?.map((id) => ({
+          id,
+        })),
       },
     },
   });
+
+  return blog;
 }

@@ -2,10 +2,10 @@ import CategoriesClient from "./CategoriesClient";
 import { getCategories } from "@/actions/category";
 
 export default async function CategoriesPage() {
-  const res = await getCategories();
+  const categoriesData = await getCategories();
 
-  // ✅ unwrap + normalize
-  const categories = (res.data ?? []).map((cat) => ({
+  // ✅ normalize data
+  const categories = (categoriesData ?? []).map((cat) => ({
     id: cat.id,
     imageUrl: cat.imageUrl ?? null,
     isActive: cat.isActive,

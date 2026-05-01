@@ -1,5 +1,3 @@
-// lib/validators/category.schema.ts
-
 import { z } from "zod";
 import { Language } from "@prisma/client";
 
@@ -28,10 +26,17 @@ export const CategoryTranslationSchema = z.object({
 
   slug: z.preprocess(
     emptyToUndefined,
-    z.string().trim().min(2).optional()
+    z
+      .string()
+      .trim()
+      .regex(/^[a-z0-9-]+$/, "Invalid slug format")
+      .optional() // ✅ important
   ),
 
-  title: z.string().trim().min(2, "Title must be at least 2 characters"),
+  title: z
+    .string()
+    .trim()
+    .min(2, "Title must be at least 2 characters"),
 
   description: z.preprocess(
     emptyToUndefined,
@@ -44,7 +49,11 @@ export const CategoryTranslationSchema = z.object({
 export const CategorySchema = z.object({
   slug: z.preprocess(
     emptyToUndefined,
-    z.string().trim().min(2)
+    z
+      .string()
+      .trim()
+      .regex(/^[a-z0-9-]+$/, "Invalid slug format")
+      .optional() // ✅ changed (auto generate support)
   ),
 
   imageUrl: z.preprocess(
@@ -54,7 +63,6 @@ export const CategorySchema = z.object({
 
   isActive: z.boolean().default(true),
 
-  // ✅ IMPORTANT
   translations: z
     .array(CategoryTranslationSchema)
     .min(1, "At least one translation is required")

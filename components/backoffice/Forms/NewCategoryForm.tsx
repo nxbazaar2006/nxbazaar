@@ -13,8 +13,6 @@ import {
 } from "@/hooks/useCategory";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 
 
 import TextInput from "@/components/FormInputs/TextInput";
@@ -22,56 +20,66 @@ import TextareaInput from "@/components/FormInputs/TextAreaInput";
 import ToggleInput from "@/components/FormInputs/ToggleInput";
 import ImageInput from "@/components/FormInputs/ImageInput";
 
-type Props = {
-  initialData?: Partial<CategoryInput> & {
-    id?: string;
-  };
-};
-
+/* ---------------------------------- */
+/* ✅ FORM SCHEMA (NO SLUG) */
+/* ---------------------------------- */
 const CategoryFormSchema = z.object({
-  slug: z.string().trim().min(2, "Slug must be at least 2 characters"),
   title: z.string().trim().min(2, "Title must be at least 2 characters"),
   description: z.string().optional(),
-  imageUrl: z.string().url("Image URL must be a valid URL").optional().or(z.literal("")),
+  imageUrl: z
+    .string()
+    .url("Image URL must be a valid URL")
+    .optional()
+    .or(z.literal("")),
   isActive: z.boolean(),
   locale: z.enum(["EN", "HI"]),
 });
 
 type CategoryFormValues = z.infer<typeof CategoryFormSchema>;
 
+type Props = {
+  initialData?: {
+    id?: string;
+    title?: string;
+    description?: string;
+    imageUrl?: string;
+    isActive?: boolean;
+    locale?: "EN" | "HI";
+  };
+};
+
 export default function CategoryForm({ initialData }: Props) {
   const router = useRouter();
-  const queryClient = useQueryClient(); 
-  const { toast } = useToast(); 
+  const { toast } = useToast();
 
   const id = initialData?.id;
 
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory(id ?? "");
 
-  const [imageUrl, setImageUrl] = useState<string>(
-    initialData?.imageUrl ?? ""
-  );
+ 
 
   const {
-  register,
-  handleSubmit,
-  control, // ✅ यही use करो
-  formState: { errors },
-} = useForm<CategoryFormValues>({
-  resolver: zodResolver(CategoryFormSchema),
-  defaultValues: {
-    slug: initialData?.slug ?? "",
-    title: initialData?.translations?.[0]?.title ?? "",
-    description: initialData?.translations?.[0]?.description ?? "",
-    imageUrl: initialData?.imageUrl ?? "",
-    isActive: initialData?.isActive ?? true,
-    locale: initialData?.translations?.[0]?.locale ?? "EN",
-  },
-});
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<CategoryFormValues>({
+    resolver: zodResolver(CategoryFormSchema),
+    defaultValues: {
+      title: initialData?.title ?? "",
+      description: initialData?.description ?? "",
+      imageUrl: initialData?.imageUrl ?? "",
+      isActive: initialData?.isActive ?? true,
+      locale: initialData?.locale ?? "EN",
+    },
+  });
+
+  /* ---------------------------------- */
+  /* ✅ SUBMIT */
+  /* ---------------------------------- */
   const onSubmit = async (data: CategoryFormValues) => {
     const payload: CategoryInput = {
-      slug: data.slug,
       imageUrl: data.imageUrl,
       isActive: data.isActive,
       translations: [
@@ -87,7 +95,6 @@ export default function CategoryForm({ initialData }: Props) {
       if (id) {
         await updateMutation.mutateAsync(payload);
 
-        
         toast({
           title: "Success 🎉",
           description: "Category updated successfully",
@@ -101,20 +108,13 @@ export default function CategoryForm({ initialData }: Props) {
         });
       }
 
-      
-      queryClient.invalidateQueries({
-        queryKey: ["categories"],
-      });
-
-      // optional delay (better UX)
+      // ✅ redirect
       setTimeout(() => {
         router.push("/dashboard/categories");
-      }, 500);
-
+      }, 400);
     } catch (error) {
       console.error("SUBMIT ERROR:", error);
 
-      // ❌ ERROR MESSAGE
       toast({
         title: "Error ❌",
         description: "Something went wrong",
@@ -135,13 +135,7 @@ export default function CategoryForm({ initialData }: Props) {
       <GlassCard className="max-w-7xl mx-auto space-y-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           
-          <TextInput
-            label="Slug"
-            name="slug"
-            register={register}
-            errors={errors}
-          />
-
+          {/* ✅ TITLE */}
           <TextInput
             label="Category Title"
             name="title"
@@ -149,6 +143,7 @@ export default function CategoryForm({ initialData }: Props) {
             errors={errors}
           />
 
+          {/* ✅ DESCRIPTION */}
           <TextareaInput<CategoryFormValues>
             label="Description"
             name="description"
@@ -156,6 +151,7 @@ export default function CategoryForm({ initialData }: Props) {
             errors={errors}
           />
 
+          {/* ✅ IMAGE */}
           <ImageInput<CategoryFormValues>
             name="imageUrl"
             control={control}
@@ -163,6 +159,7 @@ export default function CategoryForm({ initialData }: Props) {
             label="Category Image"
           />
 
+          {/* ✅ LOCALE */}
           <select
             {...register("locale")}
             className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white"
@@ -171,6 +168,7 @@ export default function CategoryForm({ initialData }: Props) {
             <option value="HI">Hindi</option>
           </select>
 
+          {/* ✅ STATUS */}
           <ToggleInput
             label="Status"
             name="isActive"
@@ -179,6 +177,7 @@ export default function CategoryForm({ initialData }: Props) {
             falseTitle="Draft"
           />
 
+          {/* ✅ SUBMIT */}
           <button
             type="submit"
             disabled={isLoading}

@@ -1,4 +1,3 @@
-// hooks/useCategory.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createCategory,
@@ -7,43 +6,56 @@ import {
 } from "@/actions/category";
 import type { CategoryInput } from "@/lib/validators/category.schema";
 
+/* ---------------------------------- */
+/* ✅ COMMON ERROR HANDLER */
+/* ---------------------------------- */
+function handleResponse<T>(res: { data?: T; error?: string }): T {
+  if (res.error) throw new Error(res.error);
+  return res.data as T;
+}
+
+/* ---------------------------------- */
+/* ✅ CREATE */
+/* ---------------------------------- */
 export function useCreateCategory() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: CategoryInput) => {
-      const res = await createCategory(data);
-      if ("error" in res) throw res.error;
-      return res.data;
-    },
+    mutationFn: (data: CategoryInput) =>
+      createCategory(data).then(handleResponse),
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 }
 
+/* ---------------------------------- */
+/* ✅ UPDATE */
+/* ---------------------------------- */
 export function useUpdateCategory(id: string) {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: CategoryInput) => {
-      const res = await updateCategory(id, data);
-      if ("error" in res) throw res.error;
-      return res.data;
-    },
+    mutationFn: (data: CategoryInput) =>
+      updateCategory(id, data).then(handleResponse),
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["category", id] }); // ✅ detail refetch
     },
   });
 }
 
+/* ---------------------------------- */
+/* ✅ DELETE */
+/* ---------------------------------- */
 export function useDeleteCategory() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      return deleteCategory(id);
-    },
+    mutationFn: (id: string) => deleteCategory(id),
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["categories"] });
     },

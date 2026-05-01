@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
 import { blogSchema } from "@/lib/validators/blog.schema";
+import { Language } from "@prisma/client";
 
 // ================= CREATE BLOG =================
 export async function POST(req: NextRequest) {
@@ -9,20 +10,21 @@ export async function POST(req: NextRequest) {
     const body: unknown = await req.json();
     const data = blogSchema.parse(body);
 
-    const title = data.translations[0]?.title;
-
-    if (!title) {
-      return NextResponse.json(
-        { message: "Title is required" },
-        { status: 400 }
-      );
-    }
-
-    const slug = await generateUniqueSlug("blog", title);
+    // 🔥 slug per translation
+    const translationsWithSlug = await Promise.all(
+      data.translations.map(async (t) => ({
+        ...t,
+        locale: t.locale.toUpperCase() as Language,
+        slug: await generateUniqueSlug(
+          "blog",
+          t.locale,
+          t.slug ?? t.title
+        ),
+      }))
+    );
 
     const blog = await db.blog.create({
       data: {
-        slug,
         imageUrl: data.imageUrl,
         isActive: data.isActive,
         isFeatured: data.isFeatured,
@@ -32,10 +34,9 @@ export async function POST(req: NextRequest) {
         publishedAt: data.publishedAt,
 
         translations: {
-          create: data.translations,
+          create: translationsWithSlug,
         },
 
-        // 🔥 related products (many-to-many)
         relatedProducts: {
           connect: data.relatedProductIds?.map((id: string) => ({
             id,
@@ -49,9 +50,16 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(blog, { status: 201 });
-  } catch {
+  } catch (error) {
+    console.error("CREATE_BLOG_ERROR:", error);
+
     return NextResponse.json(
-      { message: "Failed to create blog" },
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to create blog",
+      },
       { status: 500 }
     );
   }
@@ -71,7 +79,9 @@ export async function GET() {
     });
 
     return NextResponse.json(blogs);
-  } catch {
+  } catch (error) {
+    console.error("GET_BLOGS_ERROR:", error);
+
     return NextResponse.json(
       { message: "Failed to fetch blogs" },
       { status: 500 }

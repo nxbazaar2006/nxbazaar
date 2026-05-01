@@ -28,22 +28,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
+import toast from "react-hot-toast";
 
 interface DataTableProps<TData extends { id: string }> {
   columns: ColumnDef<TData>[];
   data: TData[];
 
-  // ✅ generic delete
-  onDeleteMany?: (ids: string[]) => void;
+  onDeleteMany?: (ids: string[]) => Promise<void>;
   isDeleting?: boolean;
 }
 
 export default function DataTable<TData extends { id: string }>({
   columns,
-  data,
+  data: initialData,
   onDeleteMany,
   isDeleting,
 }: DataTableProps<TData>) {
+  const [data, setData] = React.useState(initialData);
+
   const [rowSelection, setRowSelection] =
     React.useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] =
@@ -52,6 +54,11 @@ export default function DataTable<TData extends { id: string }>({
     React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] =
     React.useState<SortingState>([]);
+
+  // 🔥 sync when server data changes
+  React.useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
 
   const table = useReactTable({
     data,
@@ -71,23 +78,45 @@ export default function DataTable<TData extends { id: string }>({
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+
+    // 🔥 META (single delete use करेगा)
+    meta: {
+      removeRow: (id: string) => {
+        setData((prev) => prev.filter((item) => item.id !== id));
+      },
+    },
   });
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
-
   const selectedIds = selectedRows.map((row) => row.original.id);
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!selectedIds.length || !onDeleteMany) return;
 
     const confirmDelete = confirm(
       `Delete ${selectedIds.length} items?`
     );
-
     if (!confirmDelete) return;
 
-    onDeleteMany(selectedIds);
-    table.resetRowSelection();
+    try {
+      // 🔥 Optimistic remove (bulk)
+      setData((prev) =>
+        prev.filter((item) => !selectedIds.includes(item.id))
+      );
+
+      await onDeleteMany(selectedIds);
+
+      toast.success("Deleted successfully");
+
+      table.resetRowSelection();
+    } catch (error) {
+      console.error(error);
+
+      toast.error("Delete failed");
+
+      // ❗ rollback
+      setData(initialData);
+    }
   }
 
   return (

@@ -1,6 +1,8 @@
 import {db} from "@/lib/db";
 import { NextResponse } from "next/server";
-import { CreateOrderPayload } from "@/types/order";
+import { auth } from "@/auth";
+import { createOrderSchema } from "@/lib/validators/order.schema";
+import { z } from "zod";
 
 // ✅ Generate Order Number
 function generateOrderNumber(length: number): string {
@@ -18,8 +20,17 @@ function generateOrderNumber(length: number): string {
 // ✅ CREATE ORDER
 export async function POST(request: Request) {
   try {
-    const body: CreateOrderPayload = await request.json();
+    const session = await auth();
+    const body = createOrderSchema.parse(await request.json());
     const { checkoutFormData, orderItems } = body;
+    const userId = session?.user?.id ?? checkoutFormData.userId;
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
     const {
       city,
@@ -31,11 +42,58 @@ export async function POST(request: Request) {
       paymentMethod,
       phone,
       shippingCost,
+      state,
       streetAddress,
-      userId,
+      zip,
     } = checkoutFormData;
 
     const result = await db.$transaction(async (prisma) => {
+      const products = await prisma.product.findMany({
+        where: {
+          id: { in: orderItems.map((item) => item.id) },
+        },
+        include: {
+          images: true,
+          variants: true,
+        },
+      });
+      const productById = new Map(products.map((product) => [product.id, product]));
+
+      const normalizedItems = orderItems.map((item) => {
+        const product = productById.get(item.id);
+
+        if (!product) {
+          throw new Error(`Product not found: ${item.id}`);
+        }
+
+        const variant =
+          product.variants.find((entry) => entry.id === item.productVariantId) ??
+          product.variants.find((entry) => entry.isDefault) ??
+          product.variants[0];
+
+        if (!variant) {
+          throw new Error(`Product variant not found: ${product.title}`);
+        }
+
+        const imageUrl =
+          variant.image ??
+          product.imageUrl ??
+          product.images.find((image) => image.isPrimary)?.url ??
+          product.images[0]?.url ??
+          item.imageUrl ??
+          null;
+
+        return {
+          productId: product.id,
+          productVariantId: variant.id,
+          vendorId: item.vendorId ?? product.userId,
+          quantity: Number(item.qty),
+          price: Number(variant.salePrice ?? variant.price),
+          title: item.title ?? product.title,
+          imageUrl,
+        };
+      });
+
       const newOrder = await prisma.order.create({
         data: {
           userId,
@@ -45,8 +103,9 @@ export async function POST(request: Request) {
           phone,
           streetAddress,
           city,
+          state: state ?? district ?? null,
           country,
-          district,
+          zip: zip ?? null,
           shippingCost: Number(shippingCost),
           paymentMethod,
           orderNumber: generateOrderNumber(8),
@@ -54,11 +113,12 @@ export async function POST(request: Request) {
       });
 
       await prisma.orderItem.createMany({
-        data: orderItems.map((item) => ({
-          productId: item.id,
-          vendorId: item.vendorId, // ✅ FIX
-          quantity: Number(item.qty),
-          price: Number(item.salePrice),
+        data: normalizedItems.map((item) => ({
+          productId: item.productId,
+          productVariantId: item.productVariantId,
+          vendorId: item.vendorId,
+          quantity: item.quantity,
+          price: item.price,
           orderId: newOrder.id,
           imageUrl: item.imageUrl,
           title: item.title,
@@ -66,20 +126,13 @@ export async function POST(request: Request) {
       });
 
       const sales = await Promise.all(
-        orderItems.map(async (item) => {
-          const totalAmount =
-            Number(item.salePrice) * Number(item.qty);
-
+        normalizedItems.map(async (item) => {
           return prisma.sale.create({
             data: {
               orderId: newOrder.id,
-              productTitle: item.title,
-              productImage: item.imageUrl,
-              productPrice: Number(item.salePrice),
-              productQty: Number(item.qty),
-              productId: item.id,
+              productId: item.productId,
               vendorId: item.vendorId,
-              total: totalAmount,
+              total: item.price * item.quantity,
             },
           });
         })
@@ -88,11 +141,26 @@ export async function POST(request: Request) {
       return { newOrder, sales };
     });
 
-    return NextResponse.json(result.newOrder);
+    return NextResponse.json({
+      success: true,
+      message: "Order created successfully",
+      data: result.newOrder,
+    });
   } catch (error) {
     console.error(error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid order data",
+          errors: error.flatten(),
+        },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
-      { message: "Failed to create Order", error },
+      { success: false, message: "Failed to create Order" },
       { status: 500 }
     );
   }
@@ -106,10 +174,14 @@ export async function GET() {
       include: { orderItems: true },
     });
 
-    return NextResponse.json(orders);
+    return NextResponse.json({
+      success: true,
+      message: "Orders fetched successfully",
+      data: orders,
+    });
   } catch (error) {
     return NextResponse.json(
-      { message: "Failed to Fetch Orders", error },
+      { success: false, message: "Failed to Fetch Orders", error },
       { status: 500 }
     );
   }

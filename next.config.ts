@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-
   webpack: (config) => {
     config.watchOptions = {
       poll: 1000,
@@ -13,22 +12,16 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "utfs.io",
-      },
-      {
-        protocol: "https",
-        hostname: "uploadthing.com",
-      },
-      {
-        protocol: "https",
-        hostname: "ufs.sh",
-      },
+      { protocol: "https", hostname: "utfs.io" },
+      { protocol: "https", hostname: "uploadthing.com" },
+      { protocol: "https", hostname: "ufs.sh" },
     ],
   },
 
   turbopack: {},
+
+  // ✅ NEW PLACE (important)
+  reactCompiler: false,
 };
 
 export default nextConfig;
