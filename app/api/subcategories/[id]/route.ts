@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { subCategorySchema } from "@/lib/validators/subcategory.schema";
 import { Language } from "@prisma/client";
+import { generateUniqueTranslationSlug } from "@/lib/slug/translationSlug.service";
 
 // ✅ GET SINGLE
 export async function GET(
@@ -77,23 +78,19 @@ export async function PUT(
         hsnCodeId: data.hsnCodeId,
 
         translations: {
-          upsert: translations.map((t) => ({
-            where: {
-              subCategoryId_locale: {
-                subCategoryId: id,
-                locale: t.locale,
-              },
-            },
-            update: {
-              title: t.title,
-              description: t.description,
-            },
-            create: {
+          deleteMany: { subCategoryId: id },
+          create: await Promise.all(
+            translations.map(async (t) => ({
               locale: t.locale,
               title: t.title,
               description: t.description,
-            },
-          })),
+              slug: await generateUniqueTranslationSlug(
+                "subcategory",
+                t.locale,
+                t.slug ?? t.title
+              ),
+            }))
+          ),
         },
       },
       include: {

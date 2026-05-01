@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { subCategorySchema } from "@/lib/validators/subcategory.schema";
 import { generateUniqueSlug } from "@/lib/utils/generateUniqueSlug";
+import { generateUniqueTranslationSlug } from "@/lib/slug/translationSlug.service";
 import { ZodError } from "zod";
 import { Language } from "@prisma/client";
 
@@ -20,30 +21,42 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const translations = data.translations.map((translation) => ({
-      ...translation,
-      locale: translation.locale.toUpperCase() as Language,
-    }));
-
-    // `generateUniqueSlug` in this repo currently works with a single title arg.
     const slug = await generateUniqueSlug(title);
 
-    const subCategory = await db.subCategory.create({
-      data: {
-        slug,
-        imageUrl: data.imageUrl,
-        isActive: data.isActive,
-        categoryId: data.categoryId,
-        hsnCodeId: data.hsnCodeId,
-        translations: {
-          create: translations,
+    const subCategory = await db.$transaction(async (tx) => {
+      const created = await tx.subCategory.create({
+        data: {
+          slug,
+          imageUrl: data.imageUrl,
+          isActive: data.isActive,
+          categoryId: data.categoryId,
+          hsnCodeId: data.hsnCodeId,
         },
-      },
-      include: {
-        translations: true,
-        category: true,
-        hsnCode: true,
-      },
+      });
+
+      for (const translation of data.translations) {
+        const locale = translation.locale.toUpperCase() as Language;
+        const translationSlug = await generateUniqueTranslationSlug(
+          "subcategory",
+          locale,
+          translation.slug ?? translation.title
+        );
+
+        await tx.subCategoryTranslation.create({
+          data: {
+            subCategoryId: created.id,
+            locale,
+            title: translation.title,
+            description: translation.description,
+            slug: translationSlug,
+          },
+        });
+      }
+
+      return tx.subCategory.findUnique({
+        where: { id: created.id },
+        include: { translations: true, category: true, hsnCode: true },
+      });
     });
 
     return NextResponse.json(subCategory, { status: 201 });
