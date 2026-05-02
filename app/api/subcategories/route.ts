@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { subCategorySchema } from "@/lib/validators/subcategory.schema";
 import { generateUniqueSlug } from "@/lib/utils/generateUniqueSlug";
+import { generateUniqueTranslationSlug } from "@/lib/slug/translationSlug.service";
 import { ZodError } from "zod";
 import { Language, Prisma } from "@prisma/client";
 
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+<<<<<<< HEAD
     const primaryLocale = data.translations[0]?.locale ?? "en";
     const slug = await generateUniqueSlug("subcategory", primaryLocale, title);
 
@@ -44,23 +46,44 @@ export async function POST(req: NextRequest) {
           )),
       }))
     );
+=======
+    const slug = await generateUniqueSlug(title);
+>>>>>>> 6cf6bafd1bc31939473fdfa5a272376b494100f7
 
-    const subCategory = await db.subCategory.create({
-      data: {
-        slug,
-        imageUrl: data.imageUrl,
-        isActive: data.isActive,
-        categoryId: data.categoryId,
-        hsnCodeId: data.hsnCodeId,
-        translations: {
-          create: translations,
+    const subCategory = await db.$transaction(async (tx) => {
+      const created = await tx.subCategory.create({
+        data: {
+          slug,
+          imageUrl: data.imageUrl,
+          isActive: data.isActive,
+          categoryId: data.categoryId,
+          hsnCodeId: data.hsnCodeId,
         },
-      },
-      include: {
-        translations: true,
-        category: true,
-        hsnCode: true,
-      },
+      });
+
+      for (const translation of data.translations) {
+        const locale = translation.locale.toUpperCase() as Language;
+        const translationSlug = await generateUniqueTranslationSlug(
+          "subcategory",
+          locale,
+          translation.slug ?? translation.title
+        );
+
+        await tx.subCategoryTranslation.create({
+          data: {
+            subCategoryId: created.id,
+            locale,
+            title: translation.title,
+            description: translation.description,
+            slug: translationSlug,
+          },
+        });
+      }
+
+      return tx.subCategory.findUnique({
+        where: { id: created.id },
+        include: { translations: true, category: true, hsnCode: true },
+      });
     });
 
     return NextResponse.json(subCategory, { status: 201 });

@@ -1,15 +1,33 @@
-import db from "@/lib/db";
-import { localeToLanguage } from "@/lib/i18n/languageMapper";
+import { db } from "@/lib/db";
+import { getSafeTranslation } from "@/lib/getTranslation";
+import { findEntityByTranslationSlug } from "@/lib/slug/translationSlug.service";
 
-export default async function Page({ params }: any) {
-  const language = localeToLanguage(params.locale);
+interface Props {
+  params: {
+    locale: string;
+    slug: string;
+  };
+}
 
-  const data = await db.productTranslation.findFirst({
-    where: {
-      slug: params.slug,
-      language,
-    },
-  });
+export default async function ProductLocalePage({ params }: Props) {
+  const product = await findEntityByTranslationSlug(
+    "product",
+    params.locale,
+    params.slug
+  );
 
-  return <div>{data?.title}</div>;
+  const productData =
+    product ??
+    (await db.product.findFirst({
+      where: { slug: params.slug },
+      include: { translations: true },
+    }));
+
+  if (!productData) {
+    return <div>Product not found</div>;
+  }
+
+  const t = getSafeTranslation(productData.translations, params.locale);
+
+  return <div>{t?.title ?? "Product"}</div>;
 }
