@@ -5,7 +5,6 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 import type {
   SubCategory,
@@ -13,8 +12,7 @@ import type {
   UpdateSubCategoryPayload,
 } from "@/types/subcategory";
 
-import api from "@/lib/axios";
-import { apiRequest } from "@/lib/api-client";
+import { apiClient } from "@/lib/api-client";
 
 /* ================= KEYS ================= */
 export const subCategoryKeys = {
@@ -27,15 +25,13 @@ export function useCreateSubCategory() {
 
   return useMutation<SubCategory, Error, SubCategoryInput>({
     mutationFn: (data) =>
-      apiRequest(api.post("/subcategories", data)),
+      apiClient.post<SubCategory, SubCategoryInput>(
+        "/subcategories",
+        data
+      ),
 
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: subCategoryKeys.all });
-      toast.success("SubCategory created");
-    },
-
-    onError: (err) => {
-      toast.error(err.message || "Create failed");
     },
   });
 }
@@ -50,19 +46,16 @@ export function useUpdateSubCategory() {
     UpdateSubCategoryPayload
   >({
     mutationFn: ({ id, data }) =>
-      apiRequest(api.put(`/subcategories/${id}`, data)),
+      apiClient.put<SubCategory, SubCategoryInput>(
+        `/subcategories/${id}`,
+        data
+      ),
 
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: subCategoryKeys.all });
       qc.invalidateQueries({
         queryKey: ["subcategory", variables.id],
       });
-
-      toast.success("Updated successfully");
-    },
-
-    onError: (err) => {
-      toast.error(err.message || "Update failed");
     },
   });
 }
@@ -73,8 +66,8 @@ export function useSubCategories(initialData?: SubCategory[]) {
     queryKey: subCategoryKeys.all,
 
     queryFn: () =>
-      apiRequest<SubCategory[]>(
-        api.get("/subcategories?locale=EN")
+      apiClient.get<SubCategory[]>(
+        "/subcategories?locale=EN"
       ),
 
     initialData,

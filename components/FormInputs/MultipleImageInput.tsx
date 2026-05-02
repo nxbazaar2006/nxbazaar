@@ -2,49 +2,89 @@
 
 import Image from "next/image";
 import { UploadButton } from "@/lib/uploadthing";
-import { UseFormSetValue } from "react-hook-form";
-import { ProductInput } from "@/lib/validators/productSchema";
+import { useState } from "react";
 
-type Props = {
-  label: string;
-  imageUrls: string[];
-  setImageUrls: (urls: string[]) => void;
-  endpoint: Endpoint;
+import {
+  FieldValues,
+  Path,
+  useController,
+  useFormContext,
+} from "react-hook-form";
 
-  setValue: UseFormSetValue<ProductInput>; // ✅ type-safe
+type UploadResponseItem = {
+  serverData?: { url?: string };
 };
 
-export default function MultipleImageInput({
+type Props<T extends FieldValues> = {
+  label: string;
+  name: Path<T>; // e.g. "images"
+  endpoint: Endpoint;
+};
+
+export default function MultipleImageInput<T extends FieldValues>({
   label,
-  imageUrls,
-  setImageUrls,
+  name,
   endpoint,
-  setValue,
-}: Props) {
+}: Props<T>) {
+  const { control } = useFormContext<T>();
 
+  const { field } = useController({
+    name,
+    control,
+    defaultValue: [],
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  const images: { url: string; isPrimary?: boolean }[] =
+    field.value || [];
+
+  /* ================= REMOVE ================= */
   function removeImage(index: number) {
-    const updated = imageUrls.filter((_, i) => i !== index);
+    const updated = images.filter((_, i) => i !== index);
 
-    setImageUrls(updated);
-    setValue(
-      "images",
-      updated.map((url, imageIndex) => ({
-        url,
-        isPrimary: imageIndex === 0,
+    field.onChange(
+      updated.map((img, i) => ({
+        ...img,
+        isPrimary: i === 0,
       }))
     );
   }
 
+  /* ================= UPLOAD ================= */
+  function handleUpload(res: UploadResponseItem[]) {
+    const urls =
+      res
+        ?.map((item) => item.serverData?.url)
+        .filter(Boolean) as string[];
+
+    const updated = [
+      ...images,
+      ...urls.map((url) => ({ url })),
+    ];
+
+    field.onChange(
+      updated.map((img, i) => ({
+        ...img,
+        isPrimary: i === 0,
+      }))
+    );
+
+    setLoading(false);
+  }
+
   return (
     <div className="space-y-4">
-      <label className="block text-sm font-medium">{label}</label>
+      <label className="block text-sm font-medium">
+        {label}
+      </label>
 
       {/* Preview */}
       <div className="flex gap-3 flex-wrap">
-        {imageUrls.map((img, i) => (
+        {images.map((img, i) => (
           <div key={i} className="relative">
             <Image
-              src={img}
+              src={img.url}
               width={100}
               height={100}
               alt="product"
@@ -58,6 +98,12 @@ export default function MultipleImageInput({
             >
               ✕
             </button>
+
+            {img.isPrimary && (
+              <span className="absolute bottom-1 left-1 text-[10px] bg-black text-white px-1 rounded">
+                Primary
+              </span>
+            )}
           </div>
         ))}
       </div>
@@ -65,22 +111,12 @@ export default function MultipleImageInput({
       {/* Upload */}
       <UploadButton
         endpoint={endpoint}
-        onClientUploadComplete={(res) => {
-          const urls = res.map((item) => item.serverData.url);
-
-          const updated = [...imageUrls, ...urls];
-
-          setImageUrls(updated);
-          setValue(
-            "images",
-            updated.map((url, imageIndex) => ({
-              url,
-              isPrimary: imageIndex === 0,
-            }))
-          );
-        }}
-        onUploadError={(error: Error) => {
-          alert(`Upload failed: ${error.message}`);
+        disabled={loading}
+        onUploadBegin={() => setLoading(true)}
+        onClientUploadComplete={handleUpload}
+        onUploadError={(err: Error) => {
+          console.error(err);
+          setLoading(false);
         }}
       />
     </div>

@@ -1,6 +1,6 @@
 import type { Language } from "@prisma/client";
 
-export type LocaleCode = Lowercase<`${Language}`>;
+export type LocaleCode = `${Language}` | Lowercase<`${Language}`>;
 
 export interface Option {
   id: string;
@@ -38,6 +38,7 @@ export interface SubCategory {
 export interface SubCategoryFormValues {
   title: string;
   description?: string;
+  locale: LocaleCode;
   categoryId: string;
   hsnCodeId?: string;
   imageUrl?: string;

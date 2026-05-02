@@ -26,8 +26,9 @@ type SubCategoryOption = {
 /* ================= PAGE ================= */
 
 export default async function NewProduct() {
-  let categoriesData = [];
-  let subCategoriesData = [];
+  let categoriesData: Awaited<ReturnType<typeof getCategories>> = [];
+  let subCategoriesResponse: Awaited<ReturnType<typeof getSubCategories>> | null =
+    null;
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -36,7 +37,7 @@ export default async function NewProduct() {
 
   /* ================= FETCH DATA (PARALLEL + SAFE) ================= */
   try {
-    [categoriesData, subCategoriesData] = await Promise.all([
+    [categoriesData, subCategoriesResponse] = await Promise.all([
       getCategories(),
       getSubCategories(),
     ]);
@@ -51,8 +52,20 @@ export default async function NewProduct() {
   }
 
   /* ================= SAFE FALLBACK ================= */
-  const safeCategories = categoriesData ?? [];
-  const safeSubCategories = subCategoriesData ?? [];
+  const safeCategories = Array.isArray(categoriesData) ? categoriesData : [];
+
+  if (!subCategoriesResponse?.success) {
+    return (
+      <div className="p-6 text-red-500">
+        Failed to load subcategories:{" "}
+        {subCategoriesResponse?.message ?? "Unknown error"}
+      </div>
+    );
+  }
+
+  const safeSubCategories = Array.isArray(subCategoriesResponse.data)
+    ? subCategoriesResponse.data
+    : [];
 
   /* ================= MAP DATA ================= */
 

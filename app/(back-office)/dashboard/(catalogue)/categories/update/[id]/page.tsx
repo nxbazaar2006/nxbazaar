@@ -1,5 +1,5 @@
 import { getCategoryById } from "@/actions/category";
-import NewCategoryForm from "@/components/backoffice/forms/NewCategoryForm";
+import NewCategoryForm from "@/components/backoffice/Forms/NewCategoryForm";
 import { Language } from "@prisma/client";
 
 interface UpdatePageProps {

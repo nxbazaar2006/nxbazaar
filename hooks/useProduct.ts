@@ -28,10 +28,7 @@ export const useProducts = () => {
   return useQuery<ProductWithRelations[]>({
     queryKey: productKeys.all,
     queryFn: async () => {
-      const data = await unwrap<{ data: ProductWithRelations[] }>(
-        getProducts()
-      );
-      return data.data;
+      return unwrap<ProductWithRelations[]>(getProducts());
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -72,8 +69,10 @@ export const useUpdateProduct = () => {
 export const useDeleteProduct = () => {
   const qc = useQueryClient();
 
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => unwrap(deleteProduct(id)),
+  return useMutation<void, Error, string, { prev?: ProductWithRelations[] }>({
+    mutationFn: async (id) => {
+      await unwrap(deleteProduct(id));
+    },
 
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: productKeys.all });
@@ -105,8 +104,10 @@ export const useDeleteProduct = () => {
 export const useBulkDeleteProducts = () => {
   const qc = useQueryClient();
 
-  return useMutation<void, Error, string[]>({
-    mutationFn: (ids) => unwrap(bulkDeleteProduct(ids)),
+  return useMutation<void, Error, string[], { prev?: ProductWithRelations[] }>({
+    mutationFn: async (ids) => {
+      await unwrap(bulkDeleteProduct(ids));
+    },
 
     onMutate: async (ids) => {
       await qc.cancelQueries({ queryKey: productKeys.all });

@@ -2,7 +2,7 @@
 
 import GlassCard from "@/components/GlassCard";
 import FormHeader from "@/components/backoffice/FormHeader";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CategoryInput } from "@/lib/validators/category.schema";
@@ -11,28 +11,22 @@ import {
   useCreateCategory,
   useUpdateCategory,
 } from "@/hooks/useCategory";
-
 import { useRouter } from "next/navigation";
-
 
 import TextInput from "@/components/FormInputs/TextInput";
 import TextareaInput from "@/components/FormInputs/TextAreaInput";
 import ToggleInput from "@/components/FormInputs/ToggleInput";
 import ImageInput from "@/components/FormInputs/ImageInput";
+import SubmitButton from "@/components/FormInputs/SubmitButton";
 
-/* ---------------------------------- */
-/* ✅ FORM SCHEMA (NO SLUG) */
-/* ---------------------------------- */
+/* ================= SCHEMA ================= */
+
 const CategoryFormSchema = z.object({
   title: z.string().trim().min(2, "Title must be at least 2 characters"),
   description: z.string().optional(),
-  imageUrl: z
-    .string()
-    .url("Image URL must be a valid URL")
-    .optional()
-    .or(z.literal("")),
+  imageUrl: z.string().optional().or(z.literal("")),
   isActive: z.boolean(),
-  locale: z.enum(["EN", "HI"]),
+  locale: z.enum(["EN", "HI", "MR"]),
 });
 
 type CategoryFormValues = z.infer<typeof CategoryFormSchema>;
@@ -44,7 +38,7 @@ type Props = {
     description?: string;
     imageUrl?: string;
     isActive?: boolean;
-    locale?: "EN" | "HI";
+    locale?: "EN" | "HI" | "MR";
   };
 };
 
@@ -57,14 +51,9 @@ export default function CategoryForm({ initialData }: Props) {
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory(id ?? "");
 
- 
+  /* ================= FORM ================= */
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm<CategoryFormValues>({
+  const form = useForm<CategoryFormValues>({
     resolver: zodResolver(CategoryFormSchema),
     defaultValues: {
       title: initialData?.title ?? "",
@@ -75,9 +64,8 @@ export default function CategoryForm({ initialData }: Props) {
     },
   });
 
-  /* ---------------------------------- */
-  /* ✅ SUBMIT */
-  /* ---------------------------------- */
+  /* ================= SUBMIT ================= */
+
   const onSubmit = async (data: CategoryFormValues) => {
     const payload: CategoryInput = {
       imageUrl: data.imageUrl,
@@ -94,27 +82,22 @@ export default function CategoryForm({ initialData }: Props) {
     try {
       if (id) {
         await updateMutation.mutateAsync(payload);
-
         toast({
           title: "Success 🎉",
           description: "Category updated successfully",
         });
       } else {
         await createMutation.mutateAsync(payload);
-
         toast({
           title: "Success 🎉",
           description: "Category created successfully",
         });
       }
 
-      // ✅ redirect
-      setTimeout(() => {
-        router.push("/dashboard/categories");
-      }, 400);
+      router.push("/dashboard/categories");
+      router.refresh();
     } catch (error) {
-      console.error("SUBMIT ERROR:", error);
-
+      console.error(error);
       toast({
         title: "Error ❌",
         description: "Something went wrong",
@@ -125,6 +108,12 @@ export default function CategoryForm({ initialData }: Props) {
 
   const isLoading =
     createMutation.isPending || updateMutation.isPending;
+  const title = useWatch({
+    control: form.control,
+    name: "title",
+  });
+
+  /* ================= UI ================= */
 
   return (
     <div className="p-6 space-y-6">
@@ -133,65 +122,72 @@ export default function CategoryForm({ initialData }: Props) {
       />
 
       <GlassCard className="max-w-7xl mx-auto space-y-6">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          
-          {/* ✅ TITLE */}
-          <TextInput
-            label="Category Title"
-            name="title"
-            register={register}
-            errors={errors}
-          />
-
-          {/* ✅ DESCRIPTION */}
-          <TextareaInput<CategoryFormValues>
-            label="Description"
-            name="description"
-            register={register}
-            errors={errors}
-          />
-
-          {/* ✅ IMAGE */}
-          <ImageInput<CategoryFormValues>
-            name="imageUrl"
-            control={control}
-            endpoint="categoryImageUploader"
-            label="Category Image"
-          />
-
-          {/* ✅ LOCALE */}
-          <select
-            {...register("locale")}
-            className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white"
+        <FormProvider {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4"
           >
-            <option value="EN">English</option>
-            <option value="HI">Hindi</option>
-          </select>
+            {/* TITLE */}
+            <TextInput
+              label="Category Title"
+              name="title"
+              required
+            />
 
-          {/* ✅ STATUS */}
-          <ToggleInput
-            label="Status"
-            name="isActive"
-            register={register}
-            trueTitle="Active"
-            falseTitle="Draft"
-          />
+            {/* DESCRIPTION */}
+            <TextareaInput
+              label="Description"
+              name="description"
+              languageName="locale"
+              rows={6}
+              features={{
+                ai: true,
+                voice: true,
+                language: true,
+                editor: true,
+              }}
+              aiPrompt={`Create an ecommerce category description for ${
+                title || "this category"
+              }`}
+            />
 
-          {/* ✅ SUBMIT */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-2 rounded-lg bg-white/20 hover:bg-white/30 border border-white/30 text-white transition"
-          >
-            {isLoading
-              ? id
-                ? "Updating..."
-                : "Creating..."
-              : id
-              ? "Update Category"
-              : "Create Category"}
-          </button>
-        </form>
+            {/* IMAGE */}
+            <ImageInput
+              name="imageUrl"
+              endpoint="categoryImageUploader"
+              label="Category Image"
+            />
+
+            {/* LOCALE */}
+            <select
+              {...form.register("locale")}
+              className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white"
+            >
+              <option value="EN">English</option>
+              <option value="HI">Hindi</option>
+              <option value="MR">Marathi</option>
+            </select>
+
+            {/* STATUS */}
+            <ToggleInput
+              label="Status"
+              name="isActive"
+              trueTitle="Active"
+              falseTitle="Draft"
+            />
+
+            {/* SUBMIT */}
+            <SubmitButton
+              isLoading={isLoading}
+              buttonTitle={
+                id ? "Update Category" : "Create Category"
+              }
+              loadingButtonTitle={
+                id ? "Updating..." : "Creating..."
+              }
+            />
+          </form>
+        </FormProvider>
       </GlassCard>
     </div>
   );

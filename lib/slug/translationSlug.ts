@@ -1,9 +1,6 @@
 import { db } from "@/lib/db";
 import { Language } from "@prisma/client";
 
-/* ---------------------------------- */
-/* ✅ ENTITY TYPES */
-/* ---------------------------------- */
 export const SUPPORTED_SLUG_ENTITIES = [
   "category",
   "subcategory",
@@ -24,46 +21,19 @@ export interface CreateTranslationSlugInput {
   slug?: string;
 }
 
-/* ---------------------------------- */
-/* ✅ SLUGIFY */
-/* ---------------------------------- */
 export function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\p{L}\p{N}\s-]/gu, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  const value = String(text ?? "").trim();
+
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "") || "item"
+  );
 }
 
-/* ---------------------------------- */
-/* ✅ MODEL MAP */
-/* ---------------------------------- */
-const modelMap = {
-  category: db.categoryTranslation,
-  subcategory: db.subCategoryTranslation,
-  product: db.productTranslation,
-  blog: db.blogTranslation,
-  vlog: db.vlogTranslation,
-  market: db.marketTranslation,
-} as const;
-
-/* ---------------------------------- */
-/* ✅ PARENT FIELD MAP */
-/* ---------------------------------- */
-const parentFieldMap = {
-  category: "categoryId",
-  subcategory: "subCategoryId",
-  product: "productId",
-  blog: "blogId",
-  vlog: "vlogId",
-  market: "marketId",
-} as const;
-
-/* ---------------------------------- */
-/* ✅ SAFE LOCALE NORMALIZER */
-/* ---------------------------------- */
 function normalizeLocale(locale: string): Language {
   const upper = locale.toUpperCase();
 
@@ -74,30 +44,57 @@ function normalizeLocale(locale: string): Language {
   return upper as Language;
 }
 
-/* ---------------------------------- */
-/* ✅ CHECK SLUG EXISTS */
-/* ---------------------------------- */
 async function isSlugTaken(
   entity: SlugEntity,
   locale: Language,
   slug: string
 ): Promise<boolean> {
-  const model = modelMap[entity];
-
-  const exists = await model.findFirst({
-    where: {
-      slug,
-      locale,
-    },
-    select: { id: true },
-  });
-
-  return !!exists;
+  switch (entity) {
+    case "category":
+      return Boolean(
+        await db.categoryTranslation.findFirst({
+          where: { slug, locale },
+          select: { id: true },
+        })
+      );
+    case "subcategory":
+      return Boolean(
+        await db.subCategoryTranslation.findFirst({
+          where: { slug, locale },
+          select: { id: true },
+        })
+      );
+    case "product":
+      return Boolean(
+        await db.productTranslation.findFirst({
+          where: { slug, locale },
+          select: { id: true },
+        })
+      );
+    case "blog":
+      return Boolean(
+        await db.blogTranslation.findFirst({
+          where: { slug, locale },
+          select: { id: true },
+        })
+      );
+    case "vlog":
+      return Boolean(
+        await db.vlogTranslation.findFirst({
+          where: { slug, locale },
+          select: { id: true },
+        })
+      );
+    case "market":
+      return Boolean(
+        await db.marketTranslation.findFirst({
+          where: { slug, locale },
+          select: { id: true },
+        })
+      );
+  }
 }
 
-/* ---------------------------------- */
-/* ✅ GENERATE UNIQUE SLUG */
-/* ---------------------------------- */
 export async function generateUniqueSlug(
   entity: SlugEntity,
   locale: string,
@@ -110,9 +107,9 @@ export async function generateUniqueSlug(
   let counter = 1;
 
   while (counter < 1000) {
-    const exists = await isSlugTaken(entity, normalizedLocale, slug);
-
-    if (!exists) return slug;
+    if (!(await isSlugTaken(entity, normalizedLocale, slug))) {
+      return slug;
+    }
 
     slug = `${base}-${counter++}`;
   }
@@ -120,37 +117,79 @@ export async function generateUniqueSlug(
   throw new Error("Slug generation failed");
 }
 
-/* ---------------------------------- */
-/* ✅ CREATE WITH SLUG */
-/* ---------------------------------- */
 export async function createTranslationWithSlug(
   input: CreateTranslationSlugInput
 ) {
-  const model = modelMap[input.entity];
   const locale = normalizeLocale(input.locale);
-
   const slug = await generateUniqueSlug(
     input.entity,
     input.locale,
     input.slug ?? input.title
   );
 
-  const parentField = parentFieldMap[input.entity];
-
-  return model.create({
-    data: {
-      [parentField]: input.parentId,
-      locale,
-      title: input.title,
-      description: input.description,
-      slug,
-    },
-  });
+  switch (input.entity) {
+    case "category":
+      return db.categoryTranslation.create({
+        data: {
+          categoryId: input.parentId,
+          locale,
+          title: input.title,
+          description: input.description,
+          slug,
+        },
+      });
+    case "subcategory":
+      return db.subCategoryTranslation.create({
+        data: {
+          subCategoryId: input.parentId,
+          locale,
+          title: input.title,
+          description: input.description,
+          slug,
+        },
+      });
+    case "product":
+      return db.productTranslation.create({
+        data: {
+          productId: input.parentId,
+          locale,
+          title: input.title,
+          description: input.description,
+          slug,
+        },
+      });
+    case "blog":
+      return db.blogTranslation.create({
+        data: {
+          blogId: input.parentId,
+          locale,
+          title: input.title,
+          description: input.description,
+          slug,
+        },
+      });
+    case "vlog":
+      return db.vlogTranslation.create({
+        data: {
+          vlogId: input.parentId,
+          locale,
+          title: input.title,
+          slug,
+        },
+      });
+    case "market":
+      return db.marketTranslation.create({
+        data: {
+          marketId: input.parentId,
+          locale,
+          title: input.title,
+          description: input.description,
+          slug,
+        },
+      });
+  }
 }
 
-/* ---------------------------------- */
-/* ✅ FIND ENTITY BY SLUG */
-/* ---------------------------------- */
 export async function findEntityBySlug(
   entity: SlugEntity,
   locale: string,
@@ -158,24 +197,60 @@ export async function findEntityBySlug(
 ) {
   const normalizedLocale = normalizeLocale(locale);
 
-  const includeMap = {
-    category: { translations: true },
-    subcategory: { translations: true, category: true },
-    product: { translations: true, category: true, subCategory: true },
-    blog: { translations: true, category: true },
-    vlog: { translations: true },
-    market: { translations: true, categories: true },
-  };
-
-  return db[entity].findFirst({
-    where: {
-      translations: {
-        some: {
-          slug,
-          locale: normalizedLocale,
+  switch (entity) {
+    case "category":
+      return db.category.findFirst({
+        where: {
+          translations: {
+            some: { slug, locale: normalizedLocale },
+          },
         },
-      },
-    },
-    include: includeMap[entity],
-  });
+        include: { translations: true },
+      });
+    case "subcategory":
+      return db.subCategory.findFirst({
+        where: {
+          translations: {
+            some: { slug, locale: normalizedLocale },
+          },
+        },
+        include: { translations: true, category: true },
+      });
+    case "product":
+      return db.product.findFirst({
+        where: {
+          translations: {
+            some: { slug, locale: normalizedLocale },
+          },
+        },
+        include: { translations: true, category: true, subCategory: true },
+      });
+    case "blog":
+      return db.blog.findFirst({
+        where: {
+          translations: {
+            some: { slug, locale: normalizedLocale },
+          },
+        },
+        include: { translations: true, category: true },
+      });
+    case "vlog":
+      return db.vlog.findFirst({
+        where: {
+          translations: {
+            some: { slug, locale: normalizedLocale },
+          },
+        },
+        include: { translations: true },
+      });
+    case "market":
+      return db.market.findFirst({
+        where: {
+          translations: {
+            some: { slug, locale: normalizedLocale },
+          },
+        },
+        include: { translations: true, categories: true },
+      });
+  }
 }

@@ -42,7 +42,7 @@ export function useUpdateCategory(id: string) {
 
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["categories"] });
-      qc.invalidateQueries({ queryKey: ["category", id] }); // ✅ detail refetch
+      qc.invalidateQueries({ queryKey: ["category", id] }); 
     },
   });
 }

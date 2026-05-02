@@ -3,7 +3,15 @@ import { db } from "@/lib/db";
 import { subCategorySchema } from "@/lib/validators/subcategory.schema";
 import { generateUniqueSlug } from "@/lib/utils/generateUniqueSlug";
 import { ZodError } from "zod";
-import { Language } from "@prisma/client";
+import { Language, Prisma } from "@prisma/client";
+
+type SubCategoryListItem = Prisma.SubCategoryGetPayload<{
+  include: {
+    translations: true;
+    category: { include: { translations: true } };
+    hsnCode: true;
+  };
+}>;
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,13 +28,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const translations = data.translations.map((translation) => ({
-      ...translation,
-      locale: translation.locale.toUpperCase() as Language,
-    }));
+    const primaryLocale = data.translations[0]?.locale ?? "en";
+    const slug = await generateUniqueSlug("subcategory", primaryLocale, title);
 
-    // `generateUniqueSlug` in this repo currently works with a single title arg.
-    const slug = await generateUniqueSlug(title);
+    const translations = await Promise.all(
+      data.translations.map(async (translation) => ({
+        ...translation,
+        locale: translation.locale.toUpperCase() as Language,
+        slug:
+          translation.slug ??
+          (await generateUniqueSlug(
+            "subcategory",
+            translation.locale,
+            translation.title
+          )),
+      }))
+    );
 
     const subCategory = await db.subCategory.create({
       data: {
@@ -67,9 +84,10 @@ export async function POST(req: NextRequest) {
   }
 }
 export async function GET(req: NextRequest) {
-  const locale = req.nextUrl.searchParams.get("locale")?.toUpperCase() || "EN";
+  const locale = (req.nextUrl.searchParams.get("locale")?.toUpperCase() ||
+    "EN") as Language;
 
-  const data = await db.subCategory.findMany({
+  const data: SubCategoryListItem[] = await db.subCategory.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       translations: {

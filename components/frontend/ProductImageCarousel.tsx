@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import type { Swiper as SwiperType } from "swiper";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 import "swiper/css";
@@ -20,7 +21,7 @@ export default function ProductImageCarousel({
   productImages = [],
   thumbnail,
 }: Props) {
-  const [thumbsSwiper, setThumbsSwiper] = useState<any>(null);
+  const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const images =
@@ -45,7 +46,7 @@ export default function ProductImageCarousel({
               : null,
         }}
         modules={[FreeMode, Navigation, Thumbs]}
-        className="rounded-lg overflow-hidden"
+        className="rounded-lg overflow-hidden border-4 border-white"
       >
         {images.map((image, i) => (
           <SwiperSlide key={i}>
@@ -74,10 +75,10 @@ export default function ProductImageCarousel({
         {images.map((image, i) => (
           <SwiperSlide key={i}>
             <div
-              className={`p-[2px] rounded-md cursor-pointer ${
+              className={`p-[2px] rounded-md cursor-pointer border-white ${
                 activeIndex === i
                   ? "border-2 border-orange-500"
-                  : "border"
+                  : "border-2"
               }`}
             >
               <Image

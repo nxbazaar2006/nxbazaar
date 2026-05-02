@@ -46,7 +46,7 @@ export default function Product({ product }: ProductProps) {
           alt={product.title}
           width={556}
           height={556}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover border-4 border-white"
         />
       </Link>
 
@@ -62,7 +62,7 @@ export default function Product({ product }: ProductProps) {
 
           <button
             onClick={handleAddToCart}
-            className="flex items-center space-x-2 bg-lime-600 px-4 py-2 rounded-md text-white"
+            className="flex items-center space-x-2 rounded-md border border-white/40 bg-gradient-to-r from-lime-500 via-emerald-500 to-teal-500 px-4 py-2 text-white shadow-lg shadow-emerald-500/25 backdrop-blur-md transition hover:from-lime-400 hover:via-emerald-400 hover:to-teal-400 hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98]"
           >
             <BaggageClaim />
             <span>Add</span>

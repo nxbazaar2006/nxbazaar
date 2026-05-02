@@ -1,12 +1,19 @@
 "use client";
 
-import { useForm, useWatch } from "react-hook-form";
+import {
+  FormProvider,
+  Resolver,
+  useForm,
+  useWatch,
+} from "react-hook-form";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { generateSlug } from "@/lib/generateSlug";
 import { toast } from "sonner";
-import { useState } from "react";
+import GlassCard from "@/components/GlassCard";
+import FormHeader from "@/components/backoffice/FormHeader";
 
 import {
   useUpdateSubCategory,
@@ -25,9 +32,24 @@ import {
   Option,
   SubCategory,
   SubCategoryFormValues,
+  HsnCodeOption,
 } from "@/types/subcategory";
 
 import { IdSchema, OptionalString } from "@/lib/validators/common";
+
+/* ================= SCHEMA ================= */
+
+const subCategoryFormSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: OptionalString,
+  locale: z.enum(["en", "hi", "mr", "EN", "HI", "MR"]).default("en"),
+  categoryId: IdSchema,
+  hsnCodeId: IdSchema.optional().or(z.literal("")),
+  imageUrl: OptionalString,
+  isActive: z.boolean().default(true),
+});
+
+/* ================= COMPONENT ================= */
 
 type Props = {
   updateData?: SubCategory;
@@ -38,22 +60,6 @@ type ApiError = {
   message?: string;
 };
 
-type HsnOption = {
-  id: string;
-  code: string;
-  title: string;
-  gstRate: number;
-};
-
-const subCategoryFormSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: OptionalString,
-  categoryId: IdSchema,
-  hsnCodeId: IdSchema.optional().or(z.literal("")),
-  imageUrl: OptionalString,
-  isActive: z.boolean().default(true),
-});
-
 export default function SubCategoryForm({
   updateData,
   categories = [],
@@ -61,19 +67,18 @@ export default function SubCategoryForm({
   const router = useRouter();
 
   const translation = updateData?.translations?.[0];
+  const [selectedHsn, setSelectedHsn] = useState<HsnCodeOption | null>(
+    updateData?.hsnCode ?? null
+  );
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    control,
-    formState: { errors },
-  } = useForm<SubCategoryFormValues>({
-    resolver: zodResolver(subCategoryFormSchema),
+  /* ================= FORM ================= */
+
+  const form = useForm<SubCategoryFormValues>({
+    resolver: zodResolver(subCategoryFormSchema) as Resolver<SubCategoryFormValues>,
     defaultValues: {
       title: translation?.title ?? "",
       description: translation?.description ?? "",
+      locale: "en",
       categoryId: updateData?.categoryId ?? "",
       hsnCodeId: updateData?.hsnCodeId ?? "",
       isActive: updateData?.isActive ?? true,
@@ -81,42 +86,27 @@ export default function SubCategoryForm({
     },
   });
 
+  /* ================= MUTATIONS ================= */
+
   const createMutation = useCreateSubCategory();
   const updateMutation = useUpdateSubCategory();
+  const title = useWatch({
+    control: form.control,
+    name: "title",
+  });
+
+  /* ================= OPTIONS ================= */
 
   const categoryOptions = categories.map((cat) => ({
     id: cat.id,
     title: cat.title,
   }));
 
-  // ✅ SAFE WATCH
-  const imageUrl = useWatch({
-    control,
-    name: "imageUrl",
-  });
+  /* ================= SUBMIT ================= */
 
-  const hsnCodeId = useWatch({
-    control,
-    name: "hsnCodeId",
-  });
-
-  // ✅ HSN STATE
-  const [selectedHsnData, setSelectedHsnData] =
-    useState<HsnOption | null>(null);
-
-  // ✅ EDIT MODE SUPPORT
-  const selectedHsn =
-    updateData?.hsnCode && !selectedHsnData && !hsnCodeId
-      ? {
-          id: updateData.hsnCode.id,
-          code: updateData.hsnCode.code,
-          title: updateData.hsnCode.title,
-          gstRate: updateData.hsnCode.gstRate,
-        }
-      : null;
-
-  // ✅ SUBMIT
   const onSubmit = (data: SubCategoryFormValues) => {
+    const locale = data.locale.toLowerCase() as "en" | "hi" | "mr";
+
     const payload = {
       slug: generateSlug(data.title),
       imageUrl: data.imageUrl || "",
@@ -125,7 +115,7 @@ export default function SubCategoryForm({
       hsnCodeId: data.hsnCodeId || null,
       translations: [
         {
-          locale: "en" as const,
+          locale,
           title: data.title,
           description: data.description,
         },
@@ -138,7 +128,7 @@ export default function SubCategoryForm({
         {
           onSuccess: () => {
             toast.success("SubCategory Updated Successfully");
-            reset();
+            form.reset();
             router.push("/dashboard/subcategories");
             router.refresh();
           },
@@ -147,14 +137,13 @@ export default function SubCategoryForm({
           },
         }
       );
-
       return;
     }
 
     createMutation.mutate(payload, {
       onSuccess: () => {
         toast.success("SubCategory Created Successfully");
-        reset();
+        form.reset();
         router.push("/dashboard/subcategories");
         router.refresh();
       },
@@ -167,80 +156,96 @@ export default function SubCategoryForm({
   const isLoading =
     createMutation.isPending || updateMutation.isPending;
 
+  /* ================= UI ================= */
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      
-      {/* CATEGORY */}
-      <SelectInput<SubCategoryFormValues>
-        label="Category"
-        name="categoryId"
-        options={categoryOptions}
-        register={register}
-        error={errors.categoryId}
+    <div className="p-6 space-y-6">
+      <FormHeader
+        title={updateData ? "Update SubCategory" : "Create SubCategory"}
       />
 
-      {/* TITLE */}
-      <TextInput
-        label="Title"
-        name="title"
-        register={register}
-        errors={errors}
-      />
+      <GlassCard className="max-w-7xl mx-auto space-y-6">
+        <FormProvider {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4"
+          >
+            {/* CATEGORY */}
+            <input type="hidden" {...form.register("hsnCodeId")} />
 
-      {/* DESCRIPTION */}
-      <TextareaInput
-        label="Description"
-        name="description"
-        register={register}
-        errors={errors}
-      />
+            <SelectInput
+              label="Category"
+              name="categoryId"
+              options={categoryOptions}
+            />
 
-      {/* ✅ IMAGE (FIXED WITH ENDPOINT) */}
-      <ImageInput
-        label="Image"
-        endpoint="subcategoryImageUploader"
-        imageUrl={imageUrl ?? ""}
-        setImageUrl={(url) =>
-          setValue("imageUrl", url, {
-            shouldValidate: true,
-            shouldDirty: true,
-          })
-        }
-      />
+            {/* TITLE */}
+            <TextInput
+              label="Title"
+              name="title"
+              required
+            />
 
-      {/* ✅ HSN (FULL FIX) */}
-      <SearchSelectInput
-        value={selectedHsnData ?? selectedHsn ?? null}
-        onChange={(val: HsnOption | null) => {
-          setSelectedHsnData(val);
+            {/* DESCRIPTION */}
+            <TextareaInput
+              label="Description"
+              name="description"
+              languageName="locale"
+              rows={6}
+              features={{
+                ai: true,
+                voice: true,
+                language: true,
+                editor: true,
+              }}
+              aiPrompt={`Create an ecommerce subcategory description for ${
+                title || "this subcategory"
+              }`}
+            />
 
-          setValue("hsnCodeId", val?.id ?? "", {
-            shouldValidate: true,
-            shouldDirty: true,
-            shouldTouch: true,
-          });
-        }}
-      />
+            {/* IMAGE */}
+            <ImageInput
+              label="Image"
+              name="imageUrl"
+              endpoint="subcategoryImageUploader"
+            />
 
-      {/* STATUS */}
-      <ToggleInput
-        name="isActive"
-        label="Status"
-        register={register}
-      />
+            {/* HSN */}
+            <SearchSelectInput<SubCategoryFormValues>
+              value={selectedHsn}
+              onChange={(value) => {
+                setSelectedHsn(value);
+                form.setValue("hsnCodeId", value?.id ?? "", {
+                  shouldDirty: true,
+                  shouldTouch: true,
+                  shouldValidate: true,
+                });
+              }}
+            />
 
-      {/* SUBMIT */}
-      <SubmitButton
-        isLoading={isLoading}
-        buttonTitle={
-          updateData
-            ? "Update SubCategory"
-            : "Create SubCategory"
-        }
-        loadingButtonTitle={
-          updateData ? "Updating..." : "Creating..."
-        }
-      />
-    </form>
+            {/* STATUS */}
+            <ToggleInput
+              name="isActive"
+              label="Status"
+              trueTitle="Active"
+              falseTitle="Inactive"
+            />
+
+            {/* SUBMIT */}
+            <SubmitButton
+              isLoading={isLoading}
+              buttonTitle={
+                updateData
+                  ? "Update SubCategory"
+                  : "Create SubCategory"
+              }
+              loadingButtonTitle={
+                updateData ? "Updating..." : "Creating..."
+              }
+            />
+          </form>
+        </FormProvider>
+      </GlassCard>
+    </div>
   );
 }

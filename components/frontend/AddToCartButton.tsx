@@ -61,7 +61,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
   return (
     <button
       onClick={handleAddToCart}
-      className="flex items-center gap-2 bg-lime-600 hover:bg-lime-700 transition px-4 py-2 rounded-md text-white text-sm font-medium"
+      className="flex items-center gap-2 rounded-md border border-white/40 bg-gradient-to-r from-lime-500 via-emerald-500 to-teal-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-emerald-500/25 backdrop-blur-md transition hover:from-lime-400 hover:via-emerald-400 hover:to-teal-400 hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98]"
     >
       <BaggageClaim size={18} />
       <span>Add to Cart</span>

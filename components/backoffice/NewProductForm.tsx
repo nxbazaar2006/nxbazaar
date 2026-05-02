@@ -1,11 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useFieldArray, useForm } from "react-hook-form";
+import {
+  FormProvider,
+  Resolver,
+  useFieldArray,
+  useForm,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import FormHeader from "@/components/backoffice/FormHeader";
+import GlassCard from "@/components/GlassCard";
 import ArrayItemsInput from "@/components/FormInputs/ArrayItemsInput";
 import MultipleImageInput from "@/components/FormInputs/MultipleImageInput";
 import SearchSelectInput from "@/components/FormInputs/SearchSelectInput";
@@ -14,7 +22,6 @@ import SubmitButton from "@/components/FormInputs/SubmitButton";
 import TextInput from "@/components/FormInputs/TextInput";
 import TextareaInput from "@/components/FormInputs/TextAreaInput";
 import ToggleInput from "@/components/FormInputs/ToggleInput";
-
 import {
   LOCALES,
   productSchema,
@@ -36,26 +43,12 @@ type HsnOption = {
   gstRate: number;
 };
 
-<<<<<<< HEAD
 type SubCategoryOption = {
   id: string;
   title: string;
   categoryId: string;
   hsnCode?: HsnOption | null;
 };
-=======
-
-const randomCode = (length: number) =>
-  Math.random()
-    .toString(36)
-    .replace(/[^a-z0-9]/gi, "")
-    .toUpperCase()
-    .slice(0, length)
-    .padEnd(length, "0");
-
-const generateSku = () => `SKU-${randomCode(8)}`;
-const generateProductCode = () => `PC-${randomCode(10)}`;
->>>>>>> 5cea87c5237b5e7bbd98e5f2766d0573faa130c1
 
 type Props = {
   userId: string;
@@ -67,6 +60,295 @@ type Props = {
   };
 };
 
+type TranslationCardProps = {
+  index: number;
+  aiPromptBase: string;
+  canRemove: boolean;
+  onRemove: () => void;
+};
+
+type VariantCardProps = {
+  index: number;
+  canRemove: boolean;
+  isDefault: boolean;
+  onRemove: () => void;
+  onSetDefault: () => void;
+};
+
+const randomCode = (length: number) =>
+  Math.random()
+    .toString(36)
+    .replace(/[^a-z0-9]/gi, "")
+    .toUpperCase()
+    .slice(0, length)
+    .padEnd(length, "0");
+
+const generateSku = () => `SKU-${randomCode(8)}`;
+const generateProductCode = () => `PC-${randomCode(10)}`;
+
+const UNIT_OPTIONS = [
+  { label: "Number", value: "number" },
+  { label: "Qty", value: "qty" },
+  { label: "Piece", value: "piece" },
+  { label: "Pack", value: "pack" },
+  { label: "Box", value: "box" },
+  { label: "Dozen", value: "dozen" },
+  { label: "Kg", value: "kg" },
+  { label: "Gram", value: "gram" },
+  { label: "Litre", value: "litre" },
+  { label: "Meter", value: "meter" },
+];
+
+function defaultVariant(
+  currency: ProductInput["currency"],
+  isDefault = true
+): ProductInput["variants"][number] {
+  return {
+    title: isDefault ? "Default Variant" : "",
+    sku: generateSku(),
+    barcode: generateBarcode(),
+    productCode: generateProductCode(),
+    price: 0,
+    salePrice: undefined,
+    costPrice: undefined,
+    currency,
+    stock: 0,
+    reservedStock: 0,
+    lowStockAlert: undefined,
+    trackInventory: true,
+    image: "",
+    isActive: true,
+    isDefault,
+    attributes: [],
+    wholesalePricing: [],
+  };
+}
+
+function defaultTranslations(updateData: Props["updateData"]) {
+  const existing = updateData?.translations ?? [];
+
+  return LOCALES.map((locale) => {
+    const match = existing.find((translation) => translation.locale === locale);
+
+    return {
+      locale,
+      description: match?.description ?? "",
+    };
+  });
+}
+
+function TranslationCard({
+  index,
+  aiPromptBase,
+  canRemove,
+  onRemove,
+}: TranslationCardProps) {
+  const { register } = useFormContext<ProductInput>();
+
+  return (
+    <div className="grid grid-cols-1 gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-2">
+      <input type="hidden" {...register(`translations.${index}.locale` as const)} />
+
+      <TextareaInput
+        label="Description"
+        name={`translations.${index}.description`}
+        languageName={`translations.${index}.locale`}
+        placeholder="Write localized product description"
+        rows={6}
+        features={{
+          ai: true,
+          voice: true,
+          language: true,
+          editor: true,
+        }}
+        aiPrompt={`Create an ecommerce product description for ${aiPromptBase}`}
+        className="md:col-span-2"
+      />
+
+      {canRemove && (
+        <button
+          type="button"
+          className="justify-self-start text-sm text-red-500"
+          onClick={onRemove}
+        >
+          Remove translation
+        </button>
+      )}
+    </div>
+  );
+}
+
+function VariantCard({
+  index,
+  canRemove,
+  isDefault,
+  onRemove,
+  onSetDefault,
+}: VariantCardProps) {
+  const { control } = useFormContext<ProductInput>();
+  const attributeName = `variants.${index}.attributes` as const;
+  const wholesaleName = `variants.${index}.wholesalePricing` as const;
+
+  const { fields: attributeFields, append: appendAttribute, remove: removeAttribute } =
+    useFieldArray({
+      control,
+      name: attributeName,
+    });
+
+  const {
+    fields: wholesaleFields,
+    append: appendWholesale,
+    remove: removeWholesale,
+  } = useFieldArray({
+      control,
+    name: wholesaleName,
+  });
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <TextInput label="Title" name={`variants.${index}.title`} required />
+        <TextInput label="SKU" name={`variants.${index}.sku`} />
+        <TextInput label="Barcode" name={`variants.${index}.barcode`} />
+        <TextInput label="Product Code" name={`variants.${index}.productCode`} />
+        <TextInput label="Price" name={`variants.${index}.price`} type="number" required />
+        <TextInput label="Sale Price" name={`variants.${index}.salePrice`} type="number" />
+        <TextInput label="Cost Price" name={`variants.${index}.costPrice`} type="number" />
+        <TextInput label="Stock" name={`variants.${index}.stock`} type="number" />
+        <TextInput label="Reserved Stock" name={`variants.${index}.reservedStock`} type="number" />
+        <TextInput label="Low Stock Alert" name={`variants.${index}.lowStockAlert`} type="number" />
+        <SelectInput
+          label="Currency"
+          name={`variants.${index}.currency`}
+          options={[
+            { label: "INR", value: "INR" },
+            { label: "USD", value: "USD" },
+          ]}
+        />
+        <ToggleInput
+          label="Inventory Tracking"
+          name={`variants.${index}.trackInventory`}
+          trueTitle="Tracked"
+          falseTitle="Manual"
+        />
+        <ToggleInput
+          label="Active"
+          name={`variants.${index}.isActive`}
+          trueTitle="Active"
+          falseTitle="Inactive"
+        />
+        <ToggleInput
+          label="Default"
+          name={`variants.${index}.isDefault`}
+          trueTitle="Default"
+          falseTitle="Secondary"
+        />
+        <div className="flex items-end gap-3 md:col-span-3">
+          <button
+            type="button"
+            className="rounded border px-3 py-2 text-sm"
+            onClick={onSetDefault}
+          >
+            {isDefault ? "Default Variant" : "Set Default"}
+          </button>
+
+          {canRemove && (
+            <button
+              type="button"
+              className="rounded border border-red-200 px-3 py-2 text-sm text-red-500"
+              onClick={onRemove}
+            >
+              Remove
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-foreground">Attributes</h3>
+          <button
+            type="button"
+            className="rounded border px-3 py-2 text-xs"
+            onClick={() =>
+              appendAttribute({
+                name: "",
+                value: "",
+              })
+            }
+          >
+            Add Attribute
+          </button>
+        </div>
+
+        {attributeFields.map((attribute, attributeIndex) => (
+          <div key={attribute.id} className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <TextInput
+              label="Attribute Name"
+              name={`variants.${index}.attributes.${attributeIndex}.name`}
+            />
+            <TextInput
+              label="Attribute Value"
+              name={`variants.${index}.attributes.${attributeIndex}.value`}
+            />
+            <div className="flex items-end">
+              <button
+                type="button"
+                className="rounded border border-red-200 px-3 py-2 text-sm text-red-500"
+                onClick={() => removeAttribute(attributeIndex)}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-foreground">Wholesale Pricing</h3>
+          <button
+            type="button"
+            className="rounded border px-3 py-2 text-xs"
+            onClick={() =>
+              appendWholesale({
+                minQty: 1,
+                price: 0,
+              })
+            }
+          >
+            Add Tier
+          </button>
+        </div>
+
+        {wholesaleFields.map((tier, tierIndex) => (
+          <div key={tier.id} className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <TextInput
+              label="Min Qty"
+              name={`variants.${index}.wholesalePricing.${tierIndex}.minQty`}
+              type="number"
+            />
+            <TextInput
+              label="Wholesale Price"
+              name={`variants.${index}.wholesalePricing.${tierIndex}.price`}
+              type="number"
+            />
+            <div className="flex items-end">
+              <button
+                type="button"
+                className="rounded border border-red-200 px-3 py-2 text-sm text-red-500"
+                onClick={() => removeWholesale(tierIndex)}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function NewProductForm({
   userId,
   categories = [],
@@ -77,136 +359,37 @@ export default function NewProductForm({
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
 
-  const [tags, setTags] = useState<string[]>(updateData.tags ?? []);
-  const [imageUrls, setImageUrls] = useState<string[]>(
-    updateData.images?.map((img) => img.url) ?? []
-  );
-  const [selectedHsn, setSelectedHsn] = useState<HsnOption | null>(
-    updateData.hsnCode ?? null
-  );
-
-  const {
-    register,
-    control,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<ProductInput>({
-    resolver: zodResolver(productSchema),
+  const form = useForm<ProductInput>({
+    resolver: zodResolver(productSchema) as Resolver<ProductInput>,
     defaultValues: {
-<<<<<<< HEAD
       title: updateData.title ?? "",
       slug: updateData.slug ?? "",
+      imageUrl: updateData.imageUrl ?? "",
       tags: updateData.tags ?? [],
       unit: updateData.unit ?? "",
       isActive: updateData.isActive ?? true,
       isWholesale: updateData.isWholesale ?? false,
       currency: updateData.currency ?? "INR",
+      gstRate: updateData.gstRate ?? updateData.hsnCode?.gstRate ?? undefined,
       categoryId: updateData.categoryId ?? "",
       subCategoryId: updateData.subCategoryId ?? "",
       userId: updateData.userId ?? userId,
-      hsnCodeId: updateData.hsnCodeId ?? "",
+      hsnCodeId: updateData.hsnCodeId ?? updateData.hsnCode?.id ?? "",
       images: updateData.images ?? [],
-      translations: updateData.translations ?? [
-        {
-          locale: "EN",
-          title: "",
-          description: "",
-          metaTitle: "",
-          metaDescription: "",
-        },
-      ],
-      variants: updateData.variants ?? [
-        {
-          title: "Default Variant",
-          sku: "",
-          barcode: generateBarcode(),
-          price: 0,
-          salePrice: 0,
-          costPrice: 0,
-          currency: updateData.currency ?? "INR",
-          stock: 0,
-          reservedStock: 0,
-          lowStockAlert: 0,
-          trackInventory: true,
-          image: "",
-          isActive: true,
-          isDefault: true,
-          attributes: [],
-          wholesalePricing: [],
-        },
-      ],
-=======
-      title: updateData?.title ?? "",
-      slug: updateData?.slug ?? "",
-      imageUrl: updateData?.imageUrl ?? "",
-
-      unit: updateData?.unit ?? "",
-      tags: updateData?.tags ?? [],
-
-      currency: updateData?.currency ?? "INR",
-
-      isActive: updateData?.isActive ?? true,
-      isWholesale:
-        updateData?.isWholesale ?? false,
-
-      categoryId:
-        updateData?.categoryId ?? "",
-
-      subCategoryId:
-        updateData?.subCategoryId ?? "",
-
-      hsnCodeId: updateData?.hsnCodeId ?? "",
-      gstRate: updateData?.gstRate ?? updateData?.hsnCode?.gstRate ?? undefined,
-
-      images:
-        updateData?.images ?? [],
-
-      translations:
-        updateData?.translations ?? [
-          {
-            locale: "en",
-            title: "",
-            description: "",
-          },
-        ],
-
-      variants:
-        updateData?.variants ?? [
-          {
-            title: "Default Variant",
-            sku: generateSku(),
-            barcode: generateBarcode(),
-            productCode: generateProductCode(),
-
-            price: 0,
-            salePrice: 0,
-            costPrice: 0,
-
-            stock: 0,
-            image: "",
-
-            isDefault: true,
-
-            attributes: [
-              {
-                name: "Size",
-                value: "",
-              },
-            ],
-
-            wholesalePricing: [
-              {
-                minQty: 1,
-                price: 0,
-              },
-            ],
-          },
-        ],
->>>>>>> 5cea87c5237b5e7bbd98e5f2766d0573faa130c1
+      translations: defaultTranslations(updateData),
+      variants: updateData.variants?.length
+        ? updateData.variants
+        : [defaultVariant(updateData.currency ?? "INR")],
     },
   });
+
+  const {
+    control,
+    handleSubmit,
+    register,
+    setValue,
+    formState: { errors },
+  } = form;
 
   const {
     fields: variantFields,
@@ -217,49 +400,110 @@ export default function NewProductForm({
     name: "variants",
   });
 
-  const {
-    fields: translationFields,
-    append: appendTranslation,
-    remove: removeTranslation,
-  } = useFieldArray({
+  const { fields: translationFields, remove: removeTranslation } = useFieldArray({
     control,
     name: "translations",
   });
 
-  const selectedCategoryId = watch("categoryId");
-  const selectedSubCategoryId = watch("subCategoryId");
+  const selectedCategoryId = useWatch({
+    control,
+    name: "categoryId",
+  });
+  const selectedSubCategoryId = useWatch({
+    control,
+    name: "subCategoryId",
+  });
+  const selectedHsnCodeId = useWatch({
+    control,
+    name: "hsnCodeId",
+  });
+  const selectedCurrency =
+    useWatch({
+      control,
+      name: "currency",
+    }) ?? "INR";
+  const productTitle = useWatch({
+    control,
+    name: "title",
+  });
+  const autoSlug = useMemo(
+    () => generateSlug(productTitle || ""),
+    [productTitle]
+  );
 
   const filteredSubCategories = useMemo(
     () =>
-      subCategories.filter((sub) => sub.categoryId === selectedCategoryId),
+      subCategories.filter(
+        (subCategory) => subCategory.categoryId === selectedCategoryId
+      ),
     [selectedCategoryId, subCategories]
   );
 
   const selectedSubCategory = useMemo(
-    () => filteredSubCategories.find((sub) => sub.id === selectedSubCategoryId),
+    () =>
+      filteredSubCategories.find(
+        (subCategory) => subCategory.id === selectedSubCategoryId
+      ),
     [filteredSubCategories, selectedSubCategoryId]
   );
 
+  const selectedHsn = useMemo(() => {
+    const hsnCode = selectedSubCategory?.hsnCode;
+
+    if (hsnCode?.id === selectedHsnCodeId) {
+      return hsnCode;
+    }
+
+    return updateData.hsnCode?.id === selectedHsnCodeId
+      ? updateData.hsnCode
+      : null;
+  }, [selectedHsnCodeId, selectedSubCategory, updateData.hsnCode]);
+
   useEffect(() => {
     if (selectedSubCategory?.hsnCode) {
-      setSelectedHsn(selectedSubCategory.hsnCode);
-      setValue("hsnCodeId", selectedSubCategory.hsnCode.id);
+      setValue("hsnCodeId", selectedSubCategory.hsnCode.id, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      setValue("gstRate", selectedSubCategory.hsnCode.gstRate, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
       return;
     }
 
-    setSelectedHsn(null);
-    setValue("hsnCodeId", "");
+    setValue("hsnCodeId", "", { shouldDirty: true, shouldValidate: true });
+    setValue("gstRate", undefined, { shouldDirty: true, shouldValidate: true });
   }, [selectedSubCategory, setValue]);
 
+  useEffect(() => {
+    if (!productTitle) return;
+
+    setValue("slug", autoSlug, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [autoSlug, productTitle, setValue]);
+
+  const setDefaultVariant = (defaultIndex: number) => {
+    variantFields.forEach((_, index) => {
+      setValue(`variants.${index}.isDefault`, index === defaultIndex, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    });
+  };
+
   const onSubmit = async (data: ProductInput) => {
+    const firstImage = data.images[0]?.url ?? data.imageUrl ?? "";
     const payload: ProductInput = {
       ...data,
       slug: data.slug?.trim() || generateSlug(data.title),
       userId: updateData.userId ?? userId,
-      tags,
-      images: imageUrls.map((url, index) => ({
-        url,
-        isPrimary: index === 0,
+      imageUrl: firstImage,
+      variants: data.variants.map((variant) => ({
+        ...variant,
+        currency: variant.currency ?? data.currency,
       })),
     };
 
@@ -274,6 +518,7 @@ export default function NewProductForm({
       }
 
       router.push("/dashboard/products");
+      router.refresh();
     } catch (error) {
       console.error("PRODUCT_SAVE_ERROR", error);
       alert("Save failed");
@@ -282,320 +527,150 @@ export default function NewProductForm({
 
   return (
     <div className="space-y-6">
-      <FormHeader
-        title={updateData.id ? "Update Product" : "Create Product"}
-      />
+      <FormHeader title={updateData.id ? "Update Product" : "Create Product"} />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        <input type="hidden" {...register("userId")} />
-        <input type="hidden" {...register("hsnCodeId")} />
+      <GlassCard className="max-w-7xl mx-auto space-y-6">
+        <FormProvider {...form}>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          <input type="hidden" {...register("userId")} />
+          <input type="hidden" {...register("hsnCodeId")} />
+          <input type="hidden" {...register("gstRate")} />
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <TextInput
-            label="Title"
-            name="title"
-            register={register}
-            errors={errors}
-          />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <TextInput label="Product Title" name="title" required />
+            <TextInput
+              label="Slug"
+              name="slug"
+              placeholder="Auto-generated from title"
+              readOnly
+            />
+            <SelectInput
+              label="Unit"
+              name="unit"
+              options={UNIT_OPTIONS}
+              placeholder="Select unit"
+            />
+            <SelectInput
+              label="Category"
+              name="categoryId"
+              options={categories.map((category) => ({
+                label: category.title,
+                value: category.id,
+              }))}
+            />
 
-          <TextInput
-            label="Unit"
-            name="unit"
-            register={register}
-            errors={errors}
-          />
+            <SelectInput
+              label="SubCategory"
+              name="subCategoryId"
+              options={filteredSubCategories.map((subCategory) => ({
+                label: subCategory.title,
+                value: subCategory.id,
+              }))}
+            />
 
-          <SelectInput
-            label="Category"
-            name="categoryId"
-            register={register}
-            error={errors.categoryId}
-            options={categories.map((category) => ({
-              label: category.title,
-              value: category.id,
-            }))}
-          />
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">
+                HSN Code
+              </label>
+              <SearchSelectInput<ProductInput>
+                value={selectedHsn}
+                onChange={(value: HsnOption | null) => {
+                  setValue("hsnCodeId", value?.id ?? "", {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                  setValue("gstRate", value?.gstRate, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
+              />
+            </div>
 
-          <SelectInput
-            label="SubCategory"
-            name="subCategoryId"
-            register={register}
-            error={errors.subCategoryId}
-            options={filteredSubCategories.map((subCategory) => ({
-              label: subCategory.title,
-              value: subCategory.id,
-            }))}
-          />
+            <SelectInput
+              label="Currency"
+              name="currency"
+              options={[
+                { label: "INR", value: "INR" },
+                { label: "USD", value: "USD" },
+              ]}
+            />
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">
-              HSN Code
-            </label>
-            <SearchSelectInput
-              value={selectedHsn}
-              onChange={(value) => {
-                setSelectedHsn(value);
-                setValue("hsnCodeId", value?.id ?? "");
-              }}
+            <ToggleInput
+              label="Status"
+              name="isActive"
+              trueTitle="Active"
+              falseTitle="Inactive"
+            />
+
+            <ToggleInput
+              label="Wholesale"
+              name="isWholesale"
+              trueTitle="Yes"
+              falseTitle="No"
             />
           </div>
 
-          <SelectInput
-            label="Currency"
-            name="currency"
-            register={register}
-            error={errors.currency}
-            options={[
-              { label: "INR", value: "INR" },
-              { label: "USD", value: "USD" },
-            ]}
+          <ArrayItemsInput name="tags" label="Tags" placeholder="Add tag" />
+
+          <MultipleImageInput
+            name="images"
+            endpoint="multipleProductsUploader"
+            label="Images"
           />
 
-          <ToggleInput
-            label="Status"
-            name="isActive"
-            register={register}
-            trueTitle="Active"
-            falseTitle="Inactive"
-          />
-
-          <ToggleInput
-            label="Wholesale"
-            name="isWholesale"
-            register={register}
-            trueTitle="Yes"
-            falseTitle="No"
-          />
-        </div>
-
-        <ArrayItemsInput label="Tags" items={tags} setItems={setTags} />
-
-        <MultipleImageInput
-          imageUrls={imageUrls}
-          setImageUrls={setImageUrls}
-          endpoint="multipleProductsUploader"
-          label="Images"
-          setValue={setValue}
-        />
-
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Translations</h2>
-            <button
-              type="button"
-              className="rounded bg-blue-500 px-4 py-2 text-white"
-              onClick={() =>
-                appendTranslation({
-                  locale: "EN",
-                  title: "",
-                  description: "",
-                  metaTitle: "",
-                  metaDescription: "",
-                })
-              }
-            >
-              Add Language
-            </button>
+          <div className="space-y-4">
+            {translationFields.map((field, index) => (
+              <TranslationCard
+                key={field.id}
+                index={index}
+                aiPromptBase={productTitle || "this product"}
+                canRemove={translationFields.length > 1}
+                onRemove={() => removeTranslation(index)}
+              />
+            ))}
           </div>
 
-          {translationFields.map((field, index) => (
-            <div
-              key={field.id}
-              className="grid grid-cols-1 gap-4 rounded-lg border p-4 md:grid-cols-2"
-            >
-              <SelectInput
-                label="Language"
-                name={`translations.${index}.locale`}
-                register={register}
-                error={errors.translations?.[index]?.locale}
-                options={LOCALES.map((locale) => ({
-                  label: locale,
-                  value: locale,
-                }))}
-              />
-
-              <TextInput
-                label="Title"
-                name={`translations.${index}.title`}
-                register={register}
-                errors={errors}
-              />
-
-              <TextareaInput
-                label="Description"
-                name={`translations.${index}.description`}
-                register={register}
-                errors={errors}
-              />
-
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Variants</h2>
               <button
                 type="button"
-                className="self-end text-red-500"
-                onClick={() => removeTranslation(index)}
+                className="rounded bg-blue-500 px-4 py-2 text-sm text-white"
+                onClick={() =>
+                  appendVariant(defaultVariant(selectedCurrency, false))
+                }
               >
-                Remove
+                Add Variant
               </button>
             </div>
-          ))}
-        </div>
 
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Variants</h2>
-            <button
-              type="button"
-              className="rounded bg-blue-500 px-4 py-2 text-white"
-              onClick={() =>
-                appendVariant({
-                  title: "",
-                  sku: "",
-                  barcode: generateBarcode(),
-                  price: 0,
-                  salePrice: 0,
-                  costPrice: 0,
-                  currency: watch("currency") ?? "INR",
-                  stock: 0,
-                  reservedStock: 0,
-                  lowStockAlert: 0,
-                  trackInventory: true,
-                  image: "",
-                  isActive: true,
-                  isDefault: false,
-                  attributes: [],
-                  wholesalePricing: [],
-                })
-              }
-            >
-              Add Variant
-            </button>
+            {variantFields.map((field, index) => (
+              <VariantCard
+                key={field.id}
+                index={index}
+                canRemove={variantFields.length > 1}
+                isDefault={Boolean(field.isDefault)}
+                onSetDefault={() => setDefaultVariant(index)}
+                onRemove={() => removeVariant(index)}
+              />
+            ))}
+
+            {errors.variants?.message && (
+              <p className="text-sm text-red-500">
+                {String(errors.variants.message)}
+              </p>
+            )}
           </div>
 
-          {variantFields.map((field, index) => (
-            <div
-              key={field.id}
-              className="grid grid-cols-1 gap-4 rounded-lg border p-4 md:grid-cols-2"
-            >
-              <TextInput
-                label="Title"
-                name={`variants.${index}.title`}
-                register={register}
-                errors={errors}
-              />
-
-<<<<<<< HEAD
-              <TextInput
-                label="SKU"
-                name={`variants.${index}.sku`}
-                register={register}
-                errors={errors}
-              />
-=======
-                <TextInput
-                  label="Product Code"
-                  name={`variants.${index}.productCode`}
-                  register={register}
-                  errors={errors}
-                />
-
-                <TextInput
-                  label="Price"
-                  name={`variants.${index}.price`}
-                  type="number"
-                  register={register}
-                  errors={errors}
-                />
->>>>>>> 5cea87c5237b5e7bbd98e5f2766d0573faa130c1
-
-              <TextInput
-                label="Barcode"
-                name={`variants.${index}.barcode`}
-                register={register}
-                errors={errors}
-              />
-
-              <TextInput
-                label="Price"
-                name={`variants.${index}.price`}
-                type="number"
-                register={register}
-                errors={errors}
-              />
-
-              <TextInput
-                label="Sale Price"
-                name={`variants.${index}.salePrice`}
-                type="number"
-                register={register}
-                errors={errors}
-              />
-
-<<<<<<< HEAD
-              <TextInput
-                label="Cost Price"
-                name={`variants.${index}.costPrice`}
-                type="number"
-                register={register}
-                errors={errors}
-              />
-
-              <TextInput
-                label="Stock"
-                name={`variants.${index}.stock`}
-                type="number"
-                register={register}
-                errors={errors}
-              />
-
-              <ToggleInput
-                label="Default Variant"
-                name={`variants.${index}.isDefault`}
-                register={register}
-                trueTitle="Default"
-                falseTitle="Normal"
-              />
-
-              <button
-                type="button"
-                className="self-end text-red-500"
-                onClick={() => removeVariant(index)}
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-=======
-          <button
-            type="button"
-            onClick={() =>
-              appendVariant({
-                title: "",
-                sku: generateSku(),
-                barcode:
-                  generateBarcode(),
-                productCode: generateProductCode(),
-                price: 0,
-                salePrice: 0,
-                costPrice: 0,
-                stock: 0,
-                image: "",
-                isDefault: false,
-                attributes: [],
-                wholesalePricing: [],
-              })
-            }
-            className="px-4 py-2 bg-blue-500 text-white rounded"
-          >
-            Add Variant
-          </button>
->>>>>>> 5cea87c5237b5e7bbd98e5f2766d0573faa130c1
-        </div>
-
-        <SubmitButton
-          isLoading={createProduct.isPending || updateProduct.isPending}
-          buttonTitle={updateData.id ? "Update product" : "Create product"}
-          loadingButtonTitle="Saving..."
-        />
-      </form>
+          <SubmitButton
+            isLoading={createProduct.isPending || updateProduct.isPending}
+            buttonTitle={updateData.id ? "Update product" : "Create product"}
+            loadingButtonTitle="Saving..."
+          />
+          </form>
+        </FormProvider>
+      </GlassCard>
     </div>
   );
 }

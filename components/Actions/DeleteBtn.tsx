@@ -37,9 +37,6 @@ export default function DeleteBtn({
     try {
       setLoading(true);
 
-      // 🔥 Optimistic UI (row तुरंत हटे)
-      onDelete?.(id);
-
       const res = await fetch(`/api${endpoint}`, {
         method: "DELETE",
       });
@@ -48,6 +45,7 @@ export default function DeleteBtn({
         throw new Error("Delete failed");
       }
 
+      onDelete?.(id);
       toast.success(`${title} deleted successfully`);
 
       // 🔁 server sync (safe)

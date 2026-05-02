@@ -22,6 +22,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+import {
+  Controller,
+  FieldValues,
+  Path,
+  useFormContext,
+} from "react-hook-form";
+
 /* ================= TYPES ================= */
 
 type HsnItem = {
@@ -31,19 +38,23 @@ type HsnItem = {
   gstRate: number;
 };
 
-type Props = {
+type Props<T extends FieldValues> = {
+  name?: Path<T>;
   value?: HsnItem | null;
-  onChange: (value: HsnItem | null) => void;
+  onChange?: (value: HsnItem | null) => void;
   placeholder?: string;
 };
 
 /* ================= COMPONENT ================= */
 
-export default function SearchSelectInput({
-  value,
+export default function SearchSelectInput<T extends FieldValues>({
+  name,
+  value: controlledValue,
   onChange,
   placeholder = "Select HSN Code",
-}: Props) {
+}: Props<T>) {
+  const { control } = useFormContext<T>();
+
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -56,18 +67,20 @@ export default function SearchSelectInput({
     hasNextPage,
   } = useHsn(debounced);
 
-  const flatData: HsnItem[] = data?.pages?.flat() ?? [];
+  const flatData = (data?.pages?.flat() ?? []) as unknown as HsnItem[];
 
-  return (
+  const renderSelect = (
+    value: HsnItem | null,
+    handleChange: (value: HsnItem | null) => void
+  ) => (
     <Popover open={open} onOpenChange={setOpen}>
-      {/* 🔘 TRIGGER */}
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
           className="w-full justify-between 
-          bg-white/40 backdrop-blur-md 
-          text-black border-white/20"
+                bg-white/40 backdrop-blur-md 
+                text-black border-white/20"
         >
           {value
             ? `${value.code} - ${value.title} (${value.gstRate}%)`
@@ -77,15 +90,13 @@ export default function SearchSelectInput({
         </Button>
       </PopoverTrigger>
 
-      {/* 📦 DROPDOWN */}
       <PopoverContent
         align="start"
         className="w-[--radix-popover-trigger-width] p-0 
-        bg-white/40 backdrop-blur-xl 
-        border border-white/20 shadow-xl rounded-xl"
+              bg-white/40 backdrop-blur-xl 
+              border border-white/20 shadow-xl rounded-xl"
       >
         <Command className="bg-transparent text-black">
-          {/* 🔍 SEARCH */}
           <CommandInput
             placeholder="Search HSN code..."
             value={search}
@@ -93,27 +104,23 @@ export default function SearchSelectInput({
             className="text-black placeholder:text-gray-600"
           />
 
-          {/* ❌ EMPTY / LOADING */}
           <CommandEmpty className="text-black">
             {isLoading ? "Loading..." : "No HSN found"}
           </CommandEmpty>
 
-          {/* ✅ LIST */}
           <CommandGroup className="max-h-64 overflow-y-auto">
             {flatData.map((item) => (
               <CommandItem
                 key={item.id}
                 value={item.code}
                 onSelect={() => {
-                  onChange(item);
+                  handleChange(item);
                   setOpen(false);
                 }}
                 className="text-black hover:bg-white/60 cursor-pointer"
               >
                 <div className="flex flex-col">
-                  <span className="font-medium text-black">
-                    {item.code}
-                  </span>
+                  <span className="font-medium text-black">{item.code}</span>
 
                   <span className="text-xs text-gray-600">
                     {item.title} ({item.gstRate}%)
@@ -131,7 +138,6 @@ export default function SearchSelectInput({
               </CommandItem>
             ))}
 
-            {/* 🔄 LOAD MORE */}
             {hasNextPage && (
               <div className="p-2 text-center">
                 <button
@@ -147,5 +153,21 @@ export default function SearchSelectInput({
         </Command>
       </PopoverContent>
     </Popover>
+  );
+
+  if (!name) {
+    return renderSelect(controlledValue ?? null, onChange ?? (() => undefined));
+  }
+
+  return (
+    <Controller
+      name={name}
+      control={control}
+      defaultValue={null as never}
+      render={({ field }) => {
+        const value = field.value as HsnItem | null;
+        return renderSelect(value, field.onChange);
+      }}
+    />
   );
 }

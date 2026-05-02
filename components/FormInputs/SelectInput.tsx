@@ -2,10 +2,9 @@
 
 import { cn } from "@/lib/utils";
 import {
-  FieldError,
   FieldValues,
   Path,
-  UseFormRegister,
+  useFormContext,
 } from "react-hook-form";
 
 /* ================= TYPES ================= */
@@ -18,8 +17,6 @@ interface Props<T extends FieldValues> {
   label?: string;
   name: Path<T>;
   options: SelectOption[];
-  register: UseFormRegister<T>;
-  error?: FieldError;
   placeholder?: string;
   className?: string;
 }
@@ -30,11 +27,16 @@ export default function SelectInput<T extends FieldValues>({
   label,
   name,
   options = [],
-  register,
-  error,
   placeholder = "Select option",
   className,
 }: Props<T>) {
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext<T>();
+
+  const error = errors[name]?.message as string | undefined;
+
   // ✅ Normalize options
   const normalizedOptions = options.map((opt) =>
     "label" in opt
@@ -45,7 +47,7 @@ export default function SelectInput<T extends FieldValues>({
         }
   );
 
-  // ✅ Remove duplicates + invalid
+  // ✅ Remove duplicates
   const uniqueOptions = Array.from(
     new Map(
       normalizedOptions
@@ -62,40 +64,31 @@ export default function SelectInput<T extends FieldValues>({
         </label>
       )}
 
-    <select
-  {...register(name)}
-  defaultValue=""
-  className={cn(
-    "w-full px-3 py-2 rounded-xl border transition-all",
-    
-    // ✅ Glass UI Fix
-    "bg-white/40 backdrop-blur-md text-black",
-    "border-white/20 shadow-sm",
+      <select
+        {...register(name)}
+        defaultValue=""
+        className={cn(
+          "w-full px-3 py-2 rounded-xl border transition-all",
+          "bg-white/40 backdrop-blur-md text-black",
+          "border-white/20 shadow-sm",
+          "focus:outline-none focus:ring-2 focus:ring-orange-500",
+          "hover:border-orange-400",
+          error && "border-red-400"
+        )}
+      >
+        <option value="" disabled hidden>
+          {placeholder}
+        </option>
 
-    "focus:outline-none focus:ring-2 focus:ring-orange-500",
-    "hover:border-orange-400",
-    error && "border-red-400"
-  )}
->
-  <option value="" disabled hidden className="text-black">
-    {placeholder}
-  </option>
-
-  {uniqueOptions.map((opt) => (
-    <option
-      key={opt.value}
-      value={opt.value}
-      className="text-black bg-white"
-    >
-      {opt.label}
-    </option>
-  ))}
-</select>
+        {uniqueOptions.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
 
       {error && (
-        <p className="text-xs text-red-500">
-          {error.message}
-        </p>
+        <p className="text-xs text-red-500">{error}</p>
       )}
     </div>
   );

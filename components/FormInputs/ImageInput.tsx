@@ -8,7 +8,6 @@ import { UploadButton, UploadDropzone } from "@/lib/uploadthing";
 import {
   FieldValues,
   Path,
-  Control,
   useController,
   useFormContext,
 } from "react-hook-form";
@@ -25,7 +24,6 @@ type UploadResponseItem = {
 type Props<T extends FieldValues> = {
   label: string;
   name: Path<T>;
-  control?: Control<T>;
   endpoint: keyof OurFileRouter;
   previewSize?: number;
 };
@@ -35,27 +33,14 @@ type Props<T extends FieldValues> = {
 export default function ImageInput<T extends FieldValues>({
   label,
   name,
-  control,
   endpoint,
   previewSize = 160,
 }: Props<T>) {
-
-  // ✅ SAFE: context optional रखो
-  const methods = useFormContext<T>();
-  const resolvedControl = control ?? methods?.control;
-
-  // ❌ अगर दोनों नहीं मिले → clear error
-  if (!resolvedControl) {
-    throw new Error(
-      `ImageInput "${String(
-        name
-      )}" must receive control or be inside FormProvider`
-    );
-  }
+  const { control } = useFormContext<T>();
 
   const { field } = useController({
     name,
-    control: resolvedControl,
+    control,
   });
 
   const [loading, setLoading] = useState(false);
@@ -88,9 +73,9 @@ export default function ImageInput<T extends FieldValues>({
     <div className="space-y-3">
       <label className="text-sm font-medium block">{label}</label>
 
-      {/* ================= UPLOAD ================= */}
+      {/* Upload */}
       {!imageUrl && (
-        <div className="border rounded-xl p-6 text-center">
+        <div className="rounded-xl p-6 text-center">
           <UploadDropzone
             endpoint={endpoint}
             disabled={loading}
@@ -117,7 +102,7 @@ export default function ImageInput<T extends FieldValues>({
         </div>
       )}
 
-      {/* ================= PREVIEW ================= */}
+      {/* Preview */}
       {imageUrl && (
         <div
           className="relative"

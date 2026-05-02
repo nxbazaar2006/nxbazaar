@@ -61,7 +61,17 @@ export default function ActionColumn<T extends { id: string }>({
               title={title}
               endpoint={`${endpoint}/${id}`} // ✅ FIXED
               onDelete={(deletedId) => {
-                row.table.options.meta?.removeRow?.(deletedId);
+                const table = (row as Row<T> & {
+                  table?: {
+                    options?: {
+                      meta?: {
+                        removeRow?: (id: string) => void;
+                      };
+                    };
+                  };
+                }).table;
+
+                table?.options?.meta?.removeRow?.(deletedId);
               }}
             />
           </DropdownMenuItem>
@@ -69,7 +79,6 @@ export default function ActionColumn<T extends { id: string }>({
           {/* ✏️ Edit */}
           <DropdownMenuItem asChild>
             <EditBtn
-              id={id}
               title={title}
               editEndpoint={editEndpoint}
             />

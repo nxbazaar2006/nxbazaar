@@ -77,36 +77,13 @@ export async function PUT(
 
         variants: {
           deleteMany: {},
-<<<<<<< HEAD
-          create: variants.map((v) => ({
-            ...v,
-=======
-          create: validatedData.variants.map((variant) => ({
-            title: variant.title,
-
-            sku: variant.sku ?? null,
-            barcode: variant.barcode ?? null,
-            productCode: variant.productCode ?? null,
-
-            price: variant.price,
-            salePrice: variant.salePrice ?? null,
-            costPrice: variant.costPrice ?? null,
-
-            currency: validatedData.currency ?? "INR",
-
-            stock: variant.stock ?? null,
-
-            image: variant.image ?? null,
-
-            isDefault: variant.isDefault ?? false,
-            isActive: true,
-
->>>>>>> 5cea87c5237b5e7bbd98e5f2766d0573faa130c1
+          create: variants.map(({ attributes, wholesalePricing, ...variant }) => ({
+            ...variant,
             attributes: {
-              create: v.attributes,
+              create: attributes,
             },
             wholesalePricing: {
-              create: v.wholesalePricing,
+              create: wholesalePricing,
             },
           })),
         },

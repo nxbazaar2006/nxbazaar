@@ -21,7 +21,7 @@ export default async function ProductsPage({ searchParams }: Props) {
   const res = await getProducts({ page, limit, search });
 
   /* ================= ERROR ================= */
-  if (!res.success || !res.data) {
+  if (!res.success) {
     return (
       <div className="p-6 text-sm text-red-500">
         ❌ Failed to load products: {res.error}
@@ -29,14 +29,15 @@ export default async function ProductsPage({ searchParams }: Props) {
     );
   }
 
-  const { data, total } = res.data;
+  const data = Array.isArray(res.data.data) ? res.data.data : [];
+  const total = typeof res.data.total === "number" ? res.data.total : data.length;
 
   /* ================= EMPTY ================= */
   if (data.length === 0) {
     return (
       <div className="p-6 space-y-4">
         <PageHeader
-          title="Products"
+          heading="Products"
           href="/dashboard/products/new"
           linkTitle="Add Product"
         />
@@ -53,7 +54,7 @@ export default async function ProductsPage({ searchParams }: Props) {
   return (
     <div className="p-6 space-y-6">
       <PageHeader
-        title="Products"
+        heading="Products"
         href="/dashboard/products/new"
         linkTitle="Add Product"
       />
