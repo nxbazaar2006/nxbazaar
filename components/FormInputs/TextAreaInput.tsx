@@ -3,7 +3,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { Languages, Mic, MicOff, Pilcrow, Sparkles, Type } from "lucide-react";
+import {
+  Bold,
+  Heading2,
+  Italic,
+  Languages,
+  List,
+  ListOrdered,
+  Mic,
+  MicOff,
+  Pilcrow,
+  Redo2,
+  Sparkles,
+  Type,
+  Undo2,
+} from "lucide-react";
 import {
   FieldValues,
   Path,
@@ -103,6 +117,15 @@ function extractAiText(payload: unknown): string {
   ];
 
   return candidates.find((value): value is string => typeof value === "string") ?? "";
+}
+
+function editorButtonClass(active = false) {
+  return cn(
+    "inline-flex h-8 w-8 items-center justify-center rounded-lg border text-xs shadow-sm transition",
+    active
+      ? "border-cyan-300 bg-cyan-400/20 text-cyan-100"
+      : "border-white/15 bg-white/5 text-gray-700 hover:bg-white/10 dark:text-gray-200"
+  );
 }
 
 export default function TextareaInput<T extends FieldValues>({
@@ -339,13 +362,76 @@ export default function TextareaInput<T extends FieldValues>({
       {enabled.editor && mode === "editor" ? (
         <div
           className={cn(
-            "min-h-[160px] rounded-2xl border bg-transparent px-4 py-3 shadow-sm transition",
+            "overflow-hidden rounded-2xl border bg-transparent shadow-sm transition",
             error ? "border-red-500" : "border-white"
           )}
         >
+          <div className="flex flex-wrap items-center gap-1 border-b border-white/15 bg-white/5 p-2">
+            <button
+              type="button"
+              className={editorButtonClass(editor?.isActive("bold"))}
+              onClick={() => editor?.chain().focus().toggleBold().run()}
+              title="Bold"
+            >
+              <Bold className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={editorButtonClass(editor?.isActive("italic"))}
+              onClick={() => editor?.chain().focus().toggleItalic().run()}
+              title="Italic"
+            >
+              <Italic className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={editorButtonClass(
+                editor?.isActive("heading", { level: 2 })
+              )}
+              onClick={() =>
+                editor?.chain().focus().toggleHeading({ level: 2 }).run()
+              }
+              title="Heading"
+            >
+              <Heading2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={editorButtonClass(editor?.isActive("bulletList"))}
+              onClick={() => editor?.chain().focus().toggleBulletList().run()}
+              title="Bullet list"
+            >
+              <List className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={editorButtonClass(editor?.isActive("orderedList"))}
+              onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+              title="Numbered list"
+            >
+              <ListOrdered className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <span className="mx-1 h-6 w-px bg-white/15" />
+            <button
+              type="button"
+              className={editorButtonClass()}
+              onClick={() => editor?.chain().focus().undo().run()}
+              title="Undo"
+            >
+              <Undo2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={editorButtonClass()}
+              onClick={() => editor?.chain().focus().redo().run()}
+              title="Redo"
+            >
+              <Redo2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
           <EditorContent
             editor={editor}
-            className="prose prose-sm max-w-none outline-none dark:prose-invert [&_.ProseMirror]:min-h-[130px] [&_.ProseMirror]:outline-none"
+            className="prose prose-sm max-w-none px-4 py-3 outline-none dark:prose-invert [&_.ProseMirror]:min-h-[130px] [&_.ProseMirror]:outline-none"
           />
         </div>
       ) : (

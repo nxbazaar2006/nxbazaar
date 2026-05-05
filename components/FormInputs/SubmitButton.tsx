@@ -47,7 +47,6 @@ export default function SubmitButton({
           </span>
         ) : (
           <span className="relative z-10 flex items-center justify-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.95)]" />
             {buttonTitle}
           </span>
         )}

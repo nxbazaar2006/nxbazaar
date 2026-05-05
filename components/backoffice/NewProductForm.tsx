@@ -20,14 +20,13 @@ import SearchSelectInput from "@/components/FormInputs/SearchSelectInput";
 import SelectInput from "@/components/FormInputs/SelectInput";
 import SubmitButton from "@/components/FormInputs/SubmitButton";
 import TextInput from "@/components/FormInputs/TextInput";
-import ModularTextareaInput from "@/components/inputs/TextareaInput";
+import TextareaInput from "@/components/FormInputs/TextAreaInput";
 import ToggleInput from "@/components/FormInputs/ToggleInput";
 import {
   LOCALES,
   productSchema,
   type ProductInput,
 } from "@/lib/validators/productSchema";
-import { generateBarcode } from "@/lib/generateBarcode";
 import { generateSlug } from "@/lib/generateSlug";
 import { useCreateProduct, useUpdateProduct } from "@/hooks/useProduct";
 
@@ -74,17 +73,6 @@ type VariantCardProps = {
   onSetDefault: () => void;
 };
 
-const randomCode = (length: number) =>
-  Math.random()
-    .toString(36)
-    .replace(/[^a-z0-9]/gi, "")
-    .toUpperCase()
-    .slice(0, length)
-    .padEnd(length, "0");
-
-const generateSku = () => `SKU-${randomCode(8)}`;
-const generateProductCode = () => `PC-${randomCode(10)}`;
-
 const UNIT_OPTIONS = [
   { label: "Number", value: "number" },
   { label: "Qty", value: "qty" },
@@ -104,9 +92,9 @@ function defaultVariant(
 ): ProductInput["variants"][number] {
   return {
     title: isDefault ? "Default Variant" : "",
-    sku: generateSku(),
-    barcode: generateBarcode(),
-    productCode: generateProductCode(),
+    sku: "",
+    barcode: "",
+    productCode: "",
     price: 0,
     salePrice: undefined,
     costPrice: undefined,
@@ -131,7 +119,11 @@ function defaultTranslations(updateData: Props["updateData"]) {
 
     return {
       locale,
+      title: match?.title ?? "",
+      slug: match?.slug ?? "",
       description: match?.description ?? "",
+      metaTitle: match?.metaTitle ?? "",
+      metaDescription: match?.metaDescription ?? "",
     };
   });
 }
@@ -184,7 +176,7 @@ function VariantCard({
   onRemove,
   onSetDefault,
 }: VariantCardProps) {
-  const { control } = useFormContext<ProductInput>();
+  const { control, register } = useFormContext<ProductInput>();
   const attributeName = `variants.${index}.attributes` as const;
   const wholesaleName = `variants.${index}.wholesalePricing` as const;
 
@@ -205,11 +197,12 @@ function VariantCard({
 
   return (
     <div className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+      <input type="hidden" {...register(`variants.${index}.sku` as const)} />
+      <input type="hidden" {...register(`variants.${index}.barcode` as const)} />
+      <input type="hidden" {...register(`variants.${index}.productCode` as const)} />
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <TextInput label="Title" name={`variants.${index}.title`} required />
-        <TextInput label="SKU" name={`variants.${index}.sku`} />
-        <TextInput label="Barcode" name={`variants.${index}.barcode`} />
-        <TextInput label="Product Code" name={`variants.${index}.productCode`} />
         <TextInput label="Price" name={`variants.${index}.price`} type="number" required />
         <TextInput label="Sale Price" name={`variants.${index}.salePrice`} type="number" />
         <TextInput label="Cost Price" name={`variants.${index}.costPrice`} type="number" />
@@ -358,16 +351,8 @@ export default function NewProductForm({
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
 
-  const [tags, setTags] = useState<string[]>(updateData.tags ?? []);
-  const [imageUrls, setImageUrls] = useState<string[]>(
-    updateData.images?.map((img) => img.url) ?? []
-  );
-  const [selectedHsn, setSelectedHsn] = useState<HsnOption | null>(
-    updateData.hsnCode ?? null
-  );
-
   const form = useForm<ProductInput>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(productSchema) as Resolver<ProductInput>,
     defaultValues: {
       title: updateData.title ?? "",
       slug: updateData.slug ?? "",
@@ -383,20 +368,13 @@ export default function NewProductForm({
       userId: updateData.userId ?? userId,
       hsnCodeId: updateData.hsnCodeId ?? updateData.hsnCode?.id ?? "",
       images: updateData.images ?? [],
-      translations: updateData.translations ?? [
-        {
-          locale: "EN",
-          title: "",
-          description: "",
-          metaTitle: "",
-          metaDescription: "",
-        },
-      ],
+      translations: defaultTranslations(updateData),
       variants: updateData.variants ?? [
         {
           title: "Default Variant",
           sku: "",
-          barcode: generateBarcode(),
+          barcode: "",
+          productCode: "",
           price: 0,
           salePrice: 0,
           costPrice: 0,
@@ -419,7 +397,6 @@ export default function NewProductForm({
     control,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = form;
 
@@ -515,7 +492,14 @@ export default function NewProductForm({
       shouldDirty: true,
       shouldValidate: true,
     });
-  }, [autoSlug, productTitle, setValue]);
+
+    translationFields.forEach((_, index) => {
+      setValue(`translations.${index}.title`, productTitle, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    });
+  }, [autoSlug, productTitle, setValue, translationFields]);
 
   const setDefaultVariant = (defaultIndex: number) => {
     variantFields.forEach((_, index) => {
@@ -663,39 +647,9 @@ export default function NewProductForm({
             ))}
           </div>
 
-          {translationFields.map((field, index) => (
-            <div
-              key={field.id}
-              className="grid grid-cols-1 gap-4 rounded-lg border p-4 md:grid-cols-2"
-            >
-              <SelectInput
-                label="Language"
-                name={`translations.${index}.locale`}
-                register={register}
-                error={errors.translations?.[index]?.locale}
-                options={LOCALES.map((locale) => ({
-                  label: locale,
-                  value: locale,
-                }))}
-              />
-
-              <TextInput
-                label="Title"
-                name={`translations.${index}.title`}
-                register={register}
-                errors={errors}
-              />
-
-              <ModularTextareaInput
-                form={form}
-                label="Description"
-                name={`translations.${index}.description`}
-                enableAI
-                enableVoice
-                enableLanguage
-                editor="rich"
-              />
-
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Variants</h2>
               <button
                 type="button"
                 className="rounded bg-blue-500 px-4 py-2 text-sm text-white"
@@ -725,87 +679,14 @@ export default function NewProductForm({
             )}
           </div>
 
-          {variantFields.map((field, index) => (
-            <div
-              key={field.id}
-              className="grid grid-cols-1 gap-4 rounded-lg border p-4 md:grid-cols-2"
-            >
-              <TextInput
-                label="Title"
-                name={`variants.${index}.title`}
-                register={register}
-                errors={errors}
-              />
-
-              <TextInput
-                label="SKU"
-                name={`variants.${index}.sku`}
-                register={register}
-                errors={errors}
-              />
-              <TextInput
-                label="Barcode"
-                name={`variants.${index}.barcode`}
-                register={register}
-                errors={errors}
-              />
-
-              <TextInput
-                label="Price"
-                name={`variants.${index}.price`}
-                type="number"
-                register={register}
-                errors={errors}
-              />
-
-              <TextInput
-                label="Sale Price"
-                name={`variants.${index}.salePrice`}
-                type="number"
-                register={register}
-                errors={errors}
-              />
-
-              <TextInput
-                label="Cost Price"
-                name={`variants.${index}.costPrice`}
-                type="number"
-                register={register}
-                errors={errors}
-              />
-
-              <TextInput
-                label="Stock"
-                name={`variants.${index}.stock`}
-                type="number"
-                register={register}
-                errors={errors}
-              />
-
-              <ToggleInput
-                label="Default Variant"
-                name={`variants.${index}.isDefault`}
-                register={register}
-                trueTitle="Default"
-                falseTitle="Normal"
-              />
-
-              <button
-                type="button"
-                className="self-end text-red-500"
-                onClick={() => removeVariant(index)}
-              >
-                Remove
-              </button>
-            </div>
-          ))}        </div>
-
-        <SubmitButton
-          isLoading={createProduct.isPending || updateProduct.isPending}
-          buttonTitle={updateData.id ? "Update product" : "Create product"}
-          loadingButtonTitle="Saving..."
-        />
-      </form>
+          <SubmitButton
+            isLoading={createProduct.isPending || updateProduct.isPending}
+            buttonTitle={updateData.id ? "Update product" : "Create product"}
+            loadingButtonTitle="Saving..."
+          />
+          </form>
+        </FormProvider>
+      </GlassCard>
     </div>
   );
 }

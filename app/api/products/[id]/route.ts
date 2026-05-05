@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { productSchema } from "@/lib/validators/productSchema";
+import { updateProduct } from "@/actions/product";
 import { z } from "zod";
 
 /* ================= TYPES ================= */
@@ -62,50 +63,16 @@ export async function PUT(
     const body: unknown = await req.json();
     const parsed = productSchema.parse(body);
 
-    const { images, variants, translations, ...productData } =
-      parsed;
+    const updated = await updateProduct(id, parsed);
 
-    const updated = await db.product.update({
-      where: { id },
-      data: {
-        ...productData,
+    if (!updated.success) {
+      return NextResponse.json(
+        { error: updated.error },
+        { status: 400 }
+      );
+    }
 
-        images: {
-          deleteMany: {},
-          create: images,
-        },
-
-        variants: {
-          deleteMany: {},
-          create: variants.map(({ attributes, wholesalePricing, ...variant }) => ({
-            ...variant,
-            attributes: {
-              create: attributes,
-            },
-            wholesalePricing: {
-              create: wholesalePricing,
-            },
-          })),
-        },
-
-        translations: {
-          deleteMany: {},
-          create: translations,
-        },
-      },
-      include: {
-        images: true,
-        variants: {
-          include: {
-            attributes: true,
-            wholesalePricing: true,
-          },
-        },
-        translations: true,
-      },
-    });
-
-    return NextResponse.json(updated);
+    return NextResponse.json(updated.data);
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

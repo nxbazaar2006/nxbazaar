@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  FieldErrors,
   FieldValues,
   Path,
   RegisterOptions,
+  UseFormRegister,
   useFormContext,
   get,
 } from "react-hook-form";
@@ -18,6 +20,9 @@ type Props<T extends FieldValues> = {
   readOnly?: boolean;
   required?: boolean;
   icon?: React.ReactNode;
+  className?: string;
+  register?: UseFormRegister<T>;
+  errors?: FieldErrors<T>;
 };
 
 export default function TextInput<T extends FieldValues>({
@@ -30,16 +35,22 @@ export default function TextInput<T extends FieldValues>({
   readOnly = false,
   required = false,
   icon,
+  className = "",
+  register: registerProp,
+  errors: errorsProp,
 }: Props<T>) {
-  const {
-    register,
-    formState: { errors },
-  } = useFormContext<T>();
+  const formContext = useFormContext<T>();
+  const register = registerProp ?? formContext?.register;
+  const errors = errorsProp ?? formContext?.formState.errors;
 
-  const error = get(errors, name);
+  if (!register) {
+    throw new Error("TextInput requires react-hook-form register or FormProvider");
+  }
+
+  const error = errors ? get(errors, name) : undefined;
 
   return (
-    <div className="space-y-2">
+    <div className={`space-y-2 ${className}`}>
       <label className="text-sm font-medium text-gray-900 dark:text-white/90">
         {label} {required && <span className="text-red-500">*</span>}
       </label>

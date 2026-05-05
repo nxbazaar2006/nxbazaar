@@ -3,8 +3,7 @@ import Breadcrumb from "@/components/frontend/Breadcrumb";
 import CategoryCarousel from "@/components/frontend/CategoryCarousel";
 import ProductImageCarousel from "@/components/frontend/ProductImageCarousel";
 import ProductShareButton from "@/components/frontend/ProductShareButton";
-import { getProductBySlug } from "@/actions/products";
-import { getCategoryById } from "@/actions/category";
+import { getProductBySlug, getSimilarProducts } from "@/actions/products";
 import { Send, Tag } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -14,9 +13,6 @@ import DeliverWrapper from "@/components/location/DeliverWrapper";
 import ProductDeliverySection from "@/components/location/ProductDeliverySection";
 import DeliverToButton from "@/components/location/DeliverToButton";
 import PincodeChecker from "@/components/location/PincodeChecker";
-
-/* ✅ ZOD */
-import { dbProductSchema } from "@/lib/validators/productSchema";
 
 /* ================= TYPES ================= */
 
@@ -33,21 +29,18 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
 
-  const rawProduct = await getProductBySlug(slug);
-  const result = dbProductSchema.safeParse(rawProduct);
+  const product = await getProductBySlug(slug);
 
-  if (!result.success) {
+  if (!product) {
     return {
       title: "Product",
-      description: "Invalid product",
+      description: "Product details",
     };
   }
 
-  const product = result.data;
-
   return {
     title: product.title,
-    description: product.description || "Product details",
+    description: product.metaDescription || "Product details",
     openGraph: {
       images: [product.imageUrl || ""],
     },
@@ -62,25 +55,13 @@ export default async function ProductDetailPage({
   const { slug } = await params;
 
   /* ===== PRODUCT ===== */
-  const rawProduct = await getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
 
-  const productResult = dbProductSchema.safeParse(rawProduct);
-
-  if (!productResult.success) {
-    console.log(productResult.error.flatten());
+  if (!product) {
     return notFound();
   }
 
-  const product = productResult.data;
-
-  /* ===== CATEGORY ===== */
-  const rawCategory = await getCategoryById(product.categoryId);
-
-  if (!rawCategory) return notFound();
-
-  const products = rawCategory.products.filter(
-    (p: any) => p.id !== product.id
-  );
+  const products = await getSimilarProducts(product.categoryId, product.id);
 
   /* ===== SHARE ===== */
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
@@ -117,9 +98,12 @@ export default async function ProductDetailPage({
           </div>
 
           <div className="border-b pb-4">
-            <p className="py-2 text-slate-700 dark:text-slate-200">
-              {product.description}
-            </p>
+            <div
+              className="prose prose-sm max-w-none py-2 text-slate-700 dark:prose-invert dark:text-slate-200"
+              dangerouslySetInnerHTML={{
+                __html: product.description || "No description available.",
+              }}
+            />
 
             <div className="flex gap-8 mb-4">
               <p>SKU: {product.sku}</p>

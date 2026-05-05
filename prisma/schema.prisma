@@ -1,5 +1,3 @@
-
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -25,6 +23,12 @@ enum OrderStatus {
   CANCELED
 }
 
+enum Language {
+  EN
+  HI
+  MR
+}
+
 // ================= USER =================
 
 model User {
@@ -40,11 +44,10 @@ model User {
   status        Boolean  @default(true)
 
   verificationToken String?
- vlogs Vlog[]
-  products Product[]
-  coupons  Coupon[]
-  orders   Order[]
-  sales    Sale[]
+  products          Product[]
+  coupons           Coupon[]
+  orders            Order[]
+  sales             Sale[]
 
   sellerProfile SellerProfile?
   profile       UserProfile?
@@ -110,8 +113,8 @@ model SellerProfile {
 // ================= CATEGORY =================
 
 model Category {
-  id       String  @id @default(uuid())
- 
+  id String @id @default(uuid())
+
   imageUrl String?
   isActive Boolean @default(true)
 
@@ -123,8 +126,6 @@ model Category {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([slug])
 }
 
 model CategoryTranslation {
@@ -133,9 +134,8 @@ model CategoryTranslation {
   slug        String?
   title       String
   description String?
-slug     String  @unique
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([categoryId, locale])
   @@unique([locale, slug])
@@ -145,8 +145,8 @@ slug     String  @unique
 // ================= SUB CATEGORY =================
 
 model SubCategory {
-  id       String  @id @default(uuid())
- 
+  id String @id @default(uuid())
+
   imageUrl String?
   isActive Boolean @default(true)
 
@@ -162,17 +162,14 @@ model SubCategory {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([slug])
 }
 
 model SubCategoryTranslation {
-  id          String   @id @default(uuid())
-  locale      Language
-  slug        String?
-  title       String
-  description String?
-slug     String  @unique
+  id            String      @id @default(uuid())
+  locale        Language
+  slug          String?
+  title         String
+  description   String?
   subCategoryId String
   subCategory   SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
 
@@ -184,8 +181,8 @@ slug     String  @unique
 // ================= MARKET =================
 
 model Market {
-  id          String  @id @default(uuid())
- 
+  id String @id @default(uuid())
+
   title       String
   description String?
   logoUrl     String?
@@ -201,13 +198,12 @@ model Market {
 model MarketTranslation {
   id String @id @default(uuid())
 
-  locale      String // en, hi, mr
+  locale      Language
   slug        String?
   title       String
   description String?
-slug     String  @unique
-  marketId String
-  market   Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  marketId    String
+  market      Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -256,6 +252,7 @@ model Product {
   images       ProductImage[]
   variants     ProductVariant[]
   translations ProductTranslation[]
+  history      ProductHistory[]
 
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
@@ -272,12 +269,44 @@ model Product {
   orderItems OrderItem[]
   sales      Sale[]
   blogs      Blog[]      @relation("BlogProducts")
+  vlogs      Vlog[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
   @@index([slug])
   @@index([categoryId])
+  @@index([subCategoryId])
   @@index([userId])
+}
+
+model ProductHistory {
+  id        String  @id @default(uuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  productCode  String?
+  productTitle String
+
+  action String
+  field  String?
+
+  oldValue String?
+  newValue String?
+
+  variantId String?
+  sku       String?
+
+  changedByUserId   String?
+  changedByUserCode String?
+  changedByRole     String?
+  sellerCode        String?
+
+  createdAt DateTime @default(now())
+
+  @@index([productId, createdAt])
+  @@index([variantId])
+  @@index([action])
+  @@index([changedByUserId])
 }
 
 // ================= PRODUCT IMAGE =================
@@ -346,8 +375,8 @@ model VariantAttribute {
 
   variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
-  name  String  // size, color
-  value String  // M, Black
+  name  String // size, color
+  value String // M, Black
 }
 
 // ================= WHOLESALE =================
@@ -367,12 +396,11 @@ model WholesalePricing {
 // ================= TRANSLATION =================
 
 model ProductTranslation {
-  id          String   @id @default(uuid())
-  locale      Language
-  slug        String?
-  title       String
-  description String?
-slug     String  @unique
+  id              String   @id @default(uuid())
+  locale          Language
+  slug            String?
+  title           String
+  description     String?
   metaTitle       String?
   metaDescription String?
 
@@ -383,7 +411,6 @@ slug     String  @unique
   @@unique([locale, slug])
   @@index([locale, slug])
 }
-
 
 model Vlog {
   id           String            @id @default(uuid())
@@ -402,25 +429,16 @@ model Vlog {
 model VlogTranslation {
   id        String   @id @default(uuid())
   title     String
-  slug      String
+  slug      String?
   locale    Language
   vlogId    String
   vlog      Vlog     @relation(fields: [vlogId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([slug, locale])
-}
-
-model ProductImage {
-  id        String @id @default(uuid())
-  url       String
-  isPrimary Boolean @default(false)
-
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([productId])
+  @@unique([vlogId, locale])
+  @@unique([locale, slug])
+  @@index([locale, slug])
 }
 
 // ================= ORDER =================
@@ -453,12 +471,13 @@ model Order {
   sales      Sale[]
 
   // 🔥 QR CODE (Order level)
-  qrCodeUrl String?   // image URL (S3/UploadThing)
-  qrData    String?   // URL जैसे: /order/{id}
+  qrCodeUrl String? // image URL (S3/UploadThing)
+  qrData    String? // URL जैसे: /order/{id}
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
 // ================= ORDER ITEM =================
 
 model OrderItem {
@@ -470,11 +489,11 @@ model OrderItem {
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
-  vendorId String
- productVariantId String
+  vendorId         String
+  productVariantId String
   productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
-  title    String?
-  imageUrl String?
+  title            String?
+  imageUrl         String?
 
   quantity Int
   price    Float
@@ -497,10 +516,12 @@ model Sale {
 
   total Float
 
-  order     Order    @relation(fields: [orderId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
-  vendor    User     @relation(fields: [vendorId], references: [id])
-  createdAt DateTime @default(now())
+  order            Order           @relation(fields: [orderId], references: [id])
+  product          Product         @relation(fields: [productId], references: [id])
+  vendor           User            @relation(fields: [vendorId], references: [id])
+  productVariantId String?
+  productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id])
+  createdAt        DateTime        @default(now())
 }
 
 // ================= COUPON =================
@@ -551,6 +572,7 @@ model Blog {
 
   // 🔗 relation with product
   relatedProducts Product[] @relation("BlogProducts")
+  vlogs           Vlog[]
 
   publishedAt DateTime?
   createdAt   DateTime  @default(now())

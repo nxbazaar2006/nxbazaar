@@ -3,6 +3,7 @@ import NewProductForm from "@/components/backoffice/NewProductForm";
 import { getCategories } from "@/actions/category";
 import { getSubCategories } from "@/actions/subcategory";
 import { auth } from "@/auth";
+import { db } from "@/lib/db";
 
 /* ================= TYPES ================= */
 
@@ -33,6 +34,24 @@ export default async function NewProduct() {
 
   if (!session?.user?.id) {
     return <div className="p-6 text-sm text-red-500">Unauthorized</div>;
+  }
+
+  const formUser = await db.user.findFirst({
+    where: {
+      OR: [
+        { id: session.user.id },
+        ...(session.user.email ? [{ email: session.user.email }] : []),
+      ],
+    },
+    select: { id: true },
+  });
+
+  if (!formUser) {
+    return (
+      <div className="p-6 text-sm text-red-500">
+        Logged-in user was not found in database. Please sign in again.
+      </div>
+    );
   }
 
   /* ================= FETCH DATA (PARALLEL + SAFE) ================= */
@@ -105,7 +124,7 @@ export default async function NewProduct() {
      
 
       <NewProductForm
-        userId={session.user.id}
+        userId={formUser.id}
         categories={categories}
         subCategories={subCategories}
       />

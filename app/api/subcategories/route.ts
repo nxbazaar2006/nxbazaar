@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { subCategorySchema } from "@/lib/validators/subcategory.schema";
-import { generateUniqueSlug } from "@/lib/utils/generateUniqueSlug";
-import { generateUniqueTranslationSlug } from "@/lib/slug/translationSlug.service";
+import {
+  generateUniqueSlug,
+  generateUniqueTranslationSlug,
+} from "@/lib/slug/translationSlug.service";
 import { ZodError } from "zod";
 import { Language, Prisma } from "@prisma/client";
 
@@ -29,26 +31,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-<<<<<<< HEAD
     const primaryLocale = data.translations[0]?.locale ?? "en";
     const slug = await generateUniqueSlug("subcategory", primaryLocale, title);
-
-    const translations = await Promise.all(
-      data.translations.map(async (translation) => ({
-        ...translation,
-        locale: translation.locale.toUpperCase() as Language,
-        slug:
-          translation.slug ??
-          (await generateUniqueSlug(
-            "subcategory",
-            translation.locale,
-            translation.title
-          )),
-      }))
-    );
-=======
-    const slug = await generateUniqueSlug(title);
->>>>>>> 6cf6bafd1bc31939473fdfa5a272376b494100f7
 
     const subCategory = await db.$transaction(async (tx) => {
       const created = await tx.subCategory.create({

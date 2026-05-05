@@ -88,7 +88,7 @@ export default function MultipleImageInput<T extends FieldValues>({
               width={100}
               height={100}
               alt="product"
-              className="w-24 h-24 object-cover rounded-md border"
+              className="w-24 h-24 object-cover rounded-md border-4 border-white"
             />
 
             <button

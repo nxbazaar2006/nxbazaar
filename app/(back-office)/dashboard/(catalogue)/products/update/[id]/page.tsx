@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import NewProductForm from "@/components/backoffice/NewProductForm";
-import { getProductById } from "@/actions/product";
+import ProductHistoryTimeline from "@/components/backoffice/ProductHistoryTimeline";
+import { getProductById, getProductHistory } from "@/actions/product";
 import { getCategories } from "@/actions/category";
 import { getSubCategories } from "@/actions/subcategory";
 
@@ -10,16 +11,32 @@ type Props = {
   }>;
 };
 
+type SubCategoryOption = {
+  id: string;
+  categoryId: string;
+  slug: string;
+  translations?: { title: string }[];
+  hsnCode?: {
+    id: string;
+    code: string;
+    title: string;
+    gstRate: number;
+  } | null;
+};
+
+type ProductFormUpdateData = Parameters<typeof NewProductForm>[0]["updateData"];
+
 export default async function UpdateProductPage({ params }: Props) {
   const { id } = await params; // ✅ important fix
 
   if (!id) return notFound();
 
-  const [productRes, categoriesData, subCategoriesData] =
+  const [productRes, categoriesData, subCategoriesData, historyRes] =
     await Promise.all([
       getProductById(id),
       getCategories(),
       getSubCategories(),
+      getProductHistory(id),
     ]);
 
   if (!productRes?.success || !productRes?.data) {
@@ -34,8 +51,13 @@ export default async function UpdateProductPage({ params }: Props) {
       title: cat.translations?.[0]?.title || cat.slug,
     })) ?? [];
 
+  const subCategoryList =
+    subCategoriesData?.success && Array.isArray(subCategoriesData.data)
+      ? (subCategoriesData.data as SubCategoryOption[])
+      : [];
+
   const subCategories =
-    subCategoriesData?.map((sub) => ({
+    subCategoryList.map((sub) => ({
       id: sub.id,
       title: sub.translations?.[0]?.title || sub.slug,
       categoryId: sub.categoryId,
@@ -47,7 +69,7 @@ export default async function UpdateProductPage({ params }: Props) {
             gstRate: sub.hsnCode.gstRate,
           }
         : null,
-    })) ?? [];
+    }));
 
   const updateData = {
     ...product,
@@ -69,7 +91,11 @@ export default async function UpdateProductPage({ params }: Props) {
         userId={product.userId}
         categories={categories}
         subCategories={subCategories}
-        updateData={updateData}
+        updateData={updateData as ProductFormUpdateData}
+      />
+
+      <ProductHistoryTimeline
+        history={historyRes.success ? historyRes.data : []}
       />
     </div>
   );

@@ -1,10 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import {
+  Bold,
+  Heading2,
+  Italic,
+  List,
+  ListOrdered,
+  Redo2,
+  Undo2,
+} from "lucide-react";
 import { BlogInput } from "@/lib/validators/blog.schema";
 import { useCreateBlog, useUpdateBlog } from "@/hooks/useBlog";
 import { generateSlug } from "@/lib/utils/slug";
-import BlogEditor from "@/components/FormInputs/BlogEditor";
+import BlogEditor from "@/components/FormInputs/Editor";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -16,6 +27,109 @@ type Props = {
 };
 
 const locales: Locale[] = ["en", "hi", "mr"];
+
+function toolbarClass(active = false) {
+  return `inline-flex h-8 w-8 items-center justify-center rounded border text-xs ${
+    active ? "bg-black text-white" : "bg-white text-black"
+  }`;
+}
+
+function RichTextEditor({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: value || "",
+    immediatelyRender: false,
+    onUpdate: ({ editor: current }) => onChange(current.getHTML()),
+    editorProps: {
+      attributes: {
+        class: "min-h-[140px] outline-none",
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (!editor) return;
+    if (editor.getHTML() !== (value || "<p></p>")) {
+      editor.commands.setContent(value || "", { emitUpdate: false });
+    }
+  }, [editor, value]);
+
+  return (
+    <div className="overflow-hidden rounded border">
+      <div className="flex flex-wrap gap-1 border-b bg-gray-50 p-2">
+        <button
+          type="button"
+          className={toolbarClass(editor?.isActive("bold"))}
+          onClick={() => editor?.chain().focus().toggleBold().run()}
+          title="Bold"
+        >
+          <Bold className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          className={toolbarClass(editor?.isActive("italic"))}
+          onClick={() => editor?.chain().focus().toggleItalic().run()}
+          title="Italic"
+        >
+          <Italic className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          className={toolbarClass(editor?.isActive("heading", { level: 2 }))}
+          onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+          title="Heading"
+        >
+          <Heading2 className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          className={toolbarClass(editor?.isActive("bulletList"))}
+          onClick={() => editor?.chain().focus().toggleBulletList().run()}
+          title="Bullet list"
+        >
+          <List className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          className={toolbarClass(editor?.isActive("orderedList"))}
+          onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+          title="Numbered list"
+        >
+          <ListOrdered className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          className={toolbarClass()}
+          onClick={() => editor?.chain().focus().undo().run()}
+          title="Undo"
+        >
+          <Undo2 className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          className={toolbarClass()}
+          onClick={() => editor?.chain().focus().redo().run()}
+          title="Redo"
+        >
+          <Redo2 className="h-4 w-4" />
+        </button>
+      </div>
+      <EditorContent
+        editor={editor}
+        className="p-3"
+        aria-label={placeholder}
+      />
+    </div>
+  );
+}
 
 export default function BlogForm({ initialData, blogId }: Props) {
   const isEdit = Boolean(blogId);
@@ -174,16 +288,15 @@ export default function BlogForm({ initialData, blogId }: Props) {
       />
 
       {/* ===== DESCRIPTION ===== */}
-      <textarea
+      <RichTextEditor
         value={
           form.translations.find((t) => t.locale === activeTab)?.description ||
           ""
         }
-        onChange={(e) =>
-          updateTranslation(activeTab, "description", e.target.value)
+        onChange={(value) =>
+          updateTranslation(activeTab, "description", value)
         }
         placeholder={`Description (${activeTab})`}
-        className="border p-2 w-full"
       />
 
       {/* ===== SLUG CONTROL ===== */}
@@ -268,20 +381,19 @@ export default function BlogForm({ initialData, blogId }: Props) {
         className="border p-2 w-full"
       />
 
-      <textarea
+      <RichTextEditor
         value={
           form.translations.find((t) => t.locale === activeTab)
             ?.metaDescription || ""
         }
-        onChange={(e) =>
+        onChange={(value) =>
           updateTranslation(
             activeTab,
             "metaDescription",
-            e.target.value
+            value
           )
         }
         placeholder="Meta Description"
-        className="border p-2 w-full"
       />
 
       {/* ===== EDITOR ===== */}

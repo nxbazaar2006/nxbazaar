@@ -48,8 +48,22 @@ export default function RegisterForm({ role = "USER" }: Props) {
       } else {
         router.push(`/verify-email?userId=${response.data.id}`);
       }
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Something went wrong");
+    } catch (error: unknown) {
+      const message =
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        typeof error.response === "object" &&
+        error.response &&
+        "data" in error.response &&
+        typeof error.response.data === "object" &&
+        error.response.data &&
+        "message" in error.response.data &&
+        typeof error.response.data.message === "string"
+          ? error.response.data.message
+          : "Something went wrong";
+
+      toast.error(message);
     }
   };
 
