@@ -17,53 +17,76 @@ interface Banner {
   link: string;
 }
 
+const actionCardClass =
+  "apple-glass-soft group mb-3 flex items-center gap-3 p-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg";
+
 export default async function Hero() {
   const banners: Banner[] = await getBanners("");
 
   return (
-    <div className="grid grid-cols-12 gap-8 mb-6">
-      
+    <div className="mb-8 grid grid-cols-12 gap-6">
       <SidebarCategories />
 
-      <div className="col-span-full sm:col-span-7 bg-blue-600 rounded-md overflow-hidden">
+      <div
+        className="
+          apple-glass col-span-full overflow-hidden p-3 sm:col-span-7
+        "
+      >
         <HeroCarousel banners={banners} />
       </div>
 
-      <div className="col-span-2 hidden sm:block bg-white p-3 dark:bg-slate-800 rounded-lg">
+      <div
+        className="
+          apple-glass col-span-2 hidden p-3 sm:block
+        "
+      >
+        <Link href="#" className={actionCardClass}>
+          <HelpCircle className="h-5 w-5 shrink-0 text-orange-500" />
 
-        <Link href="#" className="flex items-center gap-2 mb-3">
-          <HelpCircle className="w-5 h-5 dark:text-lime-500 text-slate-900" />
           <div>
-            <h2 className="uppercase text-sm">Help Center</h2>
-            <p className="text-[0.6rem]">Guide to Customer Care</p>
+            <h2 className="text-xs font-semibold uppercase tracking-wide">
+              Help Center
+            </h2>
+            <p className="text-[0.65rem] text-muted-foreground">
+              Guide to customer care
+            </p>
           </div>
         </Link>
 
-        <Link href="#" className="flex items-center gap-2 mb-3">
-          <FolderSync className="w-5 h-5 dark:text-lime-500 text-slate-900" />
+        <Link href="#" className={actionCardClass}>
+          <FolderSync className="h-5 w-5 shrink-0 text-blue-500" />
+
           <div>
-            <h2 className="uppercase text-sm">Easy Return</h2>
-            <p className="text-[0.6rem]">Quick Return</p>
+            <h2 className="text-xs font-semibold uppercase tracking-wide">
+              Easy Return
+            </h2>
+            <p className="text-[0.65rem] text-muted-foreground">
+              Quick return
+            </p>
           </div>
         </Link>
 
-        <Link
-          href="/register-seller"
-          className="flex items-center gap-2 mb-6"
-        >
-          <CircleDollarSign className="w-5 h-5 dark:text-lime-500 text-slate-900" />
+        <Link href="/register-seller" className="apple-glass-soft group mb-6 flex items-center gap-3 bg-gradient-to-r from-orange-500/15 via-pink-500/15 to-purple-500/15 p-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+          <CircleDollarSign className="h-5 w-5 shrink-0 text-green-500" />
+
           <div>
-            <h2 className="uppercase text-sm">Sell on Limi</h2>
-            <p className="text-[0.6rem]">Millions of Visitors</p>
+            <h2 className="text-xs font-semibold uppercase tracking-wide">
+              Sell on Limi
+            </h2>
+            <p className="text-[0.65rem] text-muted-foreground">
+              Millions of visitors
+            </p>
           </div>
         </Link>
 
-        <Image
-          src={advert}
-          alt="advert"
-          className="w-full rounded-lg"
-          priority
-        />
+        <div className="overflow-hidden rounded-2xl border border-white/10">
+          <Image
+            src={advert}
+            alt="Advertisement"
+            className="h-auto w-full object-cover"
+            priority
+          />
+        </div>
       </div>
     </div>
   );

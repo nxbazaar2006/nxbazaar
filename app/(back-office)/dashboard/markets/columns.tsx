@@ -76,7 +76,7 @@ export const columns: ColumnDef<Market>[] = [
     header: "Logo",
 
     cell: ({ row }) => (
-      <ImageColumn<Market>
+      <ImageColumn
         row={row}
         accessorKey="logoUrl"
       />
@@ -131,8 +131,8 @@ export const columns: ColumnDef<Market>[] = [
         <ActionColumn<Market>
           row={row}
           title="Market"
-          editEndpoint={`/dashboard/markets/update/${market.id}`}
-          endpoint={`/api/markets/${market.id}`}
+          editEndpoint={`markets/update/${market.id}`}
+          endpoint="markets"
         />
       );
     },

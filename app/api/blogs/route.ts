@@ -3,16 +3,26 @@ import { db } from "@/lib/db";
 import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
 import { blogSchema } from "@/lib/validators/blog.schema";
 import { Language } from "@prisma/client";
+import { auth } from "@/auth";
 
 // ================= CREATE BLOG =================
 export async function POST(req: NextRequest) {
   try {
     const body: unknown = await req.json();
     const data = blogSchema.parse(body);
+    const session = await auth();
+    const userId = data.userId ?? session?.user?.id;
+
+    if (!userId) {
+      return NextResponse.json(
+        { message: "User ID is required" },
+        { status: 401 }
+      );
+    }
 
     // 🔥 slug per translation
     const translationsWithSlug = await Promise.all(
-      data.translations.map(async (t) => ({
+      data.translations.map(async (t: (typeof data.translations)[number]) => ({
         ...t,
         locale: t.locale.toUpperCase() as Language,
         slug: await generateUniqueSlug(
@@ -25,11 +35,12 @@ export async function POST(req: NextRequest) {
 
     const blog = await db.blog.create({
       data: {
+        slug: data.slug ?? translationsWithSlug[0]?.slug ?? "blog",
         imageUrl: data.imageUrl,
         isActive: data.isActive,
         isFeatured: data.isFeatured,
         content: data.content,
-        userId: data.userId,
+        userId,
         categoryId: data.categoryId,
         publishedAt: data.publishedAt,
 

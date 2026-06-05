@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { sellerBasicSchema } from "@/lib/validators/seller.schema.ts";
 import { setCurrentStep, updateOnboardingFormData } from "@/redux/slices/onboardingSlice";
 import { z } from "zod";
+import type { RootState } from "@/redux/store";
 
 type FormData = z.infer<typeof sellerBasicSchema>;
 
@@ -16,11 +17,11 @@ export default function BasicInformationForm() {
   const dispatch = useDispatch();
 
   const currentStep = useSelector(
-    (store: any) => store.onboarding.currentStep
+    (store: RootState) => store.onboarding.currentStep
   );
 
   const existingFormData = useSelector(
-    (store: any) => store.onboarding.onboardingFormData
+    (store: RootState) => store.onboarding.onboardingFormData
   );
 
   const {

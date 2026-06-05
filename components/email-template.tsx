@@ -133,7 +133,7 @@ const main: React.CSSProperties = {
   backgroundColor: "#ffffff",
   color: "#24292e",
   fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif',
+    'system-ui,"Segoe UI",Helvetica,Arial,sans-serif',
 };
 
 const container: React.CSSProperties = {

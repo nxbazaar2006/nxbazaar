@@ -34,14 +34,14 @@ export default function ProductHistoryTimeline({ history }: Props) {
   return (
     <GlassCard className="max-w-7xl mx-auto space-y-4">
       <div>
-        <h2 className="text-xl font-semibold text-white">Product History</h2>
-        <p className="text-sm text-gray-300">
+        <h2 className="text-xl font-semibold text-slate-950 dark:text-white">Product History</h2>
+        <p className="text-sm text-slate-600 dark:text-gray-300">
           Product, variant, price, stock, status, and image changes.
         </p>
       </div>
 
       {history.length === 0 ? (
-        <div className="rounded-lg border border-white/10 p-4 text-sm text-gray-300">
+        <div className="rounded-lg border border-slate-200 p-4 text-sm text-slate-600 dark:border-white/10 dark:text-gray-300">
           No product history found.
         </div>
       ) : (

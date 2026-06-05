@@ -5,9 +5,9 @@ import { z } from "zod";
 const idSchema = z.string().min(1);
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // GET USER
@@ -16,7 +16,8 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    const id = idSchema.parse(params.id);
+    const { id: rawId } = await params;
+    const id = idSchema.parse(rawId);
 
     const user = await db.user.findUnique({
       where: { id },
@@ -55,7 +56,8 @@ export async function DELETE(
   { params }: RouteParams
 ) {
   try {
-    const id = idSchema.parse(params.id);
+    const { id: rawId } = await params;
+    const id = idSchema.parse(rawId);
 
     const user = await db.user.findUnique({
       where: { id },

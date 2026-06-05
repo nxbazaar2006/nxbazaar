@@ -68,7 +68,7 @@ export default function RegisterForm({ role = "USER" }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit(onSubmit)} className="glass-card p-6">
       <input type="hidden" {...register("role")} value={role} />
 
       <TextInput
@@ -103,10 +103,10 @@ export default function RegisterForm({ role = "USER" }: Props) {
         loadingButtonTitle="Creating..."
       />
 
-      <div className="flex justify-between py-4 text-sm">
+      <div className="flex justify-between gap-4 py-4 text-sm">
         <p>
           Already have an account?
-          <Link href="/login" className="text-purple-600 ml-1">
+          <Link href="/login" className="text-primary ml-1">
             Login
           </Link>
         </p>
@@ -114,14 +114,14 @@ export default function RegisterForm({ role = "USER" }: Props) {
         {role === "USER" ? (
           <p>
             Are you a Seller?
-            <Link href="/seller-pricing" className="text-purple-600 ml-1">
+            <Link href="/seller-pricing" className="text-primary ml-1">
               Register here
             </Link>
           </p>
         ) : (
           <p>
             Are you a Seller/Vendor?
-            <Link href="/register" className="text-purple-600 ml-1">
+            <Link href="/register" className="text-primary ml-1">
               Seller Register here
             </Link>
           </p>

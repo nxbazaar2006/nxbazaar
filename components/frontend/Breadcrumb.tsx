@@ -4,40 +4,71 @@ import { ChevronRight, Home } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export default function Breadcrumb(): JSX.Element {
-  const pathname = usePathname();
+function formatLabel(value: string) {
+  return decodeURIComponent(value)
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
+export default function Breadcrumb() {
+  const pathname = usePathname();
   const pathArr = pathname.split("/").filter(Boolean);
 
-  return (
-    <nav className="flex mb-6" aria-label="Breadcrumb">
-      <ol className="inline-flex items-center space-x-1 md:space-x-2">
+  if (pathArr.length === 0) return <></>;
 
+  return (
+    <nav className="mb-6" aria-label="Breadcrumb">
+      <ol
+        className="
+          inline-flex flex-wrap items-center gap-1 rounded-2xl
+          border border-white/10 bg-white/10 px-4 py-2
+          shadow-sm backdrop-blur-xl
+        "
+      >
         <li className="inline-flex items-center">
           <Link
             href="/"
-            className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600"
+            className="
+              inline-flex items-center gap-2 rounded-xl px-2 py-1
+              text-sm font-medium text-muted-foreground
+              transition-all hover:bg-white/10 hover:text-primary
+            "
           >
-            <Home className="w-3 h-3 mr-2" />
+            <Home className="h-4 w-4" />
             Home
           </Link>
         </li>
 
         {pathArr.map((item, i) => {
           const href = "/" + pathArr.slice(0, i + 1).join("/");
+          const isLast = i === pathArr.length - 1;
 
           return (
-            <li key={i}>
-              <div className="flex items-center capitalize">
-                <ChevronRight className="w-3 h-3 text-gray-400 mx-1" />
+            <li key={href} className="inline-flex items-center">
+              <ChevronRight className="mx-1 h-4 w-4 text-muted-foreground/60" />
 
+              {isLast ? (
+                <span
+                  className="
+                    rounded-xl bg-gradient-to-r from-orange-500/20
+                    via-blue-500/20 to-purple-500/20 px-3 py-1
+                    text-sm font-semibold text-foreground
+                  "
+                >
+                  {formatLabel(item)}
+                </span>
+              ) : (
                 <Link
                   href={href}
-                  className="text-sm font-medium text-gray-700 hover:text-blue-600"
+                  className="
+                    rounded-xl px-2 py-1 text-sm font-medium
+                    text-muted-foreground transition-all
+                    hover:bg-white/10 hover:text-primary
+                  "
                 >
-                  {decodeURIComponent(item)}
+                  {formatLabel(item)}
                 </Link>
-              </div>
+              )}
             </li>
           );
         })}

@@ -3,12 +3,14 @@ import { z } from "zod";
 const optionalString = () =>
   z
     .union([z.string().trim().min(1), z.literal(""), z.undefined(), z.null()])
-    .transform((value) => value || undefined);
+    .transform((value: string | null | undefined) => value || undefined);
 
 const optionalNumber = () =>
   z
     .union([z.coerce.number(), z.literal(""), z.undefined(), z.null()])
-    .transform((value) => (value === "" || value === null ? undefined : value));
+    .transform((value: number | "" | null | undefined) =>
+      value === "" || value === null ? undefined : value
+    );
 
 const requiredNumber = (message = "Required", min = 0) =>
   z.coerce.number().min(min, message);
@@ -32,6 +34,7 @@ export const wholesalePricingSchema = z.object({
 });
 
 export const productVariantSchema = z.object({
+  id: optionalString(),
   title: z.string().min(1, "Variant title required"),
   sku: optionalString(),
   barcode: optionalString(),
@@ -60,10 +63,23 @@ export const productTranslationSchema = z.object({
   metaDescription: optionalString(),
 });
 
+type ProductVariantDraft = z.infer<typeof productVariantSchema>;
+type ProductTranslationDraft = z.infer<typeof productTranslationSchema>;
+type ProductImageDraft = z.infer<typeof productImageSchema>;
+type ProductRefinementContext = {
+  addIssue: (issue: {
+    code: "custom";
+    path: Array<string | number>;
+    message: string;
+  }) => void;
+};
+
 export const productSchema = z
   .object({
     title: z.string().trim().min(1, "Product title required"),
+    vendorCode: optionalString(),
     slug: optionalString(),
+    productCode: optionalString(),
     imageUrl: optionalString(),
     tags: z.array(z.string().trim().min(1)).default([]),
     unit: optionalString(),
@@ -81,7 +97,15 @@ export const productSchema = z
       .array(productTranslationSchema)
       .min(1, "At least one translation required"),
   })
-  .superRefine((data, ctx) => {
+  .superRefine(
+    (
+      data: {
+        variants: ProductVariantDraft[];
+        translations: ProductTranslationDraft[];
+        images: ProductImageDraft[];
+      },
+      ctx: ProductRefinementContext
+    ) => {
     const defaults = data.variants.filter((variant) => variant.isDefault);
 
     if (defaults.length !== 1) {
@@ -92,7 +116,7 @@ export const productSchema = z
       });
     }
 
-    data.variants.forEach((variant, index) => {
+    data.variants.forEach((variant: ProductVariantDraft, index: number) => {
       if (
         typeof variant.salePrice === "number" &&
         variant.salePrice > variant.price
@@ -105,7 +129,11 @@ export const productSchema = z
       }
 
       const minQtySet = new Set<number>();
-      variant.wholesalePricing.forEach((price, priceIndex) => {
+      variant.wholesalePricing.forEach(
+        (
+          price: ProductVariantDraft["wholesalePricing"][number],
+          priceIndex: number
+        ) => {
         if (minQtySet.has(price.minQty)) {
           ctx.addIssue({
             code: "custom",
@@ -114,11 +142,13 @@ export const productSchema = z
           });
         }
         minQtySet.add(price.minQty);
-      });
+        }
+      );
     });
 
     const localeSet = new Set<string>();
-    data.translations.forEach((translation, index) => {
+    data.translations.forEach(
+      (translation: ProductTranslationDraft, index: number) => {
       if (localeSet.has(translation.locale)) {
         ctx.addIssue({
           code: "custom",
@@ -127,9 +157,12 @@ export const productSchema = z
         });
       }
       localeSet.add(translation.locale);
-    });
+      }
+    );
 
-    const primaryImages = data.images.filter((image) => image.isPrimary);
+    const primaryImages = data.images.filter(
+      (image: ProductImageDraft) => image.isPrimary
+    );
 
     if (data.images.length > 0 && primaryImages.length === 0) {
       ctx.addIssue({
@@ -146,7 +179,8 @@ export const productSchema = z
         message: "Only one primary image allowed",
       });
     }
-  });
+    }
+  );
 
 export const updateProductSchema = productSchema.extend({
   id: z.string().min(1),

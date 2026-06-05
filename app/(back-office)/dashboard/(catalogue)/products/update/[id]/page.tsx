@@ -4,6 +4,7 @@ import ProductHistoryTimeline from "@/components/backoffice/ProductHistoryTimeli
 import { getProductById, getProductHistory } from "@/actions/product";
 import { getCategories } from "@/actions/category";
 import { getSubCategories } from "@/actions/subcategory";
+import { db } from "@/lib/db";
 
 type Props = {
   params: Promise<{
@@ -44,12 +45,24 @@ export default async function UpdateProductPage({ params }: Props) {
   }
 
   const product = productRes.data;
+  const owner = await db.user.findUnique({
+    where: { id: product.userId },
+    select: {
+      id: true,
+      sellerProfile: {
+        select: {
+          code: true,
+        },
+      },
+    },
+  });
 
+  const categoriesSource = Array.isArray(categoriesData) ? categoriesData : [];
   const categories =
-    categoriesData?.map((cat) => ({
+    categoriesSource.map((cat) => ({
       id: cat.id,
       title: cat.translations?.[0]?.title || cat.slug,
-    })) ?? [];
+    }));
 
   const subCategoryList =
     subCategoriesData?.success && Array.isArray(subCategoriesData.data)
@@ -89,6 +102,7 @@ export default async function UpdateProductPage({ params }: Props) {
 
       <NewProductForm
         userId={product.userId}
+        vendorCode={owner?.sellerProfile?.code}
         categories={categories}
         subCategories={subCategories}
         updateData={updateData as ProductFormUpdateData}

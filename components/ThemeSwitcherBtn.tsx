@@ -1,38 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 
 export default function ThemeSwitcherBtn() {
-  const { setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="w-9 h-9 rounded-lg bg-white/5 animate-pulse" />
-    );
-  }
-
-  const isDark = resolvedTheme === "dark";
+  const { setTheme, theme, resolvedTheme } = useTheme();
+  const currentTheme = theme === "system" ? resolvedTheme : theme;
+  const isDark = currentTheme === "dark";
 
   return (
     <button
+      type="button"
+      suppressHydrationWarning
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Light mode" : "Dark mode"}
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="p-2 rounded-lg apple-hover flex items-center justify-center"
+      className="relative flex h-8 w-14 items-center rounded-full border border-slate-200 bg-white/80 p-1 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_8px_20px_rgba(15,23,42,0.12)] backdrop-blur-xl transition-colors duration-300 dark:border-white/20 dark:bg-black/30 dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.24),0_8px_20px_rgba(0,0,0,0.18)]"
     >
       <motion.span
-        key={resolvedTheme}
-        initial={{ rotate: -90, opacity: 0 }}
-        animate={{ rotate: 0, opacity: 1 }}
+        key={currentTheme ?? "system"}
+        suppressHydrationWarning
+        initial={false}
+        animate={{
+          x: isDark ? 24 : 0,
+          rotate: isDark ? 0 : 180,
+        }}
         transition={{ duration: 0.3 }}
+        className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-white text-slate-900 shadow-md dark:from-slate-700 dark:to-slate-950 dark:text-white"
       >
-        {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        {isDark ? <Moon size={14} /> : <Sun size={14} />}
       </motion.span>
     </button>
   );

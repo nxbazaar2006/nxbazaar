@@ -3,14 +3,20 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { Checkbox } from '@/components/ui/checkbox';
 import SortableColumn from '@/components/DataTableColumns/SortableColumn';
-import Status from '@/components/DataTableColumns/Status';
+import ActionColumn from '@/components/DataTableColumns/ActionColumn';
 import { Product } from '@/types/product';
-import { Button } from '@/components/ui/button';
-import { Pencil, Trash2 } from 'lucide-react';
-import Link from 'next/link';
-import { toast } from 'sonner';
 
 /* ================= HELPER ================= */
+
+type DisplayRelation = {
+  name?: string | null;
+  title?: string | null;
+  slug?: string | null;
+  translations?: {
+    title?: string | null;
+    slug?: string | null;
+  }[];
+} | null;
 
 function getDefaultVariant(product: Product) {
   if (!product.variants || product.variants.length === 0) return null;
@@ -18,6 +24,72 @@ function getDefaultVariant(product: Product) {
   return (
     product.variants.find((v) => v.isDefault) ||
     product.variants[0]
+  );
+}
+
+function getRelationName(relation: DisplayRelation) {
+  return (
+    relation?.name ??
+    relation?.title ??
+    relation?.translations?.[0]?.title ??
+    relation?.slug ??
+    relation?.translations?.[0]?.slug ??
+    '-'
+  );
+}
+
+function shortText(value: string | null | undefined, fallback = '-') {
+  const text = value?.trim();
+
+  if (!text) return fallback;
+
+  return (
+    <span className="block max-w-[180px] truncate" title={text}>
+      {text}
+    </span>
+  );
+}
+
+function formatMoney(value: number | null | undefined, currency = 'INR') {
+  if (typeof value !== 'number') return '-';
+
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function getProductImage(product: Product) {
+  return (
+    product.imageUrl?.trim() ||
+    product.images?.find((image) => image.isPrimary)?.url ||
+    product.images?.[0]?.url ||
+    getDefaultVariant(product)?.image ||
+    ""
+  );
+}
+
+function ProductImageCell({ product }: { product: Product }) {
+  const imageUrl = getProductImage(product);
+
+  if (!imageUrl) {
+    return (
+      <div className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-muted text-xs text-muted-foreground">
+        -
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-11 w-11 overflow-hidden rounded-md border border-border bg-card shadow-sm">
+      <img
+        src={imageUrl}
+        alt={product.title}
+        className="h-full w-full object-cover"
+        loading="lazy"
+      />
+    </div>
   );
 }
 
@@ -52,12 +124,33 @@ export const columns: ColumnDef<Product>[] = [
     size: 50,
   },
 
+  /* ================= IMAGE ================= */
+  {
+    id: 'image',
+    header: 'Image',
+    cell: ({ row }) => <ProductImageCell product={row.original} />,
+    enableSorting: false,
+    size: 70,
+  },
+
   /* ================= TITLE ================= */
   {
     accessorKey: 'title',
     header: ({ column }) => (
       <SortableColumn column={column} title="Product Title" />
     ),
+    cell: ({ row }) => shortText(row.original.title),
+    size: 220,
+  },
+
+  /* ================= PRODUCT CODE ================= */
+  {
+    accessorKey: 'productCode',
+    header: ({ column }) => (
+      <SortableColumn column={column} title="Product Code" />
+    ),
+    cell: ({ row }) => shortText(row.original.productCode, '-'),
+    size: 180,
   },
 
   /* ================= CATEGORY ================= */
@@ -65,7 +158,25 @@ export const columns: ColumnDef<Product>[] = [
     id: 'category',
     header: 'Category',
     cell: ({ row }) =>
-      row.original.category?.slug ?? '-',
+      shortText(getRelationName(row.original.category)),
+    size: 180,
+  },
+
+  /* ================= SUBCATEGORY ================= */
+  {
+    id: 'subCategory',
+    header: 'SubCategory',
+    cell: ({ row }) =>
+      shortText(getRelationName(row.original.subCategory)),
+    size: 180,
+  },
+
+  /* ================= HSN ================= */
+  {
+    id: 'hsnCode',
+    header: 'HSN',
+    cell: ({ row }) => shortText(row.original.hsnCode?.code),
+    size: 110,
   },
 
   /* ================= SKU ================= */
@@ -83,8 +194,20 @@ export const columns: ColumnDef<Product>[] = [
 
     cell: ({ row }) => {
       const v = getDefaultVariant(row.original);
-      return v?.sku ?? '-';
+      return shortText(v?.sku);
     },
+    size: 210,
+  },
+
+  /* ================= BARCODE ================= */
+  {
+    id: 'barcode',
+    header: 'Barcode',
+    cell: ({ row }) => {
+      const v = getDefaultVariant(row.original);
+      return shortText(v?.barcode);
+    },
+    size: 180,
   },
 
   /* ================= PRICE ================= */
@@ -105,18 +228,19 @@ export const columns: ColumnDef<Product>[] = [
       if (!v) return '-';
 
       return v.salePrice ? (
-        <div className="flex flex-col">
+        <div className="flex min-w-[110px] flex-col">
           <span className="line-through text-xs text-gray-400">
-            ₹{v.price.toFixed(2)}
+            {formatMoney(v.price, v.currency)}
           </span>
           <span className="text-green-600 font-semibold">
-            ₹{v.salePrice.toFixed(2)}
+            {formatMoney(v.salePrice, v.currency)}
           </span>
         </div>
       ) : (
-        `₹${v.price.toFixed(2)}`
+        formatMoney(v.price, v.currency)
       );
     },
+    size: 130,
   },
 
   /* ================= STOCK ================= */
@@ -134,35 +258,66 @@ export const columns: ColumnDef<Product>[] = [
 
     cell: ({ row }) => {
       const v = getDefaultVariant(row.original);
-
-      if (!v) return 0;
+      const stock = v?.stock ?? 0;
 
       return (
         <span
           className={
-            v.stock < 5
+            stock < 5
               ? 'text-red-500 font-semibold'
               : ''
           }
         >
-          {v.stock}
+          {stock}
         </span>
       );
     },
+    size: 100,
   },
 
-  /* ================= STATUS ================= */
+  /* ================= UNIT ================= */
   {
-    accessorKey: 'isActive',
-    header: 'Status',
+    accessorKey: 'unit',
+    header: 'Unit',
+    cell: ({ row }) => shortText(row.original.unit),
+    size: 100,
+  },
 
-    cell: ({ row }) => {
-      const isActive = row.getValue('isActive') as boolean;
+  /* ================= CURRENCY ================= */
+  {
+    accessorKey: 'currency',
+    header: 'Currency',
+    cell: ({ row }) => row.original.currency ?? '-',
+    size: 100,
+  },
 
-      return (
-        <Status status={isActive ? 'active' : 'inactive'} />
-      );
-    },
+  /* ================= GST ================= */
+  {
+    accessorKey: 'gstRate',
+    header: 'GST',
+    cell: ({ row }) =>
+      typeof row.original.gstRate === 'number'
+        ? `${row.original.gstRate}%`
+        : row.original.hsnCode?.gstRate
+          ? `${row.original.hsnCode.gstRate}%`
+          : '-',
+    size: 100,
+  },
+
+  /* ================= VARIANTS ================= */
+  {
+    id: 'variants',
+    header: 'Variants',
+    cell: ({ row }) => row.original.variants?.length ?? 0,
+    size: 100,
+  },
+
+  /* ================= WHOLESALE ================= */
+  {
+    accessorKey: 'isWholesale',
+    header: 'Wholesale',
+    cell: ({ row }) => (row.original.isWholesale ? 'Yes' : 'No'),
+    size: 120,
   },
 
   /* ================= ACTIONS ================= */
@@ -170,54 +325,14 @@ export const columns: ColumnDef<Product>[] = [
     id: 'actions',
     header: 'Actions',
 
-    cell: ({ row }) => {
-      const product = row.original;
-
-      const handleDelete = async () => {
-        const confirmDelete = confirm(
-          'Delete this product?'
-        );
-        if (!confirmDelete) return;
-
-        try {
-          const res = await fetch(
-            `/api/products/${product.id}`,
-            { method: 'DELETE' }
-          );
-
-          if (!res.ok) throw new Error();
-
-          toast.success('Product deleted');
-
-          // 🔥 better than reload (optional)
-          window.location.reload();
-        } catch {
-          toast.error('Delete failed');
-        }
-      };
-
-      return (
-        <div className="flex gap-2">
-          {/* EDIT */}
-          <Link
-            href={`/dashboard/products/update/${product.id}`}
-          >
-            <Button size="icon" variant="outline">
-              <Pencil className="h-4 w-4" />
-            </Button>
-          </Link>
-
-          {/* DELETE */}
-          <Button
-            size="icon"
-            variant="destructive"
-            onClick={handleDelete}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <ActionColumn
+        row={row}
+        title="Product"
+        editEndpoint={`products/update/${row.original.id}`}
+        endpoint="products"
+      />
+    ),
 
     enableSorting: false,
     size: 120,

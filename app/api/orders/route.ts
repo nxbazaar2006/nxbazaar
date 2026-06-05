@@ -1,8 +1,31 @@
-import {db} from "@/lib/db";
+import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { createOrderSchema } from "@/lib/validators/order.schema";
+import {
+  createOrderSchema,
+  type CreateOrderInput,
+} from "@/lib/validators/order.schema";
 import { z } from "zod";
+import QRCode from "qrcode";
+
+type OrderRequestItem = {
+  id: string;
+  productVariantId?: string;
+  title?: string;
+  imageUrl?: string;
+  qty: number;
+  vendorId?: string;
+};
+
+type NormalizedOrderItem = {
+  productId: string;
+  productVariantId: string;
+  vendorId: string;
+  quantity: number;
+  price: number;
+  title: string;
+  imageUrl: string | null;
+};
 
 // ✅ Generate Order Number
 function generateOrderNumber(length: number): string {
@@ -17,12 +40,35 @@ function generateOrderNumber(length: number): string {
   return orderNumber;
 }
 
+function buildOrderQrData(orderId: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+
+  return `${baseUrl}/order-confirmation/${orderId}`;
+}
+
+function normalizeOptionalId(value: string | undefined | null) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+async function buildQrCodeUrl(text: string) {
+  return QRCode.toDataURL(text, {
+    errorCorrectionLevel: "M",
+    margin: 1,
+    scale: 4,
+    width: 256,
+  });
+}
+
 // ✅ CREATE ORDER
 export async function POST(request: Request) {
   try {
     const session = await auth();
-    const body = createOrderSchema.parse(await request.json());
+    const body: CreateOrderInput = createOrderSchema.parse(
+      await request.json()
+    );
     const { checkoutFormData, orderItems } = body;
+    const parsedOrderItems = orderItems as OrderRequestItem[];
     const userId = session?.user?.id ?? checkoutFormData.userId;
 
     if (!userId) {
@@ -50,7 +96,7 @@ export async function POST(request: Request) {
     const result = await db.$transaction(async (prisma) => {
       const products = await prisma.product.findMany({
         where: {
-          id: { in: orderItems.map((item) => item.id) },
+          id: { in: parsedOrderItems.map((item) => item.id) },
         },
         include: {
           images: true,
@@ -59,40 +105,42 @@ export async function POST(request: Request) {
       });
       const productById = new Map(products.map((product) => [product.id, product]));
 
-      const normalizedItems = orderItems.map((item) => {
-        const product = productById.get(item.id);
+      const normalizedItems: NormalizedOrderItem[] = parsedOrderItems.map(
+        (item) => {
+          const product = productById.get(item.id);
 
-        if (!product) {
-          throw new Error(`Product not found: ${item.id}`);
+          if (!product) {
+            throw new Error(`Product not found: ${item.id}`);
+          }
+
+          const variant =
+            product.variants.find((entry) => entry.id === item.productVariantId) ??
+            product.variants.find((entry) => entry.isDefault) ??
+            product.variants[0];
+
+          if (!variant) {
+            throw new Error(`Product variant not found: ${product.title}`);
+          }
+
+          const imageUrl =
+            variant.image ??
+            product.imageUrl ??
+            product.images.find((image) => image.isPrimary)?.url ??
+            product.images[0]?.url ??
+            item.imageUrl ??
+            null;
+
+          return {
+            productId: product.id,
+            productVariantId: variant.id,
+            vendorId: normalizeOptionalId(item.vendorId) ?? product.userId,
+            quantity: Number(item.qty),
+            price: Number(variant.salePrice ?? variant.price),
+            title: item.title ?? product.title,
+            imageUrl,
+          };
         }
-
-        const variant =
-          product.variants.find((entry) => entry.id === item.productVariantId) ??
-          product.variants.find((entry) => entry.isDefault) ??
-          product.variants[0];
-
-        if (!variant) {
-          throw new Error(`Product variant not found: ${product.title}`);
-        }
-
-        const imageUrl =
-          variant.image ??
-          product.imageUrl ??
-          product.images.find((image) => image.isPrimary)?.url ??
-          product.images[0]?.url ??
-          item.imageUrl ??
-          null;
-
-        return {
-          productId: product.id,
-          productVariantId: variant.id,
-          vendorId: item.vendorId ?? product.userId,
-          quantity: Number(item.qty),
-          price: Number(variant.salePrice ?? variant.price),
-          title: item.title ?? product.title,
-          imageUrl,
-        };
-      });
+      );
 
       const newOrder = await prisma.order.create({
         data: {
@@ -112,48 +160,77 @@ export async function POST(request: Request) {
         },
       });
 
-      await prisma.orderItem.createMany({
-        data: normalizedItems.map((item) => ({
-          productId: item.productId,
-          productVariantId: item.productVariantId,
-          vendorId: item.vendorId,
-          quantity: item.quantity,
-          price: item.price,
-          orderId: newOrder.id,
-          imageUrl: item.imageUrl,
-          title: item.title,
-        })),
+      const orderQrData = buildOrderQrData(newOrder.id);
+      const orderQrCodeUrl = await buildQrCodeUrl(orderQrData);
+
+      await prisma.order.update({
+        where: { id: newOrder.id },
+        data: {
+          qrData: orderQrData,
+          qrCodeUrl: orderQrCodeUrl,
+        },
       });
 
-      const sales = await Promise.all(
+      const itemRows = await Promise.all(
         normalizedItems.map(async (item) => {
-          return prisma.sale.create({
-            data: {
-              orderId: newOrder.id,
-              productId: item.productId,
-              vendorId: item.vendorId,
-              total: item.price * item.quantity,
-            },
-          });
+          const qrData = `${orderQrData}?item=${item.productVariantId}`;
+          const qrCodeUrl = await buildQrCodeUrl(qrData);
+
+          return {
+            productId: item.productId,
+            productVariantId: item.productVariantId,
+            vendorId: item.vendorId,
+            quantity: item.quantity,
+            price: item.price,
+            orderId: newOrder.id,
+            imageUrl: item.imageUrl,
+            title: item.title,
+            qrData,
+            qrCodeUrl,
+          };
         })
       );
 
-      return { newOrder, sales };
+      await prisma.orderItem.createMany({
+        data: itemRows,
+      });
+
+      await prisma.sale.createMany({
+        data: normalizedItems.map((item) => ({
+          orderId: newOrder.id,
+          productId: item.productId,
+          productVariantId: item.productVariantId,
+          vendorId: item.vendorId,
+          total: item.price * item.quantity,
+        })),
+      });
+
+      const completeOrder = await prisma.order.findUniqueOrThrow({
+        where: { id: newOrder.id },
+        include: {
+          orderItems: true,
+          sales: true,
+        },
+      });
+
+      return completeOrder;
     });
 
     return NextResponse.json({
       success: true,
       message: "Order created successfully",
-      data: result.newOrder,
+      data: result,
     });
   } catch (error) {
     console.error(error);
     if (error instanceof z.ZodError) {
+      const zodError = error as z.ZodError;
+
       return NextResponse.json(
         {
           success: false,
           message: "Invalid order data",
-          errors: error.flatten(),
+          errors: zodError.flatten(),
         },
         { status: 400 }
       );

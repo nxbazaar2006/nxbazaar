@@ -51,7 +51,10 @@ export default function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="glass-card space-y-5 p-6"
+    >
       
       {/* Email */}
       <div>
@@ -63,7 +66,7 @@ export default function LoginForm() {
           type="email"
           placeholder="name@company.com"
           {...register("email", { required: "Email is required" })}
-          className="w-full p-2.5 border rounded-lg"
+          className="w-full rounded-full border border-white/40 bg-white/70 p-3 text-foreground outline-none placeholder:text-muted-foreground backdrop-blur-xl focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 dark:border-white/10 dark:bg-white/10"
         />
 
         {errors.email && (
@@ -83,7 +86,7 @@ export default function LoginForm() {
           type="password"
           placeholder="••••••••"
           {...register("password", { required: "Password is required" })}
-          className="w-full p-2.5 border rounded-lg"
+          className="w-full rounded-full border border-white/40 bg-white/70 p-3 text-foreground outline-none placeholder:text-muted-foreground backdrop-blur-xl focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 dark:border-white/10 dark:bg-white/10"
         />
 
         {errors.password && (
@@ -97,7 +100,7 @@ export default function LoginForm() {
       <div className="flex gap-4 items-center">
         <Link
           href="/forgot-password"
-          className="text-blue-600 hover:underline text-sm"
+          className="text-primary hover:underline text-sm"
         >
           Forgot Password
         </Link>
@@ -105,18 +108,18 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-5 py-2.5"
+          className="w-full rounded-full bg-slate-950 px-5 py-3 text-white shadow-sm hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
         >
           {loading ? "Signing in..." : "Login"}
         </button>
       </div>
 
       {/* Register */}
-      <p className="text-sm text-gray-500">
-        Don't have an account?{" "}
+      <p className="text-sm text-muted-foreground">
+        Don&apos;t have an account?{" "}
         <Link
           href="/register"
-          className="text-blue-600 hover:underline"
+          className="text-primary hover:underline"
         >
           Sign Up
         </Link>

@@ -1,5 +1,6 @@
 import CategoriesClient from "./CategoriesClient";
 import { getCategories } from "@/actions/category";
+import PageHeader from "@/components/backoffice/PageHeader";
 
 export default async function CategoriesPage() {
   const categoriesData = await getCategories();
@@ -14,7 +15,14 @@ export default async function CategoriesPage() {
   }));
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-4">
+      <PageHeader
+        heading="Categories"
+        subHeading="Manage your categories"
+        href="/dashboard/categories/new"
+        linkTitle="Add Category"
+      />
+
       <CategoriesClient initialData={categories} />
     </div>
   );

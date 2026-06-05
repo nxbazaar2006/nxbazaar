@@ -5,9 +5,13 @@ import { useUserLocation } from "./useUserLocation";
 import { getPincodeFromCoords } from "@/lib/getPincodeFromCoords";
 import { getLocationFromIP } from "@/lib/getLocationFromIP";
 
+type AutoPincodeData =
+  | Awaited<ReturnType<typeof getPincodeFromCoords>>
+  | Awaited<ReturnType<typeof getLocationFromIP>>;
+
 export const useAutoPincode = () => {
   const { location, error } = useUserLocation();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AutoPincodeData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

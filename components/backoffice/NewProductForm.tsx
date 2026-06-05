@@ -48,10 +48,13 @@ type SubCategoryOption = {
   categoryId: string;
   hsnCode?: HsnOption | null;
 };
+
 type Props = {
   userId: string;
+  vendorCode?: string | null;
   categories?: SelectOption[];
   subCategories?: SubCategoryOption[];
+  transparentBackground?: boolean;
   updateData?: Partial<ProductInput> & {
     id?: string;
     hsnCode?: HsnOption | null;
@@ -115,7 +118,10 @@ function defaultTranslations(updateData: Props["updateData"]) {
   const existing = updateData?.translations ?? [];
 
   return LOCALES.map((locale) => {
-    const match = existing.find((translation) => translation.locale === locale);
+    const match = existing.find(
+      (translation: ProductInput["translations"][number]) =>
+        translation.locale === locale
+    );
 
     return {
       locale,
@@ -137,14 +143,13 @@ function TranslationCard({
   const { register } = useFormContext<ProductInput>();
 
   return (
-    <div className="grid grid-cols-1 gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-200 bg-transparent p-4 shadow-none dark:border-white/10 md:grid-cols-2">
       <input type="hidden" {...register(`translations.${index}.locale` as const)} />
 
       <TextareaInput
-        label="Description"
+        label="English Description"
         name={`translations.${index}.description`}
         languageName={`translations.${index}.locale`}
-        placeholder="Write localized product description"
         rows={6}
         features={{
           ai: true,
@@ -196,8 +201,9 @@ function VariantCard({
   });
 
   return (
-    <div className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+    <div className="space-y-4 rounded-2xl border border-slate-200 bg-transparent p-4 shadow-none dark:border-white/10">
       <input type="hidden" {...register(`variants.${index}.sku` as const)} />
+      <input type="hidden" {...register(`variants.${index}.id` as const)} />
       <input type="hidden" {...register(`variants.${index}.barcode` as const)} />
       <input type="hidden" {...register(`variants.${index}.productCode` as const)} />
 
@@ -261,7 +267,7 @@ function VariantCard({
           <h3 className="text-sm font-semibold text-foreground">Attributes</h3>
           <button
             type="button"
-            className="rounded border px-3 py-2 text-xs"
+            className="rounded-full bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-fuchsia-500/20 transition hover:from-orange-400 hover:via-fuchsia-400 hover:to-sky-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-300"
             onClick={() =>
               appendAttribute({
                 name: "",
@@ -301,7 +307,7 @@ function VariantCard({
           <h3 className="text-sm font-semibold text-foreground">Wholesale Pricing</h3>
           <button
             type="button"
-            className="rounded border px-3 py-2 text-xs"
+            className="rounded-full bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-fuchsia-500/20 transition hover:from-orange-400 hover:via-fuchsia-400 hover:to-sky-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-300"
             onClick={() =>
               appendWholesale({
                 minQty: 1,
@@ -343,8 +349,10 @@ function VariantCard({
 
 export default function NewProductForm({
   userId,
+  vendorCode,
   categories = [],
   subCategories = [],
+  transparentBackground = false,
   updateData = {},
 }: Props) {
   const router = useRouter();
@@ -355,7 +363,9 @@ export default function NewProductForm({
     resolver: zodResolver(productSchema) as Resolver<ProductInput>,
     defaultValues: {
       title: updateData.title ?? "",
+      vendorCode: vendorCode?.trim() || userId,
       slug: updateData.slug ?? "",
+      productCode: updateData.productCode ?? "",
       imageUrl: updateData.imageUrl ?? "",
       tags: updateData.tags ?? [],
       unit: updateData.unit ?? "",
@@ -407,11 +417,13 @@ export default function NewProductForm({
   } = useFieldArray({
     control,
     name: "variants",
+    keyName: "fieldId",
   });
 
   const { fields: translationFields, remove: removeTranslation } = useFieldArray({
     control,
     name: "translations",
+    keyName: "fieldId",
   });
 
   const selectedCategoryId = useWatch({
@@ -435,6 +447,7 @@ export default function NewProductForm({
     control,
     name: "title",
   });
+  const displayVendorCode = vendorCode?.trim() || userId;
   const autoSlug = useMemo(
     () => generateSlug(productTitle || ""),
     [productTitle]
@@ -517,7 +530,7 @@ export default function NewProductForm({
       slug: data.slug?.trim() || generateSlug(data.title),
       userId: updateData.userId ?? userId,
       imageUrl: firstImage,
-      variants: data.variants.map((variant) => ({
+      variants: data.variants.map((variant: ProductInput["variants"][number]) => ({
         ...variant,
         currency: variant.currency ?? data.currency,
       })),
@@ -545,15 +558,22 @@ export default function NewProductForm({
     <div className="space-y-6">
       <FormHeader title={updateData.id ? "Update Product" : "Create Product"} />
 
-      <GlassCard className="max-w-7xl mx-auto space-y-6">
+      <GlassCard
+        className={`mx-auto max-w-7xl space-y-6 ${
+          transparentBackground
+            ? "!border-slate-200 !bg-white/90 !shadow-xl !shadow-slate-200/60 hover:!bg-white/90 dark:!border-white/10 dark:!bg-slate-900/60 dark:!shadow-black/20"
+            : "!border-slate-200 !bg-white/90 !shadow-xl !shadow-slate-200/60 hover:!bg-white/90 dark:!border-white/10 dark:!bg-slate-900/60 dark:!shadow-black/20"
+        }`}
+      >
         <FormProvider {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           <input type="hidden" {...register("userId")} />
+          <input type="hidden" {...register("productCode")} />
           <input type="hidden" {...register("hsnCodeId")} />
           <input type="hidden" {...register("gstRate")} />
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <TextInput label="Product Title" name="title" required />
+            <TextInput label="Product Title (English)" name="title" required />
             <TextInput
               label="Slug"
               name="slug"
@@ -612,11 +632,16 @@ export default function NewProductForm({
               ]}
             />
 
-            <ToggleInput
-              label="Status"
-              name="isActive"
-              trueTitle="Active"
-              falseTitle="Inactive"
+            <SelectInput
+              label="Vendor Code"
+              name="vendorCode"
+              options={[
+                {
+                  label: displayVendorCode,
+                  value: displayVendorCode,
+                },
+              ]}
+              placeholder="Select vendor code"
             />
 
             <ToggleInput
@@ -636,15 +661,30 @@ export default function NewProductForm({
           />
 
           <div className="space-y-4">
-            {translationFields.map((field, index) => (
-              <TranslationCard
-                key={field.id}
-                index={index}
-                aiPromptBase={productTitle || "this product"}
-                canRemove={translationFields.length > 1}
-                onRemove={() => removeTranslation(index)}
-              />
-            ))}
+            {translationFields.map((field, index) => {
+              const translationField = field as typeof field &
+                ProductInput["translations"][number];
+
+              if (translationField.locale !== "EN") {
+                return (
+                  <input
+                    key={field.fieldId}
+                    type="hidden"
+                    {...register(`translations.${index}.locale` as const)}
+                  />
+                );
+              }
+
+              return (
+                <TranslationCard
+                  key={field.fieldId}
+                  index={index}
+                  aiPromptBase={productTitle || "this product"}
+                  canRemove={false}
+                  onRemove={() => removeTranslation(index)}
+                />
+              );
+            })}
           </div>
 
           <div className="space-y-4">
@@ -652,7 +692,7 @@ export default function NewProductForm({
               <h2 className="text-lg font-semibold">Variants</h2>
               <button
                 type="button"
-                className="rounded bg-blue-500 px-4 py-2 text-sm text-white"
+                className="rounded-full bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 px-5 py-2 text-sm font-semibold text-white shadow-sm shadow-fuchsia-500/20 transition hover:from-orange-400 hover:via-fuchsia-400 hover:to-sky-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-300"
                 onClick={() =>
                   appendVariant(defaultVariant(selectedCurrency, false))
                 }
@@ -663,10 +703,13 @@ export default function NewProductForm({
 
             {variantFields.map((field, index) => (
               <VariantCard
-                key={field.id}
+                key={field.fieldId}
                 index={index}
                 canRemove={variantFields.length > 1}
-                isDefault={Boolean(field.isDefault)}
+                isDefault={Boolean(
+                  (field as typeof field & ProductInput["variants"][number])
+                    .isDefault
+                )}
                 onSetDefault={() => setDefaultVariant(index)}
                 onRemove={() => removeVariant(index)}
               />

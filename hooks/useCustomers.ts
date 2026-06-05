@@ -5,6 +5,7 @@ import {
   updateCustomer,
   deleteCustomer,
 } from "@/services/customerService";
+import type { CustomerUpdateInput } from "@/services/customerService";
 
 import { CustomerInput } from "@/lib/validators/customer.schema";
 import { User } from "@prisma/client";
@@ -44,7 +45,7 @@ export function useUpdateCustomer() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CustomerInput) => updateCustomer(data),
+    mutationFn: (data: CustomerUpdateInput) => updateCustomer(data),
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });

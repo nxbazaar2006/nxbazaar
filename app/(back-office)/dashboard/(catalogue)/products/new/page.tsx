@@ -1,11 +1,8 @@
-
 import NewProductForm from "@/components/backoffice/NewProductForm";
 import { getCategories } from "@/actions/category";
 import { getSubCategories } from "@/actions/subcategory";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-
-/* ================= TYPES ================= */
 
 type SelectOption = {
   id: string;
@@ -24,8 +21,6 @@ type SubCategoryOption = {
   } | null;
 };
 
-/* ================= PAGE ================= */
-
 export default async function NewProduct() {
   let categoriesData: Awaited<ReturnType<typeof getCategories>> = [];
   let subCategoriesResponse: Awaited<ReturnType<typeof getSubCategories>> | null =
@@ -43,7 +38,14 @@ export default async function NewProduct() {
         ...(session.user.email ? [{ email: session.user.email }] : []),
       ],
     },
-    select: { id: true },
+    select: {
+      id: true,
+      sellerProfile: {
+        select: {
+          code: true,
+        },
+      },
+    },
   });
 
   if (!formUser) {
@@ -54,7 +56,6 @@ export default async function NewProduct() {
     );
   }
 
-  /* ================= FETCH DATA (PARALLEL + SAFE) ================= */
   try {
     [categoriesData, subCategoriesResponse] = await Promise.all([
       getCategories(),
@@ -63,14 +64,9 @@ export default async function NewProduct() {
   } catch (error) {
     console.error("DATA_FETCH_ERROR:", error);
 
-    return (
-      <div className="p-6 text-red-500">
-        Failed to load form data
-      </div>
-    );
+    return <div className="p-6 text-red-500">Failed to load form data</div>;
   }
 
-  /* ================= SAFE FALLBACK ================= */
   const safeCategories = Array.isArray(categoriesData) ? categoriesData : [];
 
   if (!subCategoriesResponse?.success) {
@@ -85,8 +81,6 @@ export default async function NewProduct() {
   const safeSubCategories = Array.isArray(subCategoriesResponse.data)
     ? subCategoriesResponse.data
     : [];
-
-  /* ================= MAP DATA ================= */
 
   const categories: SelectOption[] = safeCategories.map((cat) => ({
     id: cat.id,
@@ -107,8 +101,6 @@ export default async function NewProduct() {
       : null,
   }));
 
-  /* ================= EMPTY STATE ================= */
-
   if (categories.length === 0) {
     return (
       <div className="p-6 text-sm text-gray-500">
@@ -117,16 +109,14 @@ export default async function NewProduct() {
     );
   }
 
-  /* ================= UI ================= */
-
   return (
     <div className="space-y-6">
-     
-
       <NewProductForm
         userId={formUser.id}
+        vendorCode={formUser.sellerProfile?.code}
         categories={categories}
         subCategories={subCategories}
+        transparentBackground
       />
     </div>
   );

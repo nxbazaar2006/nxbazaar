@@ -4,6 +4,7 @@ import { addToCart } from "@/redux/slices/cartSlice";
 import { BaggageClaim } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import React from "react";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
@@ -15,6 +16,7 @@ interface ProductType {
   slug: string;
   imageUrl: string;
   salePrice: number;
+  userId?: string;
 }
 
 interface ProductProps {
@@ -23,6 +25,16 @@ interface ProductProps {
 
 export default function Product({ product }: ProductProps) {
   const dispatch = useDispatch<AppDispatch>();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const lang = searchParams.get("lang");
+  const pathLocale = pathname.split("/")[1];
+  const localePrefix = ["hi", "mr"].includes(pathLocale)
+    ? `/${pathLocale}`
+    : "";
+  const productHref = `${localePrefix}/products/${product.slug}${
+    lang ? `?lang=${lang}` : ""
+  }`;
 
   function handleAddToCart() {
     dispatch(
@@ -31,7 +43,7 @@ export default function Product({ product }: ProductProps) {
         title: product.title,
         salePrice: Number(product.salePrice), // ✅ safe
         imageUrl: product.imageUrl,
-        vendorId: "", // ✅ अगर है तो डालो, नहीं तो empty
+        vendorId: product.userId,
       })
     );
 
@@ -39,32 +51,32 @@ export default function Product({ product }: ProductProps) {
   }
 
   return (
-    <div className="rounded-lg mr-3 bg-white dark:bg-slate-900 overflow-hidden border shadow">
-      <Link href={`/products/${product.slug}`}>
+    <div className="apple-glass-soft mr-3 overflow-hidden p-0 text-card-foreground transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+      <Link href={productHref}>
         <Image
           src={product.imageUrl}
           alt={product.title}
           width={556}
           height={556}
-          className="w-full h-48 object-cover border-4 border-white"
+          className="h-48 w-full object-cover"
         />
       </Link>
 
-      <div className="px-4">
-        <Link href={`/products/${product.slug}`}>
-          <h2 className="text-center dark:text-slate-200 text-slate-800 my-2 font-semibold">
+      <div className="px-4 pb-4 pt-3">
+        <Link href={productHref}>
+          <h2 className="my-2 line-clamp-2 text-center font-semibold text-foreground">
             {product.title}
           </h2>
         </Link>
 
-        <div className="flex items-center justify-between gap-2 pb-3 dark:text-slate-200 text-slate-800">
-          <p>UGX {product.salePrice}</p>
+        <div className="flex items-center justify-between gap-2 pb-3 text-foreground">
+          <p className="font-semibold">UGX {product.salePrice}</p>
 
           <button
             onClick={handleAddToCart}
-            className="flex items-center space-x-2 rounded-md border border-white/40 bg-gradient-to-r from-lime-500 via-emerald-500 to-teal-500 px-4 py-2 text-white shadow-lg shadow-emerald-500/25 backdrop-blur-md transition hover:from-lime-400 hover:via-emerald-400 hover:to-teal-400 hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98]"
+            className="flex items-center space-x-1.5 rounded-full bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-fuchsia-500/20 transition hover:from-orange-400 hover:via-fuchsia-400 hover:to-sky-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-300 focus:ring-offset-2 active:scale-[0.98] dark:shadow-sky-950/40 dark:focus:ring-sky-400 dark:focus:ring-offset-slate-950"
           >
-            <BaggageClaim />
+            <BaggageClaim className="h-4 w-4" />
             <span>Add</span>
           </button>
         </div>

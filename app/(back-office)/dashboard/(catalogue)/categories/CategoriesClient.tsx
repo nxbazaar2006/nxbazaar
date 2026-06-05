@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "@/components/data-table-components/DataTable";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
-import PageHeader from "@/components/backoffice/PageHeader";
 import { columns } from "./columns";
 import { Category } from "@/types/category";
 
@@ -30,17 +29,10 @@ export default function CategoriesClient({ initialData }: Props) {
   });
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader
-        heading="Categories"
-        subHeading="Manage your categories"
-        href="/dashboard/categories/new"
-        linkTitle="Add Category"
-      />
-
-      <GlassCard className="flex justify-end">
+    <div className="space-y-4">
+      <div className="flex justify-end">
         <LanguageSwitcher locale={locale} setLocale={setLocale} />
-      </GlassCard>
+      </div>
 
       {error && (
         <GlassCard className="border-red-400">
@@ -48,14 +40,14 @@ export default function CategoriesClient({ initialData }: Props) {
         </GlassCard>
       )}
 
-      <GlassCard className="p-0 overflow-hidden">
-        <DataTable
-          columns={columns}
-          data={data ?? []}
-          filterKeys={["translations.0.title"]}
-          isLoading={isLoading}
-        />
-      </GlassCard>
+      <DataTable
+        columns={columns}
+        data={data ?? []}
+        endpoint="categories"
+        queryKey={["categories", locale]}
+        filterKeys={["translations.0.title"]}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

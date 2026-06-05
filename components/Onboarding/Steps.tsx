@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useSelector } from "react-redux";
+import type { RootState } from "@/redux/store";
 import BasicInformationForm from "./StepForms/BasicInformationForm";
 import FarmDetailsForm from "./StepForms/FarmDetailsForm";
 import AdditionalInformationForm from "./StepForms/AdditionalInformationForm";
@@ -13,7 +14,7 @@ interface Props {
 
 export default function StepForm({ sellerId }: Props) {
   const currentStep = useSelector(
-    (store: any) => store.onboarding.currentStep
+    (store: RootState) => store.onboarding.currentStep
   );
 
   function renderFormByStep(step: number) {

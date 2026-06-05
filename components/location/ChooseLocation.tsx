@@ -2,19 +2,30 @@
 
 import { useEffect, useState } from "react";
 import { getCountries, getStates, getCities } from "@/lib/location";
-import { useLocation } from "@/hooks/useLocation";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { saveLocation } from "@/lib/storage";
+
+type CountryOption = {
+  name: string;
+  isoCode: string;
+};
+
+type StateOption = {
+  name: string;
+  isoCode: string;
+};
+
+type CityOption = {
+  name: string;
+};
 
 export default function ChooseLocation() {
-  const { updateLocation } = useLocation();
-
   const [country, setCountry] = useState("IN");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
 
-  const [countries, setCountries] = useState<any[]>([]);
-  const [states, setStates] = useState<any[]>([]);
-  const [cities, setCities] = useState<any[]>([]);
+  const [countries, setCountries] = useState<CountryOption[]>([]);
+  const [states, setStates] = useState<StateOption[]>([]);
+  const [cities, setCities] = useState<CityOption[]>([]);
 
   useEffect(() => {
     setCountries(getCountries());
@@ -26,10 +37,15 @@ export default function ChooseLocation() {
 
   useEffect(() => {
     if (state) setCities(getCities(country, state));
-  }, [state]);
+    else setCities([]);
+  }, [country, state]);
 
   const handleSave = () => {
-    updateLocation({ country, state, city });
+    const countryName =
+      countries.find((item) => item.isoCode === country)?.name ?? country;
+    const stateName = states.find((item) => item.isoCode === state)?.name ?? state;
+
+    saveLocation({ country: countryName, state: stateName, city });
   };
 
   return (
@@ -39,35 +55,50 @@ export default function ChooseLocation() {
       </h2>
 
       <div className="space-y-3">
-        <SearchableSelect
-          placeholder="Country"
+        <select
           value={country}
-          onChange={setCountry}
-          options={countries.map((c) => ({
-            label: c.name,
-            value: c.isoCode,
-          }))}
-        />
+          onChange={(event) => {
+            setCountry(event.target.value);
+            setState("");
+            setCity("");
+          }}
+          className="w-full rounded-md border border-input bg-background px-3 py-2"
+        >
+          {countries.map((item) => (
+            <option key={item.isoCode} value={item.isoCode}>
+              {item.name}
+            </option>
+          ))}
+        </select>
 
-        <SearchableSelect
-          placeholder="State"
+        <select
           value={state}
-          onChange={setState}
-          options={states.map((s) => ({
-            label: s.name,
-            value: s.isoCode,
-          }))}
-        />
+          onChange={(event) => {
+            setState(event.target.value);
+            setCity("");
+          }}
+          className="w-full rounded-md border border-input bg-background px-3 py-2"
+        >
+          <option value="">Select state</option>
+          {states.map((item) => (
+            <option key={item.isoCode} value={item.isoCode}>
+              {item.name}
+            </option>
+          ))}
+        </select>
 
-        <SearchableSelect
-          placeholder="City"
+        <select
           value={city}
-          onChange={setCity}
-          options={cities.map((c) => ({
-            label: c.name,
-            value: c.name,
-          }))}
-        />
+          onChange={(event) => setCity(event.target.value)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2"
+        >
+          <option value="">Select city</option>
+          {cities.map((item) => (
+            <option key={item.name} value={item.name}>
+              {item.name}
+            </option>
+          ))}
+        </select>
 
         <button
           onClick={handleSave}

@@ -82,8 +82,9 @@ export function useSubCategoryBySlug(entitySlug: string, locale = "en") {
   return useQuery({
     queryKey: ["subcategory", locale, entitySlug],
     queryFn: async () => {
-      const res = await api.get(`/slugs/subcategory/${locale}/${entitySlug}`);
-      return res.data?.data ?? null;
+      return apiClient.get<SubCategory | null>(
+        `/slugs/subcategory/${locale}/${entitySlug}`
+      );
     },
     enabled: Boolean(entitySlug),
     retry: 1,

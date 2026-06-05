@@ -9,7 +9,7 @@ export default function ProductDeliverySection() {
 
   return (
     <div className="space-y-4">
-      <DeliverToButton openModal={() => alert("open modal")} />
+      <DeliverToButton />
       <PincodeChecker />
     </div>
   );

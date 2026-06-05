@@ -149,15 +149,143 @@ export async function getCategoryById(id: string) {
   return { data: category };
 }
 
+function pickTranslation<T extends { locale: string }>(
+  translations: T[],
+  locale = "EN"
+) {
+  const normalizedLocale = locale.toUpperCase();
+
+  return (
+    translations.find(
+      (translation) => translation.locale.toUpperCase() === normalizedLocale
+    ) ??
+    translations.find((translation) => translation.locale.toUpperCase() === "EN") ??
+    translations[0]
+  );
+}
+
+function mapProduct(product: {
+  id: string;
+  title: string;
+  slug: string;
+  imageUrl: string | null;
+  translations: { locale: string; title: string; slug: string | null }[];
+  variants: { price: number; salePrice: number | null; image: string | null }[];
+  images: { url: string; isPrimary: boolean }[];
+}, locale = "EN") {
+  const translation = pickTranslation(product.translations, locale);
+  const variant = product.variants[0];
+
+  return {
+    id: product.id,
+    title: translation?.title ?? product.title,
+    slug: translation?.slug ?? product.slug,
+    translations: product.translations,
+    imageUrl:
+      variant?.image ??
+      product.imageUrl ??
+      product.images.find((image) => image.isPrimary)?.url ??
+      product.images[0]?.url ??
+      "/placeholder.png",
+    salePrice: variant?.salePrice ?? variant?.price ?? 0,
+  };
+}
+
+function mapCategory(category: {
+  id: string;
+  imageUrl: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  translations: {
+    locale: string;
+    title: string;
+    slug: string | null;
+    description: string | null;
+  }[];
+  products: {
+    id: string;
+    title: string;
+    slug: string;
+    imageUrl: string | null;
+    translations: { locale: string; title: string; slug: string | null }[];
+    variants: { price: number; salePrice: number | null; image: string | null }[];
+    images: { url: string; isPrimary: boolean }[];
+  }[];
+}, locale = "EN") {
+  const translation = pickTranslation(category.translations, locale);
+
+  return {
+    id: category.id,
+    title: translation?.title ?? "Category",
+    slug: translation?.slug ?? category.id,
+    imageUrl: category.imageUrl || null,
+    description: translation?.description ?? null,
+    isActive: category.isActive,
+    products: category.products.map((product) => mapProduct(product, locale)),
+    translations: category.translations,
+    createdAt: category.createdAt,
+    updatedAt: category.updatedAt,
+  };
+}
+
 /* ---------------------------------- */
 /* ✅ GET ALL */
 /* ---------------------------------- */
-export async function getCategories() {
+export async function getCategories(path?: string, locale = "EN") {
   try {
-    return await db.category.findMany({
+    const categoryInclude = {
+      translations: true,
+      products: {
+        where: {
+          isActive: true,
+        },
+        include: {
+          translations: true,
+          variants: {
+            where: {
+              isActive: true,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+          },
+          images: {
+            orderBy: {
+              isPrimary: "desc",
+            },
+          },
+        },
+      },
+    } as const;
+
+    if (path) {
+      const slug = path.split("/").filter(Boolean).pop();
+
+      if (!slug) {
+        return null;
+      }
+
+      const category = await db.category.findFirst({
+        where: {
+          translations: {
+            some: {
+              slug,
+            },
+          },
+        },
+        include: categoryInclude,
+      });
+
+      return category ? mapCategory(category, locale) : null;
+    }
+
+    const categories = await db.category.findMany({
       orderBy: { createdAt: "desc" },
-      include: { translations: true },
+      include: categoryInclude,
     });
+
+    return categories.map((category) => mapCategory(category, locale));
   } catch (error: unknown) {
     console.error("Error fetching categories:", error);
     return [];

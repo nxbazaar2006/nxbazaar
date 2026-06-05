@@ -2,9 +2,9 @@ import {db} from "@/lib/db";
 import { NextResponse } from "next/server";
 
 type Params = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export async function GET(
@@ -12,9 +12,10 @@ export async function GET(
   { params }: Params
 ) {
   try {
+    const { id } = await params;
     const orders = await db.order.findMany({
       where: {
-        userId: params.id, // ✅ FIX: findMany instead of findUnique
+        userId: id, // ✅ FIX: findMany instead of findUnique
       },
       include: {
         orderItems: true,

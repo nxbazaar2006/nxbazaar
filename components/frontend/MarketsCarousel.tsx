@@ -49,17 +49,17 @@ export default function MarketsCarousel({ markets }: { markets: Market[] }) {
           >
             <Link
               href={`/market/${market.slug}`}
-              className="rounded-lg block"
+              className="apple-glass-soft block overflow-hidden p-2 transition hover:-translate-y-1 hover:bg-white/75 hover:shadow-lg dark:hover:bg-slate-950/45"
             >
              <Image
   src={market.logoUrl || "/placeholder.png"}
   alt={market.title}
   width={556}
   height={556}
-  className="w-full rounded-2xl"
+  className="w-full rounded-xl"
 />
 
-              <h2 className="text-center dark:text-slate-200 text-slate-800 mt-2">
+              <h2 className="text-center text-foreground mt-2">
                 {market.title}
               </h2>
             </Link>

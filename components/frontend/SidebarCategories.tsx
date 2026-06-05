@@ -2,49 +2,37 @@ import { getCategories } from "@/actions/category";
 import Image from "next/image";
 import Link from "next/link";
 
-interface Product {
-  id: string;
-}
-
-interface Category {
-  id: string;
-  title: string;
-  slug: string;
-  imageUrl: string;
-  products: Product[];
-}
-
 export default async function SidebarCategories() {
-  const categoriesData: Category[] = await getCategories("");
+  const categoriesData = await getCategories("");
 
   // Only categories with products
-  const categories = categoriesData.filter(
-    (category) => category.products?.length > 0
-  );
+  const categories = Array.isArray(categoriesData)
+    ? categoriesData.filter((category) => category.products?.length > 0)
+    : [];
 
   return (
-    <div className="sm:col-span-3 hidden sm:block bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-700 text-slate-800 overflow-hidden">
+    <div className="apple-glass hidden overflow-hidden sm:col-span-3 sm:block">
       
-      <h2 className="bg-slate-100 dark:bg-gray-800 py-3 px-6 font-semibold border-b border-gray-300 dark:border-gray-600 text-slate-800 dark:text-slate-100">
+      <h2 className="border-b border-white/30 px-6 py-4 font-semibold text-foreground dark:border-white/10">
         Shop By Category ({categories.length})
       </h2>
 
-      <div className="py-3 px-6 h-[300px] overflow-y-auto flex flex-col gap-2">
+      <div className="flex h-[300px] flex-col gap-2 overflow-y-auto px-4 py-3">
         {categories.map((category) => (
           <Link
             key={category.id}
             href={`/category/${category.slug}`}
-            className="flex items-center gap-3 hover:bg-slate-50 transition-all duration-300 dark:text-slate-300 dark:hover:bg-slate-600 rounded-md p-1"
+            className="apple-glass-soft flex items-center gap-3 p-2 text-foreground/90 transition hover:-translate-y-0.5 hover:bg-white/75 dark:hover:bg-white/10"
           >
             <Image
               width={40}
               height={40}
-              className="w-10 h-10 rounded-full object-cover border border-lime-300"
-              src={category.imageUrl}
+              className="h-10 w-10 rounded-full border border-white/50 object-cover shadow-sm dark:border-white/10"
+              src={category.imageUrl || "/placeholder.png"}
               alt={category.title}
             />
 
-            <span className="text-sm">{category.title}</span>
+            <span className="text-sm font-medium">{category.title}</span>
           </Link>
         ))}
       </div>

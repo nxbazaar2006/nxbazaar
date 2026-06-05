@@ -20,6 +20,12 @@ const nextConfig: NextConfig = {
 
   turbopack: {},
 
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "5mb",
+    },
+  },
+
   // ✅ NEW PLACE (important)
   reactCompiler: false,
 };

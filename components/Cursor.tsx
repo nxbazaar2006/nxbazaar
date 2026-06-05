@@ -1,11 +1,16 @@
 "use client";
-import { useRef } from "react";
+import { type ReactNode, useRef } from "react";
 
-export default function MagneticButton({ children }: any) {
+type MagneticButtonProps = {
+  children: ReactNode;
+};
+
+export default function MagneticButton({ children }: MagneticButtonProps) {
   const ref = useRef<HTMLDivElement>(null);
 
-  const handleMove = (e: any) => {
-    const rect = ref.current!.getBoundingClientRect();
+  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
     const x = e.clientX - rect.left - rect.width / 2;
     const y = e.clientY - rect.top - rect.height / 2;
 
@@ -13,7 +18,8 @@ export default function MagneticButton({ children }: any) {
   };
 
   const reset = () => {
-    ref.current!.style.transform = `translate(0,0)`;
+    if (!ref.current) return;
+    ref.current.style.transform = `translate(0,0)`;
   };
 
   return (
@@ -22,8 +28,8 @@ export default function MagneticButton({ children }: any) {
       onMouseMove={handleMove}
       onMouseLeave={reset}
       className="
-        px-6 py-3 rounded-xl
-        bg-gradient-to-r from-indigo-500 to-purple-500
+        px-6 py-3 rounded-full
+        bg-primary
         text-white cursor-pointer
         transition-transform duration-200
       "

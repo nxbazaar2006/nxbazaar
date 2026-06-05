@@ -1,7 +1,6 @@
 "use client";
 import {
   useMutation,
-  useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
@@ -132,12 +131,14 @@ export function useApiBulkDelete() {
       endpoint,
       ids,
     }: BulkDeletePayload) => {
-      const response = await axios.delete(
+      const response = await axios.post(
         `/api/${endpoint}/bulk-delete`,
-        {
-          data: { ids },
-        }
+        { ids }
       );
+
+      if (response.data?.success === false) {
+        throw new Error(response.data.message || "Bulk delete failed");
+      }
 
       return response.data;
     },

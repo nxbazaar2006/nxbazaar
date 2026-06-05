@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { productSchema } from "@/lib/validators/productSchema";
-import { updateProduct } from "@/actions/product";
+import { deleteProduct, updateProduct } from "@/actions/product";
 import { z } from "zod";
 
 /* ================= TYPES ================= */
@@ -76,7 +76,7 @@ export async function PUT(
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: error.flatten() },
+        { error: (error as Error).message },
         { status: 400 }
       );
     }
@@ -103,16 +103,28 @@ export async function DELETE(
       );
     }
 
-    await db.product.delete({
-      where: { id },
-    });
+    const deleted = await deleteProduct(id);
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
+    if (!deleted.success) {
+      return NextResponse.json(
+        { success: false, message: deleted.error || "Delete failed" },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Product deleted successfully",
+      data: null,
+    });
+  } catch (error: unknown) {
     console.error(error);
 
     return NextResponse.json(
-      { error: "Delete failed" },
+      {
+        success: false,
+        message: error instanceof Error ? error.message : "Delete failed",
+      },
       { status: 500 }
     );
   }

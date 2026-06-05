@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import GlassCard from "@/components/GlassCard"; 
 
 interface Props {
   heading: string;
@@ -17,27 +16,27 @@ export default function PageHeader({
   linkTitle,
 }: Props) {
   return (
-    <GlassCard className="mb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div className="space-y-1">
-        <h1 className="text-3xl font-semibold text-white">
+        <h1 className="bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
           {heading}
         </h1>
 
         {subHeading && (
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             {subHeading}
           </p>
         )}
       </div>
 
       {href && linkTitle && (
-        <Link href={href}>
-          <Button className="rounded-full flex items-center gap-3 px-6 bg-orange-500/80 hover:bg-white/30 border border-white/30 backdrop-blur-md">
-            <Plus className="w-4 h-4" />
+        <Link href={href} prefetch={false}>
+          <Button className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 px-6 text-white shadow-sm hover:from-orange-400 hover:via-fuchsia-400 hover:to-sky-400">
+            <Plus className="h-4 w-4" />
             {linkTitle}
           </Button>
         </Link>
       )}
-    </GlassCard>
+    </div>
   );
 }

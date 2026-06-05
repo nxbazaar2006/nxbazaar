@@ -5,7 +5,14 @@ import DateColumn from "@/components/DataTableColumns/DateColumn";
 import ImageColumn from "@/components/DataTableColumns/ImageColumn";
 import SortableColumn from "@/components/DataTableColumns/SortableColumn";
 import ActionColumn from "@/components/DataTableColumns/ActionColumn";
-export const columns = [
+import { ColumnDef } from "@tanstack/react-table";
+import { User, UserProfile } from "@prisma/client";
+
+export type CustomerRow = User & {
+  profile: UserProfile | null;
+};
+
+export const columns: ColumnDef<CustomerRow>[] = [
   {
     id: "select",
     header: ({ table }) => (

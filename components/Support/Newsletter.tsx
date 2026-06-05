@@ -53,7 +53,7 @@ export default function Newsletter() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="Enter your email..."
-                className="block w-full px-4 py-2 text-sm font-medium text-gray-800 placeholder-gray-400 bg-white border border-gray-300 rounded-full focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-600/50"
+                className="block w-full px-4 py-2 text-sm font-medium text-gray-800 placeholder-gray-400 bg-white border border-gray-300 rounded-md focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
               />
 
               <button
@@ -74,14 +74,14 @@ export default function Newsletter() {
             By subscribing, you agree with our{" "}
             <Link
               href="/terms"
-              className="text-blue-600 hover:text-black underline"
+              className="text-primary hover:text-black underline"
             >
               Terms of Service
             </Link>{" "}
             and{" "}
             <Link
               href="/privacy"
-              className="text-blue-600 hover:text-black underline"
+              className="text-primary hover:text-black underline"
             >
               Privacy Policy
             </Link>

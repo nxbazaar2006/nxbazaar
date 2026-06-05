@@ -2,15 +2,42 @@
 
 import { db } from "@/lib/db";
 import { CustomerInput } from "@/lib/validators/customer.schema";
+import { Prisma, UserRole } from "@prisma/client";
+import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
+
+function getCustomerProfileData(
+  data: CustomerInput
+): Prisma.UserProfileCreateWithoutUserInput & Prisma.UserProfileUpdateWithoutUserInput {
+  return {
+    username: data.username,
+    phone: data.phone,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
+    streetAddress: data.streetAddress,
+    city: data.city,
+    district: data.district,
+    country: data.country,
+    profileImage: data.profileImage,
+  };
+}
 
 /* CREATE */
 export async function createCustomer(data: CustomerInput) {
   try {
     const customer = await db.user.create({
       data: {
-        ...data,
-        role: "USER",
+        name: data.name,
+        email: data.email,
+        password: randomUUID(),
+        role: UserRole.USER,
+        profile: {
+          create: getCustomerProfileData(data),
+        },
+      },
+      include: {
+        profile: true,
       },
     });
 
@@ -26,7 +53,7 @@ export async function createCustomer(data: CustomerInput) {
 export async function getCustomers() {
   const customers = await db.user.findMany({
     where: {
-      role: "USER",
+      role: UserRole.USER,
     },
     orderBy: {
       createdAt: "desc",
@@ -56,9 +83,22 @@ export async function getCustomer(id: string) {
 /* UPDATE */
 export async function updateCustomer(id: string, data: CustomerInput) {
   try {
+    const profileData = getCustomerProfileData(data);
     const customer = await db.user.update({
       where: { id },
-      data,
+      data: {
+        name: data.name,
+        email: data.email,
+        profile: {
+          upsert: {
+            create: profileData,
+            update: profileData,
+          },
+        },
+      },
+      include: {
+        profile: true,
+      },
     });
 
     revalidatePath("/dashboard/customers");

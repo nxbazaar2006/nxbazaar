@@ -5,6 +5,10 @@ import {
   Copy,
   Check,
   QrCode,
+  CircleUserRound,
+  MessageCircle,
+  Send,
+  Smartphone,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -53,26 +57,26 @@ export default function ProductShareButton({
     <Dialog>
       {/* Trigger */}
       <DialogTrigger asChild>
-        <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-          <Share2 className="w-5 h-5 text-orange-500" />
+        <button className="rounded-full border border-slate-200 bg-white p-2 text-slate-900 shadow-sm transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700">
+          <Share2 className="h-5 w-5" />
         </button>
       </DialogTrigger>
 
       {/* Modal */}
-      <DialogContent className="space-y-5 max-w-md">
+      <DialogContent className="max-w-md space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-700 dark:bg-slate-900">
         <h3 className="text-lg font-semibold text-center">
           Share this product
         </h3>
 
         {/* 🔥 Product Preview */}
-        <div className="flex items-center gap-3 p-3 border rounded-lg">
+        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
           {image && (
             <Image
               src={image}
               alt={title}
               width={60}
               height={60}
-              className="rounded-md object-cover"
+              className="rounded-xl object-cover"
             />
           )}
           <p className="text-sm font-medium line-clamp-2">
@@ -83,22 +87,22 @@ export default function ProductShareButton({
         {/* 🔥 Social Buttons */}
         <div className="grid grid-cols-3 gap-3 text-center">
           <a href={shareLinks.whatsapp} target="_blank">
-            <div className="p-3 rounded-lg hover:bg-gray-100">
-              🟢
+            <div className="rounded-2xl p-3 transition hover:bg-slate-100 dark:hover:bg-slate-800">
+              <MessageCircle className="mx-auto h-5 w-5 text-primary" />
               <p className="text-xs">WhatsApp</p>
             </div>
           </a>
 
           <a href={shareLinks.facebook} target="_blank">
-            <div className="p-3 rounded-lg hover:bg-gray-100">
-              🔵
+            <div className="rounded-2xl p-3 transition hover:bg-slate-100 dark:hover:bg-slate-800">
+              <CircleUserRound className="mx-auto h-5 w-5 text-primary" />
               <p className="text-xs">Facebook</p>
             </div>
           </a>
 
           <a href={shareLinks.twitter} target="_blank">
-            <div className="p-3 rounded-lg hover:bg-gray-100">
-              🐦
+            <div className="rounded-2xl p-3 transition hover:bg-slate-100 dark:hover:bg-slate-800">
+              <Send className="mx-auto h-5 w-5 text-primary" />
               <p className="text-xs">Twitter</p>
             </div>
           </a>
@@ -109,7 +113,7 @@ export default function ProductShareButton({
           {/* Copy */}
           <button
             onClick={copyToClipboard}
-            className="flex items-center justify-center gap-2 w-full p-2 rounded-lg bg-orange-500 text-white"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-950 p-2.5 text-white shadow-sm transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
           >
             {copied ? <Check size={18} /> : <Copy size={18} />}
             {copied ? "Copied!" : "Copy Link"}
@@ -118,22 +122,26 @@ export default function ProductShareButton({
           {/* Native Share */}
           <button
             onClick={handleNativeShare}
-            className="w-full p-2 rounded-lg border hover:bg-gray-100"
+            className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white p-2.5 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
           >
-            📱 Share via Apps
+            <Smartphone size={18} />
+            Share via Apps
           </button>
 
           {/* QR Code */}
           <div className="flex flex-col items-center gap-2 pt-3">
             <QrCode />
-            <img
+            <Image
               src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
                 urlToShare
               )}`}
               alt="QR Code"
-              className="border rounded"
+              width={120}
+              height={120}
+              unoptimized
+              className="rounded-2xl border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-800"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-slate-500 dark:text-white/55">
               Scan to open product
             </p>
           </div>

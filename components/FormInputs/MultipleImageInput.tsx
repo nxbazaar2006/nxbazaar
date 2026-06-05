@@ -3,22 +3,25 @@
 import Image from "next/image";
 import { UploadButton } from "@/lib/uploadthing";
 import { useState } from "react";
+import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
 import {
   FieldValues,
   Path,
+  PathValue,
   useController,
   useFormContext,
 } from "react-hook-form";
 
 type UploadResponseItem = {
+  ufsUrl?: string;
   serverData?: { url?: string };
 };
 
 type Props<T extends FieldValues> = {
   label: string;
   name: Path<T>; // e.g. "images"
-  endpoint: Endpoint;
+  endpoint: keyof OurFileRouter;
 };
 
 export default function MultipleImageInput<T extends FieldValues>({
@@ -31,7 +34,7 @@ export default function MultipleImageInput<T extends FieldValues>({
   const { field } = useController({
     name,
     control,
-    defaultValue: [],
+    defaultValue: [] as PathValue<T, Path<T>>,
   });
 
   const [loading, setLoading] = useState(false);
@@ -55,7 +58,7 @@ export default function MultipleImageInput<T extends FieldValues>({
   function handleUpload(res: UploadResponseItem[]) {
     const urls =
       res
-        ?.map((item) => item.serverData?.url)
+        ?.map((item) => item.serverData?.url ?? item.ufsUrl)
         .filter(Boolean) as string[];
 
     const updated = [

@@ -1,4 +1,9 @@
-export type VlogTranslation = { id?: string; locale: string; title: string; slug: string };
+export type VlogTranslation = {
+  id?: string;
+  locale: string;
+  title: string;
+  slug: string | null;
+};
 export type VlogType = {
   id: string;
   title: string;

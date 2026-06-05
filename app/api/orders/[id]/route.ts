@@ -2,9 +2,9 @@ import {db} from "@/lib/db";
 import { NextResponse } from "next/server";
 
 type Params = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 // ✅ GET SINGLE ORDER
@@ -13,8 +13,9 @@ export async function GET(
   { params }: Params
 ) {
   try {
+    const { id } = await params;
     const order = await db.order.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { orderItems: true },
     });
 
@@ -33,8 +34,9 @@ export async function DELETE(
   { params }: Params
 ) {
   try {
+    const { id } = await params;
     const existingOrder = await db.order.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existingOrder) {
@@ -45,7 +47,7 @@ export async function DELETE(
     }
 
     const deletedOrder = await db.order.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json(deletedOrder);

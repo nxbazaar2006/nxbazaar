@@ -12,9 +12,9 @@ export default async function Page() {
   return (
     <div>
       <PageHeader
-        heading="Blog"
+        heading="Blogs"
         href="/dashboard/blog/new"
-        linkTitle="Add Blog"
+        linkTitle="Add Blogs"
       />
 
       <BlogsClient initialData={blogs} />

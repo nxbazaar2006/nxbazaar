@@ -1,7 +1,15 @@
 import { getCategories } from "@/actions/category";
 import { getMarketById } from "@/actions/market";
 import NewMarketForm from "@/components/backoffice/NewMarketForm";
-import type { Category } from "@/types/category";
+
+type CategoryOptionSource = {
+  id: string;
+  title?: string | null;
+  translations?: {
+    title?: string | null;
+    slug?: string | null;
+  }[];
+};
 
 type Props = {
   params: Promise<{
@@ -28,8 +36,8 @@ export default async function EditMarketPage({
     );
   }
 
-  const categoriesData = Array.isArray(categoriesResponse)
-    ? (categoriesResponse as Category[])
+  const categoriesData: CategoryOptionSource[] = Array.isArray(categoriesResponse)
+    ? categoriesResponse
     : [];
 
   const market = marketResponse.data;
@@ -41,7 +49,11 @@ export default async function EditMarketPage({
   };
 
   const categories = categoriesData.map((category) => ({
-    label: category.title,
+    label:
+      category.title ??
+      category.translations?.[0]?.title ??
+      category.translations?.[0]?.slug ??
+      "Untitled category",
     value: category.id,
   }));
 

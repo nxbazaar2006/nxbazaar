@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 export function useBulkDelete(
-  mutationFn: (ids: string[]) => Promise<any>,
+  mutationFn: (ids: string[]) => Promise<unknown>,
   queryKey: string[]
 ) {
 

@@ -3,13 +3,20 @@
 import { db } from "@/lib/db";
 import { blogSchema } from "@/lib/validators/blog.schema";
 import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
+import { auth } from "@/auth";
 
 export async function createBlog(data: unknown) {
   const parsed = blogSchema.parse(data);
+  const session = await auth();
+  const userId = parsed.userId ?? session?.user?.id;
+
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
 
   // 🔥 generate slug per translation
   const translationsWithSlug = await Promise.all(
-    parsed.translations.map(async (t) => ({
+    parsed.translations.map(async (t: (typeof parsed.translations)[number]) => ({
       ...t,
       slug: await generateUniqueSlug(
         "blog",
@@ -21,8 +28,9 @@ export async function createBlog(data: unknown) {
 
   const blog = await db.blog.create({
     data: {
+      slug: parsed.slug ?? translationsWithSlug[0]?.slug ?? "blog",
       content: parsed.content,
-      userId: parsed.userId,
+      userId,
       categoryId: parsed.categoryId,
 
       translations: {
@@ -30,7 +38,7 @@ export async function createBlog(data: unknown) {
       },
 
       relatedProducts: {
-        connect: parsed.relatedProductIds?.map((id) => ({
+        connect: parsed.relatedProductIds?.map((id: string) => ({
           id,
         })),
       },

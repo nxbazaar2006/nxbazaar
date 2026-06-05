@@ -2,15 +2,15 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 type Params = {
-  params: {
+  params: Promise<{
     slug: string;
     locale?: string;
-  };
+  }>;
 };
 
 export async function GET(_req: Request, { params }: Params) {
   try {
-    const { slug, locale } = params;
+    const { slug, locale } = await params;
 
     if (!slug) {
       return NextResponse.json(

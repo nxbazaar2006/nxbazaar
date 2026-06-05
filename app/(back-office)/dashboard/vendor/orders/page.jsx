@@ -2,14 +2,18 @@ import Heading from "@/components/backoffice/Heading";
 import PageHeader from "@/components/backoffice/PageHeader";
 import TableActions from "@/components/backoffice/TableActions";
 import DataTable from "@/components/data-table-components/DataTable";
-import { getData } from "@/lib/getData";
+import { db } from "@/lib/db";
 
 import Link from "next/link";
 import React from "react";
 import { columns } from "./columns";
 
 export default async function Coupons() {
-  const allSales = await getData("sales");
+  const allSales = await db.sale.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 
   // Fetch all the Sales
   // Filter by vendorId => to get sales for this vendor

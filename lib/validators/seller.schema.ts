@@ -19,13 +19,9 @@ export const SellerSchema = z.object({
 
   physicalAddress: z.string().min(5, "Address is required"),
 
-  terms: z.string().optional(),
-
   isActive: z.boolean().default(true),
 
-  profileImageUrl: z.string().url().optional(),
-
-  products: z.array(z.string()).optional(),
+  profileImageUrl: z.string().url().optional().or(z.literal("").transform(() => undefined)),
 
   // 🔥 FIX: string → number transform
   turnover: z
@@ -33,13 +29,9 @@ export const SellerSchema = z.object({
     .min(1, "Land size is required")
     .transform((val) => Number(val)),
 
-  mainproduct: z.string().optional(),
+  mainProduct: z.string().optional(),
 
-  // 🚨 MOST IMPORTANT FIX
-  userId: z
-    .string()
-    .min(1, "User ID is required")
-    .uuid("Invalid User ID"),
+  userId: z.string().uuid("Invalid User ID").optional(),
 });
 
 export type SellerInput = z.infer<typeof SellerSchema>;

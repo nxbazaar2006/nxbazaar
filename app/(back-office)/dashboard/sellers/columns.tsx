@@ -6,17 +6,21 @@ import { Checkbox } from "@/components/ui/checkbox";
 import DateColumn from "@/components/DataTableColumns/DateColumn";
 import SortableColumn from "@/components/DataTableColumns/SortableColumn";
 import ActionColumn from "@/components/DataTableColumns/ActionColumn";
-import Status from "@/components/DataTableColumns/Status";
 
 // ✅ Define Seller Type
 export type Seller = {
   id: string;
-  name: string;
-  email: string;
+  name: string | null;
+  email: string | null;
   role: string;
-  plan: string;
+  plan: string | null;
   status: boolean;
   createdAt: string | Date;
+  sellerProfile?: {
+    contactPerson: string | null;
+    phone: string | null;
+    mainProduct: string | null;
+  } | null;
 };
 
 // ✅ Typed Columns
@@ -64,15 +68,18 @@ export const columns: ColumnDef<Seller>[] = [
   },
 
   {
-    accessorKey: "plan",
-    header: "Plan",
+    accessorKey: "sellerProfile.mainProduct",
+    header: "Main Product",
+    cell: ({ row }) => row.original.sellerProfile?.mainProduct ?? "-",
   },
 
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Status row={row} accessorKey="status" />
+      <span className="font-medium">
+        {row.original.status ? "Active" : "Inactive"}
+      </span>
     ),
   },
 
@@ -93,8 +100,8 @@ export const columns: ColumnDef<Seller>[] = [
         <ActionColumn
           row={row}
           title="Seller"
-          editEndpoint={`/sellers/update/${seller.id}`}
-          endpoint={`/sellers/${seller.id}`}
+          editEndpoint={`sellers/update/${seller.id}`}
+          endpoint="sellers"
         />
       );
     },

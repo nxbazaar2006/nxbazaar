@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import FormHeader from "@/components/backoffice/FormHeader";
 import VlogForm from "@/components/backoffice/VlogForm";
+import type { VlogInput } from "@/lib/validators/vlog.schema";
 
 export default async function Page({
   params,
@@ -26,7 +27,11 @@ export default async function Page({
           productId: vlog.productId ?? "",
           userId: vlog.userId ?? "",
           blogId: vlog.blogId ?? "",
-          translations: vlog.translations.map((t)=>({locale:t.locale.toLowerCase() as any,title:t.title,slug:t.slug})),
+          translations: vlog.translations.map((t) => ({
+            locale: t.locale as VlogInput["translations"][number]["locale"],
+            title: t.title,
+            slug: t.slug,
+          })),
         }}
       />
     </>

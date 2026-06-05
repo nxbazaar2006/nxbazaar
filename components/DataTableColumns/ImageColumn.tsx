@@ -1,38 +1,47 @@
 import Image from "next/image";
 import { Row } from "@tanstack/react-table";
 
-interface Props<TData> {
+interface ImageColumnProps<TData extends object> {
   row: Row<TData>;
-  accessorKey: keyof TData; // ✅ type-safe key
+  accessorKey: keyof TData & string;
+  alt?: string;
+  size?: number;
 }
 
-export default function ImageColumn<TData extends Record<string, unknown>>({
+export default function ImageColumn<TData extends object>({
   row,
   accessorKey,
-}: Props<TData>) {
-  // ✅ fully type-safe access
+  alt = "image",
+  size = 48,
+}: ImageColumnProps<TData>) {
   const value = row.original[accessorKey];
 
-  // ensure string
   const imageUrl =
-    typeof value === "string" && value.length > 0 ? value : undefined;
+    typeof value === "string" && value.trim().length > 0
+      ? value
+      : undefined;
 
   if (!imageUrl) {
     return (
-      <div className="w-10 h-10 flex items-center justify-center text-xs text-gray-400 bg-gray-100 rounded-full">
+      <div
+        className="flex items-center justify-center rounded-md border border-border bg-muted text-xs text-muted-foreground"
+        style={{ width: size, height: size }}
+      >
         —
       </div>
     );
   }
 
   return (
-    <div className="relative w-12 h-12 rounded-xl overflow-hidden 
-                    backdrop-blur-md bg-white/30 border border-white/20 shadow-lg">
+    <div
+      className="relative overflow-hidden rounded-md border border-border bg-card shadow-sm"
+      style={{ width: size, height: size }}
+    >
       <Image
         src={imageUrl}
-        alt="category"
+        alt={alt}
         fill
-        sizes="48px"
+        sizes={`${size}px`}
         className="object-cover"
       />
     </div>

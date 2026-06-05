@@ -1,28 +1,74 @@
 import FilterComponent from "@/components/frontend/Filter/FilterComponent";
 import { getCategories } from "@/actions/category";
-import { getProducts } from "@/actions/products";
+import { db } from "@/lib/db";
 
 // ✅ Params Types
 type PageProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
-  searchParams?: {
+  }>;
+  searchParams?: Promise<{
     sort?: string;
     min?: string;
     max?: string;
     page?: string;
-  };
+    search?: string;
+  }>;
 };
 
+function getEnglishTranslation<
+  T extends {
+    locale: string;
+    title: string;
+    slug: string | null;
+    description?: string | null;
+  }
+>(translations: T[]) {
+  return (
+    translations.find((translation) => translation.locale === "EN") ??
+    translations[0] ??
+    null
+  );
+}
+
+function mapProduct(product: {
+  id: string;
+  userId: string;
+  title: string;
+  slug: string;
+  imageUrl: string | null;
+  translations: { locale: string; title: string; slug: string | null }[];
+  variants: { price: number; salePrice: number | null; image: string | null; isDefault: boolean }[];
+  images: { url: string; isPrimary: boolean }[];
+}) {
+  const translation = getEnglishTranslation(product.translations);
+  const variant =
+    product.variants.find((item) => item.isDefault) ?? product.variants[0];
+
+  return {
+    id: product.id,
+    userId: product.userId,
+    title: translation?.title ?? product.title,
+    slug: translation?.slug ?? product.slug,
+    imageUrl:
+      variant?.image ??
+      product.imageUrl ??
+      product.images.find((image) => image.isPrimary)?.url ??
+      product.images[0]?.url ??
+      "/placeholder.png",
+    salePrice: variant?.salePrice ?? variant?.price ?? 0,
+  };
+}
+
 export default async function Page({ params, searchParams }: PageProps) {
-  const { slug } = params;
+  const { slug } = await params;
+  const query = (await searchParams) ?? {};
 
   // ✅ Default values with type safety
-  const sort = searchParams?.sort ?? "asc";
-  const min = Number(searchParams?.min ?? 0);
-  const max = searchParams?.max ? Number(searchParams.max) : undefined;
-  const page = Number(searchParams?.page ?? 1);
+  const sort = query.sort ?? "asc";
+  const min = Number(query.min ?? 0);
+  const max = query.max ? Number(query.max) : undefined;
+  const page = Number(query.page ?? 1);
 
   // ✅ Fetch category
   const category = await getCategories(`/filter/${slug}`);
@@ -31,16 +77,64 @@ export default async function Page({ params, searchParams }: PageProps) {
     return <div>Category not found</div>;
   }
 
-  // ✅ Build query string safely
-  const query = `?catId=${category.id}&page=${page}&sort=${sort}&min=${min}${
-    max ? `&max=${max}` : ""
-  }`;
+  const productsData = await db.product.findMany({
+    where: {
+      categoryId: category.id,
+      isActive: true,
+      ...(query.search
+        ? {
+            OR: [
+              {
+                title: {
+                  contains: query.search,
+                  mode: "insensitive",
+                },
+              },
+              {
+                translations: {
+                  some: {
+                    title: {
+                      contains: query.search,
+                      mode: "insensitive",
+                    },
+                  },
+                },
+              },
+            ],
+          }
+        : {}),
+    },
+    include: {
+      translations: true,
+      variants: {
+        where: {
+          isActive: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+      images: {
+        orderBy: {
+          isPrimary: "desc",
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 
-  const products = await getProducts(query);
-
-  if (!products) {
-    return <div>No products found</div>;
-  }
+  const currentPage = Math.max(page, 1);
+  const pageSize = 3;
+  const products = productsData
+    .map(mapProduct)
+    .filter((product) => product.salePrice >= min)
+    .filter((product) => (max === undefined ? true : product.salePrice <= max))
+    .sort((a, b) =>
+      sort === "desc" ? b.salePrice - a.salePrice : a.salePrice - b.salePrice
+    )
+    .slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div>

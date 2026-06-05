@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 type Locale = "en" | "hi" | "mr";
+type BlogTranslationInput = BlogInput["translations"][number];
 
 type Props = {
   initialData?: BlogInput;
@@ -27,6 +28,7 @@ type Props = {
 };
 
 const locales: Locale[] = ["en", "hi", "mr"];
+const DESCRIPTION_PLACEHOLDER = "Write a clear ecommerce description";
 
 function toolbarClass(active = false) {
   return `inline-flex h-8 w-8 items-center justify-center rounded border text-xs ${
@@ -146,7 +148,7 @@ export default function BlogForm({ initialData, blogId }: Props) {
           categoryId: initialData.categoryId ?? "",
           translations: locales.map((locale) => {
             const existing = initialData.translations.find(
-              (translation) =>
+              (translation: BlogTranslationInput) =>
                 translation.locale.toLowerCase() === locale
             );
 
@@ -194,12 +196,12 @@ export default function BlogForm({ initialData, blogId }: Props) {
       | "metaDescription",
     value: string
   ) => {
-    const updated = form.translations.map((t) =>
+    const updated = form.translations.map((t: BlogTranslationInput) =>
       t.locale === locale ? { ...t, [field]: value } : t
     );
 
     const enTitle =
-      updated.find((t) => t.locale === "en")?.title || "";
+      updated.find((t: BlogTranslationInput) => t.locale === "en")?.title || "";
 
     setForm({
       ...form,
@@ -214,7 +216,7 @@ export default function BlogForm({ initialData, blogId }: Props) {
 
   const handleSubmit = async () => {
     const englishTitle =
-      form.translations.find((t) => t.locale === "en")?.title.trim() ?? "";
+      form.translations.find((t: BlogTranslationInput) => t.locale === "en")?.title.trim() ?? "";
 
     if (!englishTitle) {
       setActiveTab("en");
@@ -226,7 +228,7 @@ export default function BlogForm({ initialData, blogId }: Props) {
       ...form,
       slug: form.slug || generateSlug(englishTitle),
       translations: form.translations
-        .map((translation) => ({
+        .map((translation: BlogTranslationInput) => ({
           ...translation,
           title: translation.title.trim(),
           description: translation.description?.trim() || undefined,
@@ -234,7 +236,7 @@ export default function BlogForm({ initialData, blogId }: Props) {
           metaDescription:
             translation.metaDescription?.trim() || undefined,
         }))
-        .filter((translation) => translation.title.length > 0),
+        .filter((translation: BlogTranslationInput) => translation.title.length > 0),
     };
 
     const response =
@@ -278,7 +280,7 @@ export default function BlogForm({ initialData, blogId }: Props) {
       {/* ===== TITLE ===== */}
       <input
         value={
-          form.translations.find((t) => t.locale === activeTab)?.title || ""
+          form.translations.find((t: BlogTranslationInput) => t.locale === activeTab)?.title || ""
         }
         onChange={(e) =>
           updateTranslation(activeTab, "title", e.target.value)
@@ -290,13 +292,13 @@ export default function BlogForm({ initialData, blogId }: Props) {
       {/* ===== DESCRIPTION ===== */}
       <RichTextEditor
         value={
-          form.translations.find((t) => t.locale === activeTab)?.description ||
+          form.translations.find((t: BlogTranslationInput) => t.locale === activeTab)?.description ||
           ""
         }
         onChange={(value) =>
           updateTranslation(activeTab, "description", value)
         }
-        placeholder={`Description (${activeTab})`}
+        placeholder={DESCRIPTION_PLACEHOLDER}
       />
 
       {/* ===== SLUG CONTROL ===== */}
@@ -371,7 +373,7 @@ export default function BlogForm({ initialData, blogId }: Props) {
       {/* ===== SEO ===== */}
       <input
         value={
-          form.translations.find((t) => t.locale === activeTab)
+          form.translations.find((t: BlogTranslationInput) => t.locale === activeTab)
             ?.metaTitle || ""
         }
         onChange={(e) =>
@@ -383,7 +385,7 @@ export default function BlogForm({ initialData, blogId }: Props) {
 
       <RichTextEditor
         value={
-          form.translations.find((t) => t.locale === activeTab)
+          form.translations.find((t: BlogTranslationInput) => t.locale === activeTab)
             ?.metaDescription || ""
         }
         onChange={(value) =>
@@ -393,7 +395,7 @@ export default function BlogForm({ initialData, blogId }: Props) {
             value
           )
         }
-        placeholder="Meta Description"
+        placeholder={DESCRIPTION_PLACEHOLDER}
       />
 
       {/* ===== EDITOR ===== */}

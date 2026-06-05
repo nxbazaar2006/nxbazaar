@@ -47,11 +47,6 @@ ADD COLUMN     "gstRate" DOUBLE PRECISION;
 ALTER TABLE "ProductTranslation" ADD COLUMN     "slug" TEXT NOT NULL;
 
 -- AlterTable
-ALTER TABLE "ProductVariant" ADD COLUMN     "productCode" TEXT NOT NULL,
-ALTER COLUMN "sku" SET NOT NULL,
-ALTER COLUMN "barcode" SET NOT NULL;
-
--- AlterTable
 ALTER TABLE "Sale" ADD COLUMN     "productVariantId" TEXT NOT NULL;
 
 -- AlterTable
@@ -104,9 +99,6 @@ CREATE UNIQUE INDEX "MarketTranslation_slug_key" ON "MarketTranslation"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ProductTranslation_slug_key" ON "ProductTranslation"("slug");
-
--- CreateIndex
-CREATE UNIQUE INDEX "ProductVariant_productCode_key" ON "ProductVariant"("productCode");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SubCategoryTranslation_slug_key" ON "SubCategoryTranslation"("slug");

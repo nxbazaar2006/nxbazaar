@@ -4,10 +4,11 @@ import { setCurrentStep } from "@/redux/slices/onboardingSlice";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "@/redux/store";
 
 export default function NavButtons() {
   const currentStep = useSelector(
-    (store: any) => store.onboarding.currentStep
+    (store: RootState) => store.onboarding.currentStep
   );
 
   const dispatch = useDispatch();

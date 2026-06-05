@@ -6,8 +6,8 @@ import EmptyCart from "./EmptyCart";
 type CartItem = {
   id: string;
   title: string;
-  salePrice: number; // ✅ FIX
-  imageUrl?: string; // ✅ FIX
+  salePrice: number;
+  imageUrl?: string;
   qty: number;
 };
 
@@ -16,24 +16,40 @@ type Props = {
 };
 
 export default function CartItems({ cartItems }: Props) {
+  const hasItems = cartItems.length > 0;
+
   return (
-    <div className="md:col-span-8 col-span-full">
-      {cartItems.length > 0 && (
-        <>
-          <h2 className="py-2 mb-6 text-2xl">Shopping Cart</h2>
+    <div className="col-span-full md:col-span-8">
+      {hasItems ? (
+        <div
+          className="
+            rounded-3xl border border-white/10
+            bg-white/10 backdrop-blur-xl
+            p-4 shadow-sm md:p-6
+          "
+        >
+          <h2 className="mb-6 text-2xl font-semibold tracking-tight">
+            Shopping Cart
+          </h2>
 
-          <div className="flex justify-between border-b pb-3 text-sm mb-4 text-gray-400">
-            <h2>PRODUCT</h2>
-            <h2>QUANTITY</h2>
-            <h2>PRICE</h2>
+          <div
+            className="
+              mb-4 hidden grid-cols-12 border-b border-white/10
+              pb-3 text-xs font-semibold uppercase tracking-wider
+              text-muted-foreground md:grid
+            "
+          >
+            <h2 className="col-span-6">Product</h2>
+            <h2 className="col-span-3 text-center">Quantity</h2>
+            <h2 className="col-span-3 text-right">Price</h2>
           </div>
-        </>
-      )}
 
-      {cartItems.length > 0 ? (
-        cartItems.map((item) => (
-          <CartProduct key={item.id} cartItem={item} />
-        ))
+          <div className="space-y-4">
+            {cartItems.map((item) => (
+              <CartProduct key={item.id} cartItem={item} />
+            ))}
+          </div>
+        </div>
       ) : (
         <EmptyCart />
       )}

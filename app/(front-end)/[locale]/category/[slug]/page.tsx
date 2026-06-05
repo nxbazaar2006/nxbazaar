@@ -3,14 +3,14 @@ import { db } from "@/lib/db";
 import { getSafeTranslation } from "@/lib/getTranslation";
 
 interface Props {
-  params: {
+  params: Promise<{
     locale: string;
     slug: string;
-  };
+  }>;
 }
 
 export default async function CategoryPage({ params }: Props) {
-  const { locale, slug } = params;
+  const { locale, slug } = await params;
 
   const category = await findEntityByTranslationSlug("category", locale, slug);
 

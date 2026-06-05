@@ -10,10 +10,14 @@ import {
   ChevronRight,
   CircleDollarSign,
   ExternalLink,
+  History,
   HeartHandshake,
   LayoutGrid,
   LayoutList,
   LogOut,
+  MonitorPlay,
+  Settings,
+  ScanSearch,
   Store,
   Truck,
   UserSquare2,
@@ -27,7 +31,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
 type Props = {
@@ -59,13 +63,22 @@ export default function Sidebar({
   const [hovered, setHovered] = useState(false);
 
   const pathname = usePathname();
-  const router = useRouter();
 
   const isExpanded = hovered || showSidebar;
 
   const catalogueLinks: NavItem[] = [
     { title: "Products", icon: Boxes, href: "/dashboard/products" },
-    { title: "Categories", icon: LayoutList, href: "/dashboard/categories" },
+    {
+      title: "Categories",
+      icon: LayoutList,
+      href: "/dashboard/categories",
+    },
+    { title: "Coupons", icon: ScanSearch, href: "/dashboard/coupons" },
+    {
+      title: "Store Banners",
+      icon: MonitorPlay,
+      href: "/dashboard/banners",
+    },
     {
       title: "SubCategories",
       icon: LayoutList,
@@ -74,24 +87,33 @@ export default function Sidebar({
   ];
 
   const sidebarLinks: NavItem[] = [
+    {
+      title: "Product History",
+      icon: History,
+      href: "/backoffice/product-history",
+    },
     { title: "Customers", icon: Users2, href: "/dashboard/customers" },
     { title: "Markets", icon: Warehouse, href: "/dashboard/markets" },
     { title: "Sellers", icon: UserSquare2, href: "/dashboard/sellers" },
     { title: "Orders", icon: Truck, href: "/dashboard/orders" },
     { title: "Sales", icon: Truck, href: "/dashboard/sales" },
-    { title: "Wallet", icon: CircleDollarSign, href: "/dashboard/wallet" },
+    {
+      title: "Wallet",
+      icon: CircleDollarSign,
+      href: "/dashboard/wallet",
+    },
     {
       title: "Sellers Support",
       icon: HeartHandshake,
       href: "/dashboard/seller-support",
     },
-    { title: "Settings", icon: LayoutGrid, href: "/dashboard/settings" },
+    { title: "Profile Settings", icon: Settings, href: "/dashboard/profile" },
     { title: "Online Store", icon: ExternalLink, href: "/" },
   ];
 
   async function handleLogout() {
     await signOut({ redirect: false });
-    router.push("/");
+    window.location.assign("/");
   }
 
   return (
@@ -100,7 +122,7 @@ export default function Sidebar({
       {showSidebar && (
         <div
           onClick={() => setShowSidebar(false)}
-          className="fixed inset-0 bg-black/80 z-30 sm:hidden"
+          className="fixed inset-0 bg-black/50 z-30 sm:hidden"
         />
       )}
 
@@ -113,14 +135,12 @@ export default function Sidebar({
           setHovered(false);
           setSidebarExpanded(false);
         }}
-        animate={{ width: isExpanded ? 200 : 65 }}
+        animate={{ width: isExpanded ? 180 : 56 }}
         transition={{ duration: 0.25, ease: "easeInOut" }}
         className={`
           ${showSidebar ? "block" : "hidden"} sm:block
-          fixed top-14 left-0 z-40
-          h-[calc(100vh-3rem)]
-
-          rounded-2xl
+          fixed left-0 top-24 z-35
+          h-[calc(100vh-6rem)]
           overflow-y-auto no-scrollbar
         `}
       >
@@ -137,13 +157,17 @@ export default function Sidebar({
           {/* CATALOGUE */}
           <Collapsible open={openMenu} onOpenChange={setOpenMenu}>
             <CollapsibleTrigger asChild>
-              <div className="flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer hover:bg-white/10">
+              <div className={`${getSidebarButtonClass(false)} cursor-pointer justify-between`}>
                 <div className="flex items-center gap-2">
                   <Store className="w-4 h-4" />
                   {isExpanded && <span>Catalogue</span>}
                 </div>
                 {isExpanded &&
-                  (openMenu ? <ChevronDown /> : <ChevronRight />)}
+                  (openMenu ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  ))}
               </div>
             </CollapsibleTrigger>
 
@@ -174,9 +198,12 @@ export default function Sidebar({
           ))}
 
           {/* LOGOUT */}
-          <button onClick={handleLogout}>
-            <SidebarItem
-              href="#"
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full"
+          >
+            <SidebarButton
               icon={LogOut}
               label="Logout"
               active={false}
@@ -189,28 +216,56 @@ export default function Sidebar({
   );
 }
 
-function SidebarItem({ href, icon: Icon, label, active, expanded }: SidebarItemProps) {
+function getSidebarButtonClass(active: boolean) {
+  const base =
+    "flex items-center px-2 py-2 transition-colors duration-200 hover:text-cyan-700 dark:hover:text-cyan-300";
+
+  const state = active
+    ? "text-sky-700 dark:text-cyan-200"
+    : "text-slate-700 dark:text-slate-300";
+
+  return `${base} ${state}`;
+}
+
+function SidebarItem({
+  href,
+  icon: Icon,
+  label,
+  active,
+  expanded,
+}: SidebarItemProps) {
   return (
-    <Link href={href}>
+    <Link href={href} prefetch={false}>
       <motion.div
-        whileHover={{ scale: 1.04 }}
+        whileHover={{ scale: 1.02 }}
         className={`
-          flex items-center
+          ${getSidebarButtonClass(active)}
           ${expanded ? "gap-2 px-2" : "justify-center"}
-          py-2 rounded-lg
-
-          transition-all duration-200
-
-          ${
-            active
-              ? "bg-white/10 border-l-2 border-white text-white"
-              : "text-white/60 hover:text-white hover:bg-white/10"
-          }
         `}
       >
         <Icon className="w-4 h-4" />
         {expanded && <span>{label}</span>}
       </motion.div>
     </Link>
+  );
+}
+
+function SidebarButton({
+  icon: Icon,
+  label,
+  active,
+  expanded,
+}: Omit<SidebarItemProps, "href">) {
+  return (
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className={`
+        ${getSidebarButtonClass(active)}
+        ${expanded ? "gap-2 px-2" : "justify-center"}
+      `}
+    >
+      <Icon className="w-4 h-4" />
+      {expanded && <span>{label}</span>}
+    </motion.div>
   );
 }

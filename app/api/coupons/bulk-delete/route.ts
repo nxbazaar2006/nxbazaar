@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { getErrorMessage } from "@/lib/error-message"
 
 export async function POST(request: Request) {
   try {
@@ -17,9 +18,9 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ message: "Deleted successfully" })
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { message: error.message || "Failed to delete coupons" },
+      { message: getErrorMessage(error, "Failed to delete coupons") },
       { status: 500 }
     )
   }

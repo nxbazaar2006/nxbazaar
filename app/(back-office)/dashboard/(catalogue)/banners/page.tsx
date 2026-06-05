@@ -9,7 +9,7 @@ export default async function Page() {
 
   if (!bannersResponse.success) {
     return (
-      <div className="p-6 text-red-500">
+      <div className="space-y-4 text-red-500">
         {bannersResponse.error || "Failed to load banners"}
       </div>
     )
@@ -18,21 +18,17 @@ export default async function Page() {
   const banners = bannersResponse.data ?? []
 
   return (
-    <div>
-
+    <div className="space-y-4">
       <PageHeader
         heading="Banners"
         href="/dashboard/banners/new"
         linkTitle="Add Banner"
       />
 
-      <div className="py-8">
-        <DataTable
-          data={banners}
-          columns={columns}
-        />
-      </div>
-
+      <DataTable
+        data={banners}
+        columns={columns}
+      />
     </div>
   )
 }

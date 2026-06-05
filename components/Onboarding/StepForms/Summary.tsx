@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useMutation } from "@tanstack/react-query";
+import type { RootState } from "@/redux/store";
 
 interface Props {
   sellerId: string;
@@ -16,7 +17,7 @@ export default function Summary({ sellerId }: Props) {
   const dispatch = useDispatch();
 
   const onboardingFormData = useSelector(
-    (store: any) => store.onboarding.onboardingFormData
+    (store: RootState) => store.onboarding.onboardingFormData
   );
 
   const mutation = useMutation({

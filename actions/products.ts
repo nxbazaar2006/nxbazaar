@@ -4,11 +4,18 @@ import { db } from "@/lib/db";
 
 type ProductDetail = Awaited<ReturnType<typeof getProductBySlug>>;
 
-function englishTranslation<
-  T extends { locale: string; title: string; description?: string | null }
->(translations: T[]) {
+function getTranslation<
+  T extends {
+    locale: string;
+    title: string;
+    slug?: string | null;
+    description?: string | null;
+  }
+>(translations: T[], locale = "EN") {
+  const normalizedLocale = locale.toUpperCase();
+
   return (
-    translations.find((translation) => translation.locale === "EN") ??
+    translations.find((translation) => translation.locale.toUpperCase() === normalizedLocale) ??
     translations.find((translation) => translation.locale.toUpperCase() === "EN") ??
     translations[0] ??
     null
@@ -19,6 +26,7 @@ function mapProduct(product: {
   id: string;
   title: string;
   slug: string;
+  productCode?: string | null;
   userId: string;
   categoryId: string;
   imageUrl?: string | null;
@@ -27,6 +35,7 @@ function mapProduct(product: {
   translations: {
     locale: string;
     title: string;
+    slug: string | null;
     description: string | null;
     metaDescription?: string | null;
   }[];
@@ -42,8 +51,8 @@ function mapProduct(product: {
     isDefault: boolean;
     wholesalePricing: { minQty: number; price: number }[];
   }[];
-}) {
-  const translation = englishTranslation(product.translations);
+}, locale = "EN") {
+  const translation = getTranslation(product.translations, locale);
   const variant =
     product.variants.find((item) => item.isDefault) ?? product.variants[0];
   const primaryImage =
@@ -56,12 +65,13 @@ function mapProduct(product: {
   return {
     ...product,
     title: translation?.title ?? product.title,
+    slug: translation?.slug ?? product.slug,
     description: translation?.description ?? "",
     metaDescription: translation?.metaDescription ?? translation?.description ?? "",
     imageUrl: primaryImage,
     productImages: product.images.map((image) => image.url),
     sku: variant?.sku ?? "",
-    productCode: variant?.productCode ?? "",
+    productCode: product.productCode ?? variant?.productCode ?? "",
     productPrice: variant?.price ?? 0,
     price: variant?.price ?? 0,
     salePrice: variant?.salePrice ?? variant?.price ?? 0,
@@ -72,7 +82,7 @@ function mapProduct(product: {
   };
 }
 
-export async function getProductBySlug(slug: string) {
+export async function getProductBySlug(slug: string, locale = "EN") {
   const product = await db.product.findFirst({
     where: {
       OR: [
@@ -100,12 +110,13 @@ export async function getProductBySlug(slug: string) {
     },
   });
 
-  return product ? mapProduct(product) : null;
+  return product ? mapProduct(product, locale) : null;
 }
 
 export async function getSimilarProducts(
   categoryId: string,
-  excludeProductId: string
+  excludeProductId: string,
+  locale = "EN"
 ): Promise<NonNullable<ProductDetail>[]> {
   const products = await db.product.findMany({
     where: {
@@ -130,5 +141,31 @@ export async function getSimilarProducts(
     },
   });
 
-  return products.map(mapProduct);
+  if (products.length > 0) {
+    return products.map((product) => mapProduct(product, locale));
+  }
+
+  const fallbackProducts = await db.product.findMany({
+    where: {
+      id: { not: excludeProductId },
+      isActive: true,
+    },
+    take: 12,
+    include: {
+      images: {
+        orderBy: { isPrimary: "desc" },
+      },
+      translations: true,
+      variants: {
+        include: {
+          wholesalePricing: {
+            orderBy: { minQty: "asc" },
+          },
+        },
+        orderBy: { isDefault: "desc" },
+      },
+    },
+  });
+
+  return fallbackProducts.map((product) => mapProduct(product, locale));
 }

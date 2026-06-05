@@ -1,36 +1,30 @@
 "use client"
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
+import { FormProvider, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
+import GlassCard from "@/components/GlassCard"
 import TextInput from "@/components/FormInputs/TextInput"
 import ToggleInput from "@/components/FormInputs/ToggleInput"
 import SubmitButton from "@/components/FormInputs/SubmitButton"
 import { couponSchema } from "@/lib/validators/coupon.schema"
 import { useCreateCoupon, useUpdateCoupon } from "@/hooks/useCouponMutation"
 import type { CreateCouponInput, UpdateCouponInput } from "@/types/coupon"
+import { getErrorMessage } from "@/lib/error-message"
 
 interface CouponFormProps {
   updateData?: UpdateCouponInput
+  vendorId: string
 }
 
-export default function CouponForm({ updateData }: CouponFormProps) {
+export default function CouponForm({ updateData, vendorId }: CouponFormProps) {
   const router = useRouter()
-  const vendorId = ""
 
   const createMutation = useCreateCoupon()
   const updateMutation = useUpdateCoupon()
 
-  const [loading, setLoading] = useState(false)
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<CreateCouponInput>({
+  const form = useForm<CreateCouponInput>({
     resolver: zodResolver(couponSchema),
     defaultValues: {
       title: updateData?.title || "",
@@ -45,8 +39,6 @@ export default function CouponForm({ updateData }: CouponFormProps) {
   })
 
   const onSubmit = async (data: CreateCouponInput) => {
-    setLoading(true)
-
     try {
       if (updateData?.id) {
         const result = await updateMutation.mutateAsync({
@@ -69,60 +61,60 @@ export default function CouponForm({ updateData }: CouponFormProps) {
 
         if (result.success) {
           toast.success("Coupon created successfully")
-          reset()
+          form.reset()
+          router.push("/dashboard/coupons")
+          router.refresh()
         } else {
           toast.error(result.error || "Failed to create coupon")
         }
       }
-    } catch (error: any) {
-      toast.error(error.message || "Something went wrong")
-    } finally {
-      setLoading(false)
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Something went wrong"))
     }
   }
 
+  const isLoading =
+    form.formState.isSubmitting ||
+    createMutation.isPending ||
+    updateMutation.isPending
+
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="max-w-4xl mx-auto p-6 rounded-lg 
-bg-orange-500 dark:bg-orange-500 
-border border-orange-300 dark:border-orange-900 
-text-foreground"
-    >
-      <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
-        <TextInput
-          label="Coupon Title"
-          name="title"
-          register={register}
-          errors={errors}
-          className="w-full"
-        />
+    <GlassCard className="mx-auto max-w-4xl">
+      <FormProvider {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
+            <input type="hidden" {...form.register("vendorId")} />
 
-        <TextInput
-          label="Coupon Expiry Date"
-          name="expiryDate"
-          type="date"
-          register={register}
-          errors={errors}
-          className="w-full"
-        />
+            <TextInput<CreateCouponInput>
+              label="Coupon Title"
+              name="title"
+              className="w-full"
+            />
 
-        <ToggleInput
-          label="Publish your Coupon"
-          name="isActive"
-          trueTitle="Active"
-          falseTitle="Draft"
-          register={register}
-        />
-      </div>
+            <TextInput<CreateCouponInput>
+              label="Coupon Expiry Date"
+              name="expiryDate"
+              type="date"
+              className="w-full"
+            />
 
-      <SubmitButton
-        isLoading={loading}
-        buttonTitle={updateData?.id ? "Update Coupon" : "Create Coupon"}
-        loadingButtonTitle={`${
-          updateData?.id ? "Updating" : "Creating"
-        } Coupon please wait...`}
-      />
-    </form>
+            <ToggleInput<CreateCouponInput>
+              label="Publish your Coupon"
+              name="isActive"
+              trueTitle="Active"
+              falseTitle="Draft"
+            />
+          </div>
+
+          <SubmitButton
+            isLoading={isLoading}
+            buttonTitle={updateData?.id ? "Update Coupon" : "Create Coupon"}
+            loadingButtonTitle={`${
+              updateData?.id ? "Updating" : "Creating"
+            } Coupon please wait...`}
+          />
+        </form>
+      </FormProvider>
+    </GlassCard>
   )
 }

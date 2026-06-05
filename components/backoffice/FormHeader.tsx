@@ -15,12 +15,12 @@ export default function FormHeader({ title, description }: Props) {
   return (
     <GlassCard className="flex items-center justify-between px-5 py-4">
       <div className="space-y-0.5">
-        <h2 className="text-lg font-semibold text-white">
+        <h2 className="bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 bg-clip-text text-lg font-semibold text-transparent">
           {title}
         </h2>
 
         {description && (
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-slate-600 dark:text-gray-300">
             {description}
           </p>
         )}
@@ -32,11 +32,10 @@ export default function FormHeader({ title, description }: Props) {
           w-9 h-9 flex items-center justify-center
           rounded-full
 
-          bg-white/20 border border-white/30
-          text-white
+          bg-background border border-border
+          text-foreground
 
-          hover:bg-white/30
-          backdrop-blur-md
+          hover:bg-accent
           transition-all
         "
       >

@@ -1,12 +1,4 @@
 export function checkDelivery(pincode: string) {
-  // 👉 simple logic (demo)
-  const availablePincodes = [
-    "440001",
-    "440002",
-    "440003",
-    "440010",
-  ];
-
   if (!pincode) {
     return {
       success: false,
@@ -21,16 +13,16 @@ export function checkDelivery(pincode: string) {
     };
   }
 
-  if (availablePincodes.includes(pincode)) {
+  if (/^\d{6}$/.test(pincode)) {
     return {
       success: true,
-      message: "Delivery available 🚚",
-      eta: "2-3 days",
+      message: "Delivery available across India 🚚",
+      eta: "3-7 days",
     };
   }
 
   return {
     success: false,
-    message: "Delivery not available ❌",
+    message: "Delivery not available",
   };
 }

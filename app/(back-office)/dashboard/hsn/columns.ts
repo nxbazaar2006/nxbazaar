@@ -1,6 +1,15 @@
 import { ColumnDef } from "@tanstack/react-table"
 
-export const columns:ColumnDef<any>[] = [
+type HsnColumn = {
+id:string
+hsnCode:string
+description:string
+cgst:number
+sgst:number
+igst:number
+}
+
+export const columns:ColumnDef<HsnColumn>[] = [
 
 {
 accessorKey:"hsnCode",

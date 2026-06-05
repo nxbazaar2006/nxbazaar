@@ -42,7 +42,7 @@ export const SlugSchema = z.preprocess(
 );
 
 export const OptionalSlug = z.preprocess(
-  (val) => emptyToUndefined(normalizeSlug(val)),
+  (val: unknown) => emptyToUndefined(normalizeSlug(val)),
   z.string().min(3).max(200).optional()
 );
 
@@ -54,7 +54,7 @@ export const OptionalUrl = z.preprocess(
 /* ================= DATE ================= */
 
 export const OptionalDate = z.preprocess(
-  (value) => {
+  (value: unknown) => {
     if (!value) return undefined;
     if (value instanceof Date) return value;
     const date = new Date(value as string);
@@ -66,12 +66,12 @@ export const OptionalDate = z.preprocess(
 /* ================= NUMBER ================= */
 
 export const PriceSchema = z.preprocess(
-  (val) => Number(val),
+  (val: unknown) => Number(val),
   z.number().min(0)
 );
 
 export const OptionalNumber = z.preprocess(
-  (val) => {
+  (val: unknown) => {
     if (val === "" || val == null) return undefined;
     const num = Number(val);
     return isNaN(num) ? undefined : num;
@@ -82,7 +82,7 @@ export const OptionalNumber = z.preprocess(
 /* ================= BOOLEAN ================= */
 
 export const OptionalBoolean = z.preprocess(
-  (val) => {
+  (val: unknown) => {
     if (val === "true") return true;
     if (val === "false") return false;
     return val;
@@ -97,9 +97,9 @@ export const IdArraySchema = z.array(IdSchema).optional();
 /* ================= PAGINATION ================= */
 
 export const PaginationSchema = z.object({
-  page: z.preprocess((val) => Number(val), z.number().min(1).default(1)),
+  page: z.preprocess((val: unknown) => Number(val), z.number().min(1).default(1)),
   limit: z.preprocess(
-    (val) => Number(val),
+    (val: unknown) => Number(val),
     z.number().min(1).max(100).default(10)
   ),
 });
@@ -111,7 +111,7 @@ export const SortOrderEnum = z.enum(["asc", "desc"]);
 /* ================= LANGUAGE ================= */
 
 export const LanguageEnum = z.preprocess(
-  (v) => (typeof v === "string" ? v.toUpperCase() : v),
+  (v: unknown) => (typeof v === "string" ? v.toUpperCase() : v),
   z.enum(["EN", "HI", "MR"])
 );
 
@@ -122,3 +122,27 @@ export const StatusEnum = z.enum([
   "published",
   "archived",
 ]);
+
+export const blogTranslationSchema = z.object({
+  locale: z.string().min(2),
+  slug: OptionalString,
+  title: z.string().trim().min(1, "Title is required"),
+  description: OptionalString,
+  metaTitle: OptionalString,
+  metaDescription: OptionalString,
+});
+
+export const blogSchema = z.object({
+  slug: OptionalString,
+  imageUrl: OptionalString,
+  isActive: z.boolean().default(true),
+  isFeatured: z.boolean().default(false),
+  content: z.any().default({}),
+  userId: OptionalString,
+  categoryId: OptionalString,
+  publishedAt: z.coerce.date().optional(),
+  translations: z.array(blogTranslationSchema).min(1),
+  relatedProductIds: z.array(z.string()).optional(),
+});
+
+export type BlogInput = z.infer<typeof blogSchema>;

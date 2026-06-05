@@ -6,7 +6,7 @@ import { useEffect } from "react";
 export default function DeliverWrapper({
   children,
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }) {
   const { data, loading } = useAutoPincode();
 

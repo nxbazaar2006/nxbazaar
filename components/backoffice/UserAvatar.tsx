@@ -83,7 +83,7 @@ export default function UserAvatar({ user }: Props) {
         sideOffset={12}
         className="
           w-[260px]
-          apple-glass apple-shadow
+          bg-popover shadow-sm
           border border-white/10
           rounded-2xl
           p-3
@@ -130,7 +130,7 @@ export default function UserAvatar({ user }: Props) {
         <DropdownMenuItem asChild>
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 px-2 py-2 rounded-md apple-hover"
+            className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent"
           >
             <LayoutDashboard className="h-4 w-4" />
             Dashboard
@@ -140,7 +140,7 @@ export default function UserAvatar({ user }: Props) {
         <DropdownMenuItem asChild>
           <Link
             href="/dashboard/profile"
-            className="flex items-center gap-2 px-2 py-2 rounded-md apple-hover"
+            className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent"
           >
             <Settings className="h-4 w-4" />
             Profile Settings
@@ -151,7 +151,7 @@ export default function UserAvatar({ user }: Props) {
           <DropdownMenuItem asChild>
             <Link
               href="/dashboard/orders"
-              className="flex items-center gap-2 px-2 py-2 rounded-md apple-hover"
+              className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent"
             >
               <User className="h-4 w-4" />
               My Orders

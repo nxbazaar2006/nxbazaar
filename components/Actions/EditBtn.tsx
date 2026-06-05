@@ -15,6 +15,7 @@ export default function EditBtn({
   return (
     <Link
       href={`/dashboard/${editEndpoint}`}
+      prefetch={false}
       className="flex items-center text-lime-600 hover:text-lime-700"
     >
       <Pencil className="mr-2 h-4 w-4" />

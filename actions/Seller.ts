@@ -3,7 +3,23 @@
 import { db } from "@/lib/db";
 import { SellerSchema } from "@/lib/validators/seller.schema";
 import { UserRole } from "@prisma/client";
+import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
+
+function getSellerProfileData(sellerData: ReturnType<typeof SellerSchema.parse>) {
+  return {
+    code: sellerData.code,
+    contactPerson: sellerData.contactPerson,
+    contactPersonPhone: sellerData.contactPersonPhone,
+    phone: sellerData.phone,
+    physicalAddress: sellerData.physicalAddress,
+    profileImageUrl: sellerData.profileImageUrl,
+    notes: sellerData.notes,
+    isActive: sellerData.isActive,
+    turnover: sellerData.turnover,
+    mainProduct: sellerData.mainProduct,
+  };
+}
 
 /* ---------------- CREATE SELLER ---------------- */
 
@@ -12,20 +28,29 @@ export async function createSeller(data: unknown) {
     const sellerData = SellerSchema.parse(data);
 
     const seller = await db.$transaction(async (tx) => {
-      // 🔥 STEP 1: create user automatically
-      const user = await tx.user.create({
-        data: {
-          name: sellerData.name,
-          email: sellerData.email,
-          role: UserRole.SELLER,
-          emailVerified: true,
-        },
-      });
+      const user = sellerData.userId
+        ? await tx.user.update({
+            where: { id: sellerData.userId },
+            data: {
+              name: sellerData.name,
+              email: sellerData.email,
+              role: UserRole.SELLER,
+              emailVerified: true,
+            },
+          })
+        : await tx.user.create({
+            data: {
+              name: sellerData.name,
+              email: sellerData.email,
+              password: randomUUID(),
+              role: UserRole.SELLER,
+              emailVerified: true,
+            },
+          });
 
-      // 🔥 STEP 2: create seller profile
       const profile = await tx.sellerProfile.create({
         data: {
-          ...sellerData,
+          ...getSellerProfileData(sellerData),
           userId: user.id,
         },
       });
@@ -149,13 +174,15 @@ export async function updateSeller(id: string, data: unknown) {
       await tx.user.update({
         where: { id },
         data: {
+          name: sellerData.name,
+          email: sellerData.email,
           emailVerified: true,
         },
       });
 
       return await tx.sellerProfile.update({
         where: { userId: id },
-        data: sellerData,
+        data: getSellerProfileData(sellerData),
       });
     });
 

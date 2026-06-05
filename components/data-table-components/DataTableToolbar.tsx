@@ -1,38 +1,55 @@
 "use client";
 
-import { useMemo } from "react";
-import { Table } from "@tanstack/react-table";
+import type { Table } from "@tanstack/react-table";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
-import { useApiBulkDelete } from "@/lib/apiRequest";
 
-interface DataTableToolbarProps<
-  TData extends { id: string }
-> {
+import { useApiBulkDelete } from "@/lib/apiRequest";
+import { getErrorMessage } from "@/lib/error-message";
+
+type ApiError = {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+};
+
+type BulkDeleteResponse = {
+  message?: string;
+  data?: {
+    deletedIds?: string[];
+    blockedIds?: string[];
+  };
+};
+
+interface DataTableToolbarProps<TData extends { id: string }> {
   table: Table<TData>;
-  endpoint: string;
-  queryKey: readonly unknown[];
+  endpoint?: string;
+  queryKey?: readonly unknown[];
   filterKeys?: (keyof TData)[];
+  onDeleteSuccess?: (ids: string[]) => void;
 }
 
-export function DataTableToolbar<
-  TData extends { id: string }
->({
+export function DataTableToolbar<TData extends { id: string }>({
   table,
   endpoint,
-  queryKey,
+  onDeleteSuccess,
 }: DataTableToolbarProps<TData>) {
-  const bulkDelete = useApiBulkDelete(endpoint, queryKey);
+  "use no memo";
 
-  const selectedRows =
-    table.getFilteredSelectedRowModel().rows;
-
-  const ids = useMemo(
-    () => selectedRows.map((row) => row.original.id),
-    [selectedRows]
-  );
+  const bulkDelete = useApiBulkDelete();
+  const ids = table
+    .getFilteredSelectedRowModel()
+    .rows.map((row) => row.original.id);
 
   const handleBulkDelete = async () => {
+    if (!endpoint) {
+      toast.error("Delete endpoint missing");
+      return;
+    }
+
     if (ids.length === 0) {
       toast.error("Please select at least one row");
       return;
@@ -45,37 +62,69 @@ export function DataTableToolbar<
     if (!confirmed) return;
 
     try {
+      const result = (await bulkDelete.mutateAsync({
+        endpoint,
+        ids,
+      })) as BulkDeleteResponse;
+      const deletedIds = result.data?.deletedIds ?? ids;
+
       table.resetRowSelection();
-      await bulkDelete.mutateAsync(ids);
-      toast.success("Deleted successfully");
-    } catch (error: any) {
+
+      onDeleteSuccess?.(deletedIds);
+
+      toast.success(result.message || "Deleted successfully");
+    } catch (error: unknown) {
+      const apiMessage =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error
+          ? (error as ApiError).response?.data?.message
+          : undefined;
+
       toast.error(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to delete items"
+        apiMessage ||
+          getErrorMessage(
+            error,
+            "Failed to delete items"
+          )
       );
     }
   };
 
-  return (
-    <div className="flex items-center justify-between">
-      <div className="text-sm text-muted-foreground">
-        {ids.length > 0 && (
-          <span>{ids.length} selected</span>
-        )}
-      </div>
+  // Hide toolbar completely when nothing is selected
+  if (!endpoint || ids.length === 0) {
+    return null;
+  }
 
+  return (
+    <div className="flex justify-end">
       <Button
+        type="button"
         variant="destructive"
         size="sm"
         onClick={handleBulkDelete}
-        disabled={
-          ids.length === 0 || bulkDelete.isPending
-        }
+        disabled={bulkDelete.isPending}
+        className="
+          rounded-xl
+          border border-white/10
+          bg-gradient-to-r
+          from-red-500
+          via-orange-500
+          to-pink-500
+          text-white
+          shadow-sm
+          transition-all
+          hover:scale-[1.02]
+          hover:from-red-400
+          hover:via-orange-400
+          hover:to-pink-400
+          disabled:opacity-50
+        "
       >
+        <Trash2 className="mr-2 h-4 w-4" />
         {bulkDelete.isPending
           ? "Deleting..."
-          : "Delete Selected"}
+          : `Delete Selected (${ids.length})`}
       </Button>
     </div>
   );

@@ -15,7 +15,7 @@ export default function GlassCard({
   return (
     <motion.div
       whileHover={{ y: -2 }}
-      className={`apple-glass apple-shadow rounded-2xl p-4 ${className}`}
+      className={`rounded-2xl border border-border bg-card p-4 shadow-sm transition-colors hover:bg-muted/40 ${className}`}
     >
       {children}
     </motion.div>

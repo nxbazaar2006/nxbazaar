@@ -78,9 +78,7 @@ export default function SearchSelectInput<T extends FieldValues>({
         <Button
           variant="outline"
           role="combobox"
-          className="w-full justify-between 
-                bg-white/40 backdrop-blur-md 
-                text-black border-white/20"
+          className="w-full justify-between border-slate-200 bg-transparent text-foreground shadow-sm hover:border-orange-400 hover:bg-transparent dark:border-white/10"
         >
           {value
             ? `${value.code} - ${value.title} (${value.gstRate}%)`
@@ -92,19 +90,17 @@ export default function SearchSelectInput<T extends FieldValues>({
 
       <PopoverContent
         align="start"
-        className="w-[--radix-popover-trigger-width] p-0 
-              bg-white/40 backdrop-blur-xl 
-              border border-white/20 shadow-xl rounded-xl"
+        className="w-[--radix-popover-trigger-width] rounded-md border border-slate-200 bg-white/95 p-0 shadow-xl shadow-slate-200/60 dark:border-white/10 dark:bg-slate-900/95 dark:shadow-black/20"
       >
-        <Command className="bg-transparent text-black">
+        <Command className="bg-transparent text-foreground">
           <CommandInput
             placeholder="Search HSN code..."
             value={search}
             onValueChange={setSearch}
-            className="text-black placeholder:text-gray-600"
+            className="text-foreground placeholder:text-muted-foreground"
           />
 
-          <CommandEmpty className="text-black">
+          <CommandEmpty className="text-foreground">
             {isLoading ? "Loading..." : "No HSN found"}
           </CommandEmpty>
 
@@ -117,12 +113,12 @@ export default function SearchSelectInput<T extends FieldValues>({
                   handleChange(item);
                   setOpen(false);
                 }}
-                className="text-black hover:bg-white/60 cursor-pointer"
+                className="text-foreground hover:bg-accent cursor-pointer"
               >
                 <div className="flex flex-col">
-                  <span className="font-medium text-black">{item.code}</span>
+                  <span className="font-medium text-foreground">{item.code}</span>
 
-                  <span className="text-xs text-gray-600">
+                  <span className="text-xs text-muted-foreground">
                     {item.title} ({item.gstRate}%)
                   </span>
                 </div>
@@ -131,7 +127,7 @@ export default function SearchSelectInput<T extends FieldValues>({
                   className={cn(
                     "ml-auto h-4 w-4",
                     value?.id === item.id
-                      ? "opacity-100 text-orange-500"
+                      ? "opacity-100 text-primary"
                       : "opacity-0"
                   )}
                 />
@@ -143,7 +139,7 @@ export default function SearchSelectInput<T extends FieldValues>({
                 <button
                   type="button"
                   onClick={() => fetchNextPage()}
-                  className="text-sm text-black hover:underline"
+                  className="text-sm text-primary hover:underline"
                 >
                   Load more...
                 </button>

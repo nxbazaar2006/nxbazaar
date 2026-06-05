@@ -95,7 +95,7 @@ export const columns: ColumnDef<BlogType>[] = [
 
           <ActionColumn
             row={row}
-            title="Blog"
+            title="Blogs"
             editEndpoint={`blog/update/${blog.id}`}
             endpoint={`blogs/${blog.id}`}
           />

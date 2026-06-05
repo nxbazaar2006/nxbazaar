@@ -4,10 +4,6 @@ export const INDIAN_LANGUAGES: Language[] = [
   Language.EN,
   Language.HI,
   Language.MR,
-  Language.TA,
-  Language.TE,
-  Language.KN,
-  Language.GU,
 ];
 
 export const SLUG_ROUTE_MODELS = [

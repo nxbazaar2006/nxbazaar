@@ -89,6 +89,7 @@ const DEFAULT_FEATURES: Required<FeatureToggles> = {
   language: false,
   editor: false,
 };
+const DEFAULT_DESCRIPTION_PLACEHOLDER = "Write a clear ecommerce description";
 
 function siblingPath(path: string, sibling: string) {
   const parts = path.split(".");
@@ -166,6 +167,11 @@ export default function TextareaInput<T extends FieldValues>({
   const localeConfig = LOCALES.find((item) => item.value === locale) ?? LOCALES[0];
   const value = typeof field.value === "string" ? field.value : "";
   const error = get(errors, name);
+  const resolvedPlaceholder =
+    placeholder ??
+    (label.toLowerCase().includes("description")
+      ? DEFAULT_DESCRIPTION_PLACEHOLDER
+      : undefined);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -363,7 +369,7 @@ export default function TextareaInput<T extends FieldValues>({
         <div
           className={cn(
             "overflow-hidden rounded-2xl border bg-transparent shadow-sm transition",
-            error ? "border-red-500" : "border-white"
+            error ? "border-red-500" : "border-slate-200 dark:border-white/10"
           )}
         >
           <div className="flex flex-wrap items-center gap-1 border-b border-white/15 bg-white/5 p-2">
@@ -440,13 +446,13 @@ export default function TextareaInput<T extends FieldValues>({
           value={value}
           rows={rows}
           lang={locale}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           onChange={(event) => updateValue(event.target.value)}
           className={cn(
             "w-full resize-none rounded-2xl border bg-transparent px-4 py-3 text-gray-900 shadow-sm outline-none transition-all duration-300 ease-in-out placeholder:text-gray-400 hover:shadow-md dark:text-gray-100",
             error
               ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
-              : "border-white focus:border-white focus:ring-2 focus:ring-white/20"
+              : "border-slate-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 dark:border-white/10"
           )}
         />
       )}

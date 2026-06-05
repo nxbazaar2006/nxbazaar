@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createTranslationWithSlug } from "@/lib/slug/translationSlug.service";
 import { SUPPORTED_SLUG_ENTITIES } from "@/lib/slug/translationSlug.types";
+import { getErrorMessage } from "@/lib/error-message";
 
 const createTranslationSlugSchema = z.object({
   entity: z.enum(SUPPORTED_SLUG_ENTITIES),
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
     const created = await createTranslationWithSlug(payload);
 
     return NextResponse.json({ success: true, data: created }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, message: error.issues[0]?.message ?? "Invalid payload" },
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: false, message: error?.message ?? "Failed to create translation slug" },
+      { success: false, message: getErrorMessage(error, "Failed to create translation slug") },
       { status: 500 }
     );
   }

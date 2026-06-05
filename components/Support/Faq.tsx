@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GoPlus, GoDash } from "react-icons/go";
+import { Minus, Plus } from "lucide-react";
 
 type FAQItem = {
   id: number;
@@ -67,9 +67,9 @@ export default function Faq() {
                     </span>
 
                     {isOpen ? (
-                      <GoDash className="w-5 h-5 transition" />
+                      <Minus className="w-5 h-5 transition" />
                     ) : (
-                      <GoPlus className="w-5 h-5 transition" />
+                      <Plus className="w-5 h-5 transition" />
                     )}
                   </button>
 

@@ -12,81 +12,67 @@ import {
 } from "@/components/ui/pagination";
 import { useSearchParams } from "next/navigation";
 
-// ✅ Props Type
 type PaginateProps = {
   totalPages: number;
   isSearch?: boolean;
 };
 
-export default function Paginate({
-  totalPages,
-  isSearch,
-}: PaginateProps) {
+export default function Paginate({ totalPages, isSearch }: PaginateProps) {
   const searchParams = useSearchParams();
 
-  // ✅ Safe params
-  const sort = searchParams.get("sort") ?? "asc";
-  const min = searchParams.get("min") ?? "0";
-  const max = searchParams.get("max") ?? "";
-  const search = searchParams.get("search") ?? "";
+  const currentPage = Math.max(1, Number(searchParams.get("page") ?? 1));
 
-  const currentPage = Number(searchParams.get("page") ?? 1);
-
-  // ✅ Reusable function to generate URL
   const createPageUrl = (page: number) => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
 
-    params.set("page", page.toString());
-    params.set("sort", sort);
-    params.set("min", min);
-    if (max) params.set("max", max);
+    params.set("page", String(page));
 
-    if (isSearch && search) {
-      params.set("search", search);
+    if (!isSearch) {
+      params.delete("search");
     }
 
     return `?${params.toString()}`;
   };
 
+  if (!totalPages || totalPages <= 1) return null;
+
+  const getPages = () => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    if (currentPage <= 3) {
+      return [1, 2, 3, 4];
+    }
+
+    if (currentPage >= totalPages - 2) {
+      return [totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+
+    return [currentPage - 1, currentPage, currentPage + 1];
+  };
+
+  const pages = getPages();
+
   return (
-    <Pagination>
+    <Pagination className="mt-6">
       <PaginationContent>
-        {/* 🔹 Previous */}
         <PaginationItem>
           <PaginationPrevious
-            href={createPageUrl(
-              currentPage === 1 ? 1 : currentPage - 1
-            )}
+            href={createPageUrl(Math.max(1, currentPage - 1))}
+            className={
+              currentPage === 1
+                ? "pointer-events-none opacity-50"
+                : ""
+            }
           />
         </PaginationItem>
 
-        {/* 🔹 Pages */}
-        {totalPages <= 3 ? (
-          Array.from({ length: totalPages }, (_, i) => {
-            const page = i + 1;
-            return (
-              <PaginationItem key={page}>
-                <PaginationLink
-                  isActive={page === currentPage}
-                  href={createPageUrl(page)}
-                >
-                  {page}
-                </PaginationLink>
-              </PaginationItem>
-            );
-          })
-        ) : (
+        {pages[0] > 1 && (
           <>
-            {[1, 2, 3].map((page) => (
-              <PaginationItem key={page}>
-                <PaginationLink
-                  isActive={page === currentPage}
-                  href={createPageUrl(page)}
-                >
-                  {page}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
+            <PaginationItem>
+              <PaginationLink href={createPageUrl(1)}>1</PaginationLink>
+            </PaginationItem>
 
             <PaginationItem>
               <PaginationEllipsis />
@@ -94,14 +80,39 @@ export default function Paginate({
           </>
         )}
 
-        {/* 🔹 Next */}
+        {pages.map((page) => (
+          <PaginationItem key={page}>
+            <PaginationLink
+              href={createPageUrl(page)}
+              isActive={page === currentPage}
+            >
+              {page}
+            </PaginationLink>
+          </PaginationItem>
+        ))}
+
+        {pages[pages.length - 1] < totalPages && (
+          <>
+            <PaginationItem>
+              <PaginationEllipsis />
+            </PaginationItem>
+
+            <PaginationItem>
+              <PaginationLink href={createPageUrl(totalPages)}>
+                {totalPages}
+              </PaginationLink>
+            </PaginationItem>
+          </>
+        )}
+
         <PaginationItem>
           <PaginationNext
-            href={createPageUrl(
+            href={createPageUrl(Math.min(totalPages, currentPage + 1))}
+            className={
               currentPage === totalPages
-                ? totalPages
-                : currentPage + 1
-            )}
+                ? "pointer-events-none opacity-50"
+                : ""
+            }
           />
         </PaginationItem>
       </PaginationContent>

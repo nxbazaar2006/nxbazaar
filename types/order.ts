@@ -6,6 +6,15 @@ export type Order = Prisma.OrderGetPayload<{
   };
 }>;
 
+export type InvoiceOrder = Order & {
+  address: string;
+  subTotal: number;
+  gstRate: number;
+  gstAmount: number;
+  shippingCost: number;
+  totalAmount: number;
+};
+
 export interface CheckoutFormData {
   city: string;
   country: string;

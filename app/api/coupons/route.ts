@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { couponSchema } from "@/lib/validators/coupon.schema";
+import { getErrorMessage } from "@/lib/error-message";
 
 // ================= CREATE =================
 export async function POST(req: Request) {
@@ -43,9 +44,9 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(coupon, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { message: error.message || "Failed to create coupon" },
+      { message: getErrorMessage(error, "Failed to create coupon") },
       { status: 500 }
     );
   }
@@ -56,7 +57,7 @@ export async function GET() {
   try {
     const coupons = await db.coupon.findMany({
       include: { vendor: true },
-      orderBy: { createdAt: "desc" },
+      orderBy: { expiryDate: "desc" },
     });
 
     return NextResponse.json(coupons);

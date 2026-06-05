@@ -2,16 +2,18 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 type Params = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 /* ---------------- GET SELLER ---------------- */
 
 export async function GET(request: Request, { params }: Params) {
   try {
-    if (!params.id) {
+    const { id } = await params;
+
+    if (!id) {
       return NextResponse.json(
         { success: false, message: "Seller ID is required" },
         { status: 400 }
@@ -19,7 +21,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     const seller = await db.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { sellerProfile: true },
     });
 
@@ -49,7 +51,9 @@ export async function GET(request: Request, { params }: Params) {
 
 export async function DELETE(request: Request, { params }: Params) {
   try {
-    if (!params.id) {
+    const { id } = await params;
+
+    if (!id) {
       return NextResponse.json(
         { success: false, message: "Seller ID is required" },
         { status: 400 }
@@ -58,7 +62,7 @@ export async function DELETE(request: Request, { params }: Params) {
 
     await db.$transaction(async (tx) => {
       const user = await tx.user.findUnique({
-        where: { id: params.id },
+        where: { id },
       });
 
       if (!user) {
@@ -67,12 +71,12 @@ export async function DELETE(request: Request, { params }: Params) {
 
       // ✅ delete profile first
       await tx.sellerProfile.deleteMany({
-        where: { userId: params.id },
+        where: { userId: id },
       });
 
       // ⚠️ optional: instead of delete → downgrade
       await tx.user.delete({
-        where: { id: params.id },
+        where: { id },
       });
     });
 
@@ -99,7 +103,9 @@ export async function DELETE(request: Request, { params }: Params) {
 
 export async function PUT(request: Request, { params }: Params) {
   try {
-    if (!params.id) {
+    const { id } = await params;
+
+    if (!id) {
       return NextResponse.json(
         { success: false, message: "Seller ID is required" },
         { status: 400 }
@@ -110,7 +116,7 @@ export async function PUT(request: Request, { params }: Params) {
     const { status, emailVerified } = body;
 
     const updatedUser = await db.user.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(status !== undefined && { status }),
         ...(emailVerified !== undefined && { emailVerified }),

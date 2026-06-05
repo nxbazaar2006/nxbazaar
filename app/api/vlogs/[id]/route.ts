@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { vlogSchema } from "@/lib/validators/vlog.schema";
+import { Language } from "@prisma/client";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,7 +21,15 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         productId: validated.productId,
         userId: validated.userId,
         blogId: validated.blogId,
-        translations: { deleteMany: {}, create: validated.translations.map((t) => ({ ...t, locale: t.locale.toUpperCase() as any })) },
+        translations: {
+          deleteMany: {},
+          create: validated.translations.map(
+            (t: (typeof validated.translations)[number]) => ({
+              ...t,
+              locale: t.locale.toUpperCase() as Language,
+            })
+          ),
+        },
       },
       include: { translations: true },
     });

@@ -236,6 +236,7 @@ model Product {
   id       String  @id @default(uuid())
   title    String
   slug     String  @unique
+  productCode String? @unique
   imageUrl String?
 
   tags String[]
@@ -252,8 +253,6 @@ model Product {
   images       ProductImage[]
   variants     ProductVariant[]
   translations ProductTranslation[]
-  history      ProductHistory[]
-
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
 
@@ -282,7 +281,6 @@ model Product {
 model ProductHistory {
   id        String  @id @default(uuid())
   productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   productCode  String?
   productTitle String
@@ -334,7 +332,8 @@ model ProductVariant {
 
   sku         String? @unique
   barcode     String? @unique
-  productCode String? @unique
+  barcodeUrl  String?
+  productCode String?
 
   // 💰 Pricing
   price     Float
@@ -365,6 +364,7 @@ model ProductVariant {
   updatedAt DateTime @updatedAt
 
   @@index([productId])
+  @@index([productCode])
 }
 
 // ================= ATTRIBUTES =================

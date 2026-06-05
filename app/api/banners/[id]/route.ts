@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { bannerSchema } from "@/lib/validators/banner.schema";
+import { getErrorMessage } from "@/lib/error-message";
 
 // ================= GET ONE =================
 export async function GET(
@@ -49,9 +50,9 @@ export async function PUT(
 
     return NextResponse.json(updated);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { message: error.message || "Failed to update banner" },
+      { message: getErrorMessage(error, "Failed to update banner") },
       { status: 500 }
     );
   }

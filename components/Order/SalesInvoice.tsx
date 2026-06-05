@@ -3,23 +3,21 @@
 import Image from "next/image";
 import React, { useRef } from "react";
 import logo from "@/public/limiLogo.webp";
-import { convertIsoDateToNormal } from "@/lib/convertIsoDatetoNormal";
-import { useReactToPrint } from "react-to-print";
-import { Order } from "@/types/order";
+import { convertIsoDatetoNormal } from "@/lib/convertIsoDatetoNormal";
+import { formatINR } from "@/lib/currency";
+import type { InvoiceOrder } from "@/types/order";
 
 type Props = {
-  order: Order;
+  order: InvoiceOrder;
 };
 
 export default function SalesInvoice({ order }: Props) {
 
   const invoiceRef = useRef<HTMLDivElement>(null);
 
-  const invoiceDate = convertIsoDateToNormal(order.createdAt);
+  const invoiceDate = convertIsoDatetoNormal(order.createdAt);
 
-  const handlePrint = useReactToPrint({
-    content: () => invoiceRef.current,
-  });
+  const handlePrint = () => window.print();
 
   return (
     <div className="flex flex-col">
@@ -67,6 +65,26 @@ export default function SalesInvoice({ order }: Props) {
 
           </div>
 
+          {order.qrCodeUrl ? (
+            <div className="mt-6 flex items-center justify-between border-b pb-6">
+              <div>
+                <h2 className="text-sm font-semibold">Order QR Code</h2>
+                <p className="text-xs text-slate-600">
+                  Scan to open the order confirmation page.
+                </p>
+              </div>
+
+              <Image
+                src={order.qrCodeUrl}
+                alt={`QR code for order ${order.orderNumber}`}
+                width={120}
+                height={120}
+                unoptimized
+                className="h-[120px] w-[120px]"
+              />
+            </div>
+          ) : null}
+
           <table className="w-full mt-8 text-sm">
 
             <thead>
@@ -76,6 +94,7 @@ export default function SalesInvoice({ order }: Props) {
                 <th>Qty</th>
                 <th>Price</th>
                 <th>Total</th>
+                <th>QR</th>
               </tr>
             </thead>
 
@@ -84,27 +103,44 @@ export default function SalesInvoice({ order }: Props) {
               {order.orderItems.map((item) => {
 
                 const lineTotal = (item.price * item.quantity).toFixed(2);
+                const itemTitle = item.title ?? "Product";
+                const itemImageUrl = item.imageUrl || "/placeholder.png";
 
                 return (
                   <tr key={item.id}>
 
                     <td>
                       <Image
-                        src={item.imageUrl}
+                        src={itemImageUrl}
                         width={40}
                         height={40}
-                        alt={item.title}
+                        alt={itemTitle}
                         className="rounded"
                       />
                     </td>
 
-                    <td>{item.title}</td>
+                    <td>{itemTitle}</td>
 
                     <td>{item.quantity}</td>
 
-                    <td>${item.price}</td>
+                    <td>{formatINR(item.price)}</td>
 
-                    <td>${lineTotal}</td>
+                    <td>{formatINR(Number(lineTotal))}</td>
+
+                    <td>
+                      {item.qrCodeUrl ? (
+                        <Image
+                          src={item.qrCodeUrl}
+                          width={72}
+                          height={72}
+                          alt={`QR for ${item.title}`}
+                          unoptimized
+                          className="h-18 w-18 rounded border border-slate-200 bg-white p-1"
+                        />
+                      ) : (
+                        "-"
+                      )}
+                    </td>
 
                   </tr>
                 );
@@ -120,22 +156,22 @@ export default function SalesInvoice({ order }: Props) {
 
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>${order.subTotal.toFixed(2)}</span>
+                <span>{formatINR(order.subTotal)}</span>
               </div>
 
               <div className="flex justify-between">
                 <span>GST ({order.gstRate}%)</span>
-                <span>${order.gstAmount.toFixed(2)}</span>
+                <span>{formatINR(order.gstAmount)}</span>
               </div>
 
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span>${order.shippingCost.toFixed(2)}</span>
+                <span>{formatINR(order.shippingCost)}</span>
               </div>
 
               <div className="flex justify-between font-bold border-t pt-2">
                 <span>Total</span>
-                <span>${order.totalAmount.toFixed(2)}</span>
+                <span>{formatINR(order.totalAmount)}</span>
               </div>
 
             </div>

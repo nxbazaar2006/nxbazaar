@@ -40,6 +40,12 @@ export const ourFileRouter = {
     return { url: file.ufsUrl };
   }),
 
+  customerProfileUploader: f({
+    image: { maxFileSize: "4MB", maxFileCount: 1 },
+  }).onUploadComplete(async ({ file }) => {
+    return { url: file.ufsUrl };
+  }),
+
   multipleProductsUploader: f({
     image: {
       maxFileSize: "4MB",

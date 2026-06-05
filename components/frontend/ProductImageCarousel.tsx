@@ -46,7 +46,7 @@ export default function ProductImageCarousel({
               : null,
         }}
         modules={[FreeMode, Navigation, Thumbs]}
-        className="rounded-lg overflow-hidden border-4 border-white"
+        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
       >
         {images.map((image, i) => (
           <SwiperSlide key={i}>
@@ -56,7 +56,7 @@ export default function ProductImageCarousel({
                 alt="Product Image"
                 width={600}
                 height={600}
-                className="w-full h-[400px] object-cover transition-transform duration-300 group-hover:scale-110"
+                className="h-[400px] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
               />
             </div>
           </SwiperSlide>
@@ -75,10 +75,10 @@ export default function ProductImageCarousel({
         {images.map((image, i) => (
           <SwiperSlide key={i}>
             <div
-              className={`p-[2px] rounded-md cursor-pointer border-white ${
+              className={`cursor-pointer rounded-2xl border p-[2px] transition ${
                 activeIndex === i
-                  ? "border-2 border-orange-500"
-                  : "border-2"
+                  ? "border-slate-950/30 shadow-sm dark:border-white/30"
+                  : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
               }`}
             >
               <Image
@@ -86,7 +86,7 @@ export default function ProductImageCarousel({
                 alt="Thumbnail"
                 width={120}
                 height={120}
-                className="rounded-md object-cover"
+                className="rounded-lg object-cover"
               />
             </div>
           </SwiperSlide>

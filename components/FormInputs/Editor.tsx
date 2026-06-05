@@ -27,8 +27,8 @@ export default function Editor({
   if (!editor) return null;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl">
-      <div className="flex gap-2 border-b border-white/10 bg-white/5 p-2">
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <div className="flex gap-2 border-b border-border bg-muted p-2">
         {resolvedFeatures.toolbar && <EditorToolbar editor={editor} />}
 
         {resolvedFeatures.aiAssistant && onAiAssist && (

@@ -8,7 +8,7 @@ import { UploadButton, UploadDropzone } from "@/lib/uploadthing";
 import {
   FieldValues,
   Path,
-  useController,
+  PathValue,
   useFormContext,
 } from "react-hook-form";
 
@@ -21,32 +21,60 @@ type UploadResponseItem = {
   serverData?: { url?: string };
 };
 
-type Props<T extends FieldValues> = {
+type BaseProps = {
   label: string;
-  name: Path<T>;
   endpoint: keyof OurFileRouter;
   previewSize?: number;
 };
+
+type FormProps<T extends FieldValues> = BaseProps & {
+  name: Path<T>;
+  imageUrl?: never;
+  setImageUrl?: never;
+};
+
+type ControlledProps = BaseProps & {
+  imageUrl: string;
+  setImageUrl: (url: string) => void;
+  name?: never;
+};
+
+type Props<T extends FieldValues> = FormProps<T> | ControlledProps;
 
 /* ================= COMPONENT ================= */
 
 export default function ImageInput<T extends FieldValues>({
   label,
-  name,
   endpoint,
   previewSize = 160,
+  ...props
 }: Props<T>) {
-  const { control } = useFormContext<T>();
-
-  const { field } = useController({
-    name,
-    control,
-  });
+  const form = useFormContext<T>();
+  const isControlled = "imageUrl" in props;
 
   const [loading, setLoading] = useState(false);
   const [uploadError, setUploadError] = useState("");
 
-  const imageUrl = (field.value ?? "") as string;
+  const imageUrl = isControlled
+    ? props.imageUrl
+    : ((form?.watch(props.name) ?? "") as string);
+
+  const updateImageUrl = (url: string) => {
+    if (isControlled) {
+      props.setImageUrl?.(url);
+      return;
+    }
+
+    if (!form) {
+      throw new Error("ImageInput requires react-hook-form FormProvider or imageUrl/setImageUrl props");
+    }
+
+    form.setValue(props.name, url as PathValue<T, typeof props.name>, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  };
 
   /* ================= UPLOAD ================= */
 
@@ -57,7 +85,7 @@ export default function ImageInput<T extends FieldValues>({
       "";
 
     if (uploadedUrl && uploadedUrl !== imageUrl) {
-      field.onChange(uploadedUrl);
+      updateImageUrl(uploadedUrl);
       setUploadError("");
     }
 
@@ -118,7 +146,7 @@ export default function ImageInput<T extends FieldValues>({
           {/* Remove */}
           <button
             type="button"
-            onClick={() => field.onChange("")}
+            onClick={() => updateImageUrl("")}
             className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded"
           >
             Remove

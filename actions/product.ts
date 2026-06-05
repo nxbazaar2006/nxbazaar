@@ -1,14 +1,23 @@
 "use server";
 
-import { randomUUID } from "crypto";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import {
   productSchema,
+  LOCALES,
   type ProductInput,
 } from "@/lib/validators/productSchema";
 import { generateUniqueSlug } from "@/lib/slug/translationSlug";
-import { generateBarcode } from "@/lib/generateBarcode";
+import { generateSlug } from "@/lib/generateSlug";
+import {
+  barcodeValueFromSku,
+  getBarcodeImageUrl,
+} from "@/lib/barcode";
+import {
+  generateProductCode,
+  productCodePrefix,
+  generateSku,
+} from "@/lib/productCodeGeneration";
 import type { ProductWithRelations } from "@/types/product";
 import type { ActionResponse } from "@/types/action-response";
 
@@ -24,15 +33,18 @@ type ProductListResult = {
 };
 
 type SkuContext = {
-  sellerCode: string;
-  categoryCode: string;
-  subCategoryCode: string;
-  productNameCode: string;
+  vendorCode: string;
+  productTitle: string;
+  subCategory: string;
 };
 
-type ProductCodeInput = {
-  sellerCode: string;
-  title: string;
+type SkuInput = {
+  vendorCode: string;
+  productTitle: string;
+  subCategory: string;
+  color: string;
+  size: string;
+  number: number | string;
 };
 
 type ProductLabelData = {
@@ -47,6 +59,8 @@ type ProductLabelData = {
   salePrice: number | null;
   stock: number | null;
 };
+
+type ProductLocale = (typeof LOCALES)[number];
 
 export type ProductHistoryItem = {
   id: string;
@@ -73,23 +87,34 @@ type ProductHistoryActor = {
   sellerCode: string | null;
 };
 
+type ProductHistoryAction = "CREATE" | "UPDATE" | "DELETE" | "VARIANT_UPDATE";
+
 type ProductHistoryEntry = {
   productId: string;
   productCode: string | null;
   productTitle: string;
-  action: string;
+  action: ProductHistoryAction;
   field?: string | null;
   oldValue?: unknown;
   newValue?: unknown;
   variantId?: string | null;
   sku?: string | null;
+  user?: ProductHistoryActor;
 };
 
 type ProductSnapshot = Awaited<ReturnType<typeof getProductSnapshot>>;
 
 const productInclude = {
-  category: true,
-  subCategory: true,
+  category: {
+    include: {
+      translations: true,
+    },
+  },
+  subCategory: {
+    include: {
+      translations: true,
+    },
+  },
   hsnCode: true,
   user: true,
   images: true,
@@ -105,6 +130,7 @@ const productInclude = {
 const HISTORY_PRODUCT_FIELDS = [
   "title",
   "slug",
+  "productCode",
   "tags",
   "unit",
   "isActive",
@@ -131,9 +157,187 @@ const HISTORY_VARIANT_FIELDS = [
   "isDefault",
 ] as const;
 
+const TRANSLATION_LOCALE_NAMES = {
+  EN: "English",
+  HI: "Hindi",
+  MR: "Marathi",
+} satisfies Record<ProductLocale, string>;
+
+type ProductTranslationInput = ProductInput["translations"][number];
+
+function cleanText(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function pickEnglishTranslation(translations: ProductInput["translations"]) {
+  return (
+    translations.find(
+      (translation: ProductTranslationInput) => translation.locale === "EN"
+    ) ??
+    translations[0]
+  );
+}
+
+function normalizeProductTranslations(input: ProductInput): ProductInput["translations"] {
+  const existing = input.translations ?? [];
+  const english = pickEnglishTranslation(existing);
+  const englishTitle = cleanText(english?.title) || cleanText(input.title);
+  const englishDescription = cleanText(english?.description);
+  const englishMetaTitle = cleanText(english?.metaTitle);
+  const englishMetaDescription = cleanText(english?.metaDescription);
+
+  return LOCALES.map((locale) => {
+    const translation = existing.find(
+      (item: ProductTranslationInput) => item.locale === locale
+    );
+
+    return {
+      locale,
+      slug: cleanText(translation?.slug) || undefined,
+      title: cleanText(translation?.title) || englishTitle,
+      description:
+        cleanText(translation?.description) || englishDescription || undefined,
+      metaTitle: cleanText(translation?.metaTitle) || englishMetaTitle || undefined,
+      metaDescription:
+        cleanText(translation?.metaDescription) ||
+        englishMetaDescription ||
+        undefined,
+    };
+  });
+}
+
+function shouldTranslateField(
+  translation: ProductTranslationInput,
+  english: ProductTranslationInput,
+  field: "title" | "description" | "metaTitle" | "metaDescription"
+) {
+  const targetValue = cleanText(translation[field]);
+  const sourceValue = cleanText(english[field]);
+
+  return Boolean(sourceValue) && (!targetValue || targetValue === sourceValue);
+}
+
+async function translateWithOpenAI({
+  text,
+  targetLocale,
+  field,
+  productTitle,
+}: {
+  text: string;
+  targetLocale: Exclude<ProductLocale, "EN">;
+  field: "title" | "description" | "metaTitle" | "metaDescription";
+  productTitle: string;
+}) {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey || !text.trim()) {
+    return text;
+  }
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
+        input: [
+          {
+            role: "system",
+            content:
+              "Translate ecommerce product content. Preserve meaning, numbers, units, brand names, and HTML/markdown if present. Return only translated text.",
+          },
+          {
+            role: "user",
+            content: `Target language: ${TRANSLATION_LOCALE_NAMES[targetLocale]}. Field: ${field}. Product title: ${productTitle}. Text: ${text}`,
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      return text;
+    }
+
+    const payload = await response.json();
+    const outputText =
+      typeof payload.output_text === "string"
+        ? payload.output_text
+        : payload.output?.[0]?.content?.[0]?.text;
+
+    return typeof outputText === "string" && outputText.trim()
+      ? outputText.trim()
+      : text;
+  } catch (error) {
+    console.error("PRODUCT_TRANSLATION_ERROR", error);
+    return text;
+  }
+}
+
+async function autoTranslateProductInput(input: ProductInput): Promise<ProductInput> {
+  const translations = normalizeProductTranslations(input);
+  const english = pickEnglishTranslation(translations);
+  const productTitle = cleanText(english.title) || cleanText(input.title);
+  const translated = await Promise.all(
+    translations.map(async (translation: ProductTranslationInput) => {
+      if (translation.locale === "EN") {
+        return translation;
+      }
+
+      const next = { ...translation };
+
+      if (shouldTranslateField(next, english, "title")) {
+        next.title = await translateWithOpenAI({
+          text: english.title,
+          targetLocale: next.locale,
+          field: "title",
+          productTitle,
+        });
+      }
+
+      if (shouldTranslateField(next, english, "description")) {
+        next.description = await translateWithOpenAI({
+          text: english.description ?? "",
+          targetLocale: next.locale,
+          field: "description",
+          productTitle,
+        });
+      }
+
+      if (shouldTranslateField(next, english, "metaTitle")) {
+        next.metaTitle = await translateWithOpenAI({
+          text: english.metaTitle ?? "",
+          targetLocale: next.locale,
+          field: "metaTitle",
+          productTitle,
+        });
+      }
+
+      if (shouldTranslateField(next, english, "metaDescription")) {
+        next.metaDescription = await translateWithOpenAI({
+          text: english.metaDescription ?? "",
+          targetLocale: next.locale,
+          field: "metaDescription",
+          productTitle,
+        });
+      }
+
+      return next;
+    })
+  );
+
+  return {
+    ...input,
+    title: cleanText(input.title) || productTitle,
+    translations: translated,
+  };
+}
+
 async function withTranslationSlugs(translations: ProductInput["translations"]) {
   return Promise.all(
-    translations.map(async (translation) => ({
+    translations.map(async (translation: ProductInput["translations"][number]) => ({
       ...translation,
       slug:
         translation.slug ||
@@ -202,9 +406,13 @@ function sortedWholesalePricing(
 }
 
 function productCodeForHistory(
-  product: Pick<ProductWithRelations, "variants"> | null | undefined
+  product:
+    | (Pick<ProductWithRelations, "variants"> & { productCode?: string | null })
+    | null
+    | undefined
 ) {
   return (
+    product?.productCode ??
     product?.variants.find((variant) => variant.isDefault)?.productCode ??
     product?.variants[0]?.productCode ??
     null
@@ -219,20 +427,8 @@ function variantHistoryKey(variant: {
   return variant.sku ?? variant.productCode ?? `title:${variant.title}`;
 }
 
-function historyActionForField(field: string, variantLevel = false) {
-  if (["price", "salePrice", "costPrice"].includes(field)) {
-    return "PRICE_CHANGED";
-  }
-
-  if (["stock", "reservedStock", "lowStockAlert"].includes(field)) {
-    return "STOCK_CHANGED";
-  }
-
-  if (["isActive", "isDefault", "trackInventory"].includes(field)) {
-    return "STATUS_CHANGED";
-  }
-
-  return variantLevel ? "VARIANT_UPDATED" : "PRODUCT_UPDATED";
+function historyActionForField(_field: string, variantLevel = false): ProductHistoryAction {
+  return variantLevel ? "VARIANT_UPDATE" : "UPDATE";
 }
 
 async function getProductSnapshot(id: string) {
@@ -242,9 +438,20 @@ async function getProductSnapshot(id: string) {
   });
 }
 
-async function getHistoryActor(fallbackUserId: string): Promise<ProductHistoryActor> {
+async function getHistoryActor(
+  fallbackUserId: string | null = null
+): Promise<ProductHistoryActor> {
   const session = await auth();
   const actorId = session?.user?.id ?? fallbackUserId;
+
+  if (!actorId) {
+    return {
+      changedByUserId: null,
+      changedByUserCode: null,
+      changedByRole: null,
+      sellerCode: null,
+    };
+  }
 
   const user = await db.user.findUnique({
     where: { id: actorId },
@@ -272,6 +479,37 @@ async function getHistoryActor(fallbackUserId: string): Promise<ProductHistoryAc
   };
 }
 
+function createProductHistory({
+  productId,
+  productCode,
+  productTitle,
+  action,
+  field,
+  oldValue,
+  newValue,
+  variantId,
+  sku,
+  user,
+}: ProductHistoryEntry & { user: ProductHistoryActor }) {
+  return db.productHistory.create({
+    data: {
+      productId,
+      productCode,
+      productTitle,
+      action,
+      field: field ?? null,
+      oldValue: historyValue(oldValue),
+      newValue: historyValue(newValue),
+      variantId: variantId ?? null,
+      sku: sku ?? null,
+      changedByUserId: user.changedByUserId,
+      changedByUserCode: user.changedByUserCode,
+      changedByRole: user.changedByRole,
+      sellerCode: user.sellerCode,
+    },
+  });
+}
+
 async function writeProductHistory(
   entries: ProductHistoryEntry[],
   actor: ProductHistoryActor
@@ -281,39 +519,10 @@ async function writeProductHistory(
   try {
     await db.$transaction(
       entries.map((entry) =>
-        db.$executeRaw`
-          INSERT INTO "ProductHistory" (
-            "id",
-            "productId",
-            "productCode",
-            "productTitle",
-            "action",
-            "field",
-            "oldValue",
-            "newValue",
-            "variantId",
-            "sku",
-            "changedByUserId",
-            "changedByUserCode",
-            "changedByRole",
-            "sellerCode"
-          ) VALUES (
-            ${randomUUID()},
-            ${entry.productId},
-            ${entry.productCode},
-            ${entry.productTitle},
-            ${entry.action},
-            ${entry.field ?? null},
-            ${historyValue(entry.oldValue)},
-            ${historyValue(entry.newValue)},
-            ${entry.variantId ?? null},
-            ${entry.sku ?? null},
-            ${actor.changedByUserId},
-            ${actor.changedByUserCode},
-            ${actor.changedByRole},
-            ${actor.sellerCode}
-          )
-        `
+        createProductHistory({
+          ...entry,
+          user: entry.user ?? actor,
+        })
       )
     );
   } catch (error) {
@@ -331,19 +540,223 @@ async function recordProductCreated(
         productId: product.id,
         productCode: productCodeForHistory(product),
         productTitle: product.title,
-        action: "PRODUCT_CREATED",
+        action: "CREATE",
         field: "product",
         oldValue: null,
         newValue: {
           title: product.title,
           slug: product.slug,
+          productCode: productCodeForHistory(product),
           variants: product.variants.length,
+          generatedVariants: product.variants.map((variant) => ({
+            id: variant.id,
+            title: variant.title,
+            sku: variant.sku,
+            productCode: variant.productCode,
+            barcode: variant.barcode,
+          })),
           images: product.images.length,
         },
       },
     ],
     actor
   );
+}
+
+function productTranslationForLocale(
+  product: ProductWithRelations,
+  locale: (typeof LOCALES)[number]
+) {
+  return (
+    product.translations.find((translation) => translation.locale === locale) ??
+    product.translations.find((translation) => translation.locale === "EN") ??
+    product.translations[0]
+  );
+}
+
+function entityLabel(entity: {
+  id: string;
+  translations?: { title: string; slug: string | null; locale: string }[];
+}) {
+  const translation =
+    entity.translations?.find((item) => item.locale === "EN") ??
+    entity.translations?.[0];
+
+  return translation?.title ?? translation?.slug ?? entity.id;
+}
+
+function productContentContext(product: ProductWithRelations) {
+  const categoryTitle = entityLabel(product.category);
+  const subCategoryTitle = product.subCategory
+    ? entityLabel(product.subCategory)
+    : null;
+
+  return {
+    categoryTitle,
+    subCategoryTitle,
+    sectionTitle: subCategoryTitle
+      ? `${categoryTitle} / ${subCategoryTitle}`
+      : categoryTitle,
+  };
+}
+
+async function ensureProductBlogCategory(product: ProductWithRelations) {
+  const { categoryTitle } = productContentContext(product);
+  const slug = generateSlug(categoryTitle);
+
+  return db.blogCategory.upsert({
+    where: { slug },
+    update: {
+      title: categoryTitle,
+    },
+    create: {
+      slug,
+      title: categoryTitle,
+    },
+  });
+}
+
+async function generateUniqueBlogSlug(baseValue: string) {
+  const base = generateSlug(baseValue);
+  let slug = base;
+  let counter = 1;
+
+  while (counter < 1000) {
+    const existing = await db.blog.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      return slug;
+    }
+
+    slug = `${base}-${counter++}`;
+  }
+
+  throw new Error("Blog slug generation failed");
+}
+
+async function createProductBlogAndVlog(product: ProductWithRelations) {
+  const { categoryTitle, subCategoryTitle, sectionTitle } =
+    productContentContext(product);
+  const existingBlog = await db.blog.findFirst({
+    where: {
+      relatedProducts: {
+        some: { id: product.id },
+      },
+    },
+    select: { id: true },
+  });
+  const existingVlog = await db.vlog.findFirst({
+    where: { productId: product.id },
+    select: { id: true },
+  });
+
+  if (existingBlog && existingVlog) {
+    return;
+  }
+
+  const blogCategory = await ensureProductBlogCategory(product);
+  const blog =
+    existingBlog ??
+    (await db.blog.create({
+      data: {
+        slug: await generateUniqueBlogSlug(`${product.slug}-blog`),
+        imageUrl: product.imageUrl,
+        isActive: true,
+        isFeatured: false,
+        content: {
+          type: "auto-product-blog",
+          productId: product.id,
+          productTitle: product.title,
+          categoryId: product.categoryId,
+          categoryTitle,
+          subCategoryId: product.subCategoryId,
+          subCategoryTitle,
+        },
+        userId: product.userId,
+        categoryId: blogCategory.id,
+        translations: {
+          create: await Promise.all(
+            LOCALES.map(async (locale) => {
+              const translation = productTranslationForLocale(product, locale);
+              const title = `${translation?.title ?? product.title} - ${sectionTitle}`;
+
+              return {
+                locale,
+                title,
+                description:
+                  translation?.description ??
+                  `Explore ${product.title} in ${sectionTitle}.`,
+                metaTitle: title,
+                metaDescription:
+                  translation?.metaDescription ??
+                  translation?.description ??
+                  `Explore ${product.title} in ${sectionTitle}.`,
+                slug: await generateUniqueSlug("blog", locale, title),
+              };
+            })
+          ),
+        },
+        relatedProducts: {
+          connect: { id: product.id },
+        },
+      },
+    }));
+
+  if (existingVlog) {
+    return;
+  }
+
+  const vlogTranslations = await Promise.all(
+    LOCALES.map(async (locale) => {
+      const translation = productTranslationForLocale(product, locale);
+      const title = `${translation?.title ?? product.title} Vlog - ${sectionTitle}`;
+
+      return {
+        locale,
+        title,
+        slug: await generateUniqueSlug("vlog", locale, title),
+      };
+    })
+  );
+
+  await db.vlog.create({
+    data: {
+      title: `${product.title} Vlog`,
+      productId: product.id,
+      userId: product.userId,
+      blogId: blog.id,
+      translations: {
+        create: vlogTranslations,
+      },
+    },
+  });
+}
+
+export async function syncMissingProductBlogAndVlog(productId?: string) {
+  try {
+    const products = await db.product.findMany({
+      where: productId ? { id: productId } : undefined,
+      include: productInclude,
+    });
+
+    for (const product of products) {
+      await createProductBlogAndVlog(product as ProductWithRelations);
+    }
+
+    return { success: true, data: products.length };
+  } catch (error) {
+    console.error("PRODUCT_BLOG_VLOG_SYNC_ERROR:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to sync product blog and vlog",
+    };
+  }
 }
 
 async function recordProductChanges(
@@ -381,7 +794,7 @@ async function recordProductChanges(
       productId: newProduct.id,
       productCode,
       productTitle: newProduct.title,
-      action: "IMAGES_CHANGED",
+      action: "UPDATE",
       field: "images",
       oldValue: oldImages,
       newValue: newImages,
@@ -400,7 +813,7 @@ async function recordProductChanges(
         productId: newProduct.id,
         productCode,
         productTitle: newProduct.title,
-        action: "VARIANT_ADDED",
+        action: "VARIANT_UPDATE",
         field: "variant",
         oldValue: null,
         newValue: {
@@ -441,7 +854,7 @@ async function recordProductChanges(
         productId: newProduct.id,
         productCode,
         productTitle: newProduct.title,
-        action: "VARIANT_UPDATED",
+        action: "VARIANT_UPDATE",
         field: "attributes",
         oldValue: oldAttributes,
         newValue: newAttributes,
@@ -458,7 +871,7 @@ async function recordProductChanges(
         productId: newProduct.id,
         productCode,
         productTitle: newProduct.title,
-        action: "VARIANT_UPDATED",
+        action: "VARIANT_UPDATE",
         field: "wholesalePricing",
         oldValue: oldPricing,
         newValue: newPricing,
@@ -471,22 +884,91 @@ async function recordProductChanges(
   await writeProductHistory(entries, actor);
 }
 
-function shortCode(
-  value: string | null | undefined,
-  fallback: string,
-  maxLength = 5
-) {
-  const code = value
-    ?.trim()
-    .replace(/[^a-z0-9]+/gi, "")
-    .toUpperCase()
-    .slice(0, maxLength);
-  const fallbackCode = fallback
-    .replace(/[^a-z0-9]+/gi, "")
-    .toUpperCase()
-    .slice(0, maxLength);
+function productDeleteSnapshot(product: ProductWithRelations) {
+  return {
+    id: product.id,
+    title: product.title,
+    productCode: productCodeForHistory(product),
+    variants: product.variants.map((variant) => ({
+      id: variant.id,
+      title: variant.title,
+      sku: variant.sku,
+      productCode: variant.productCode,
+      barcode: variant.barcode,
+    })),
+  };
+}
 
-  return (code || fallbackCode).padEnd(3, fallbackCode[0] ?? "X").slice(0, maxLength);
+async function getProductsReferencedByOrdersOrSales(ids: string[]) {
+  if (ids.length === 0) {
+    return new Set<string>();
+  }
+
+  const [orderItems, sales] = await Promise.all([
+    db.orderItem.findMany({
+      where: { productId: { in: ids } },
+      select: { productId: true },
+      distinct: ["productId"],
+    }),
+    db.sale.findMany({
+      where: { productId: { in: ids } },
+      select: { productId: true },
+      distinct: ["productId"],
+    }),
+  ]);
+
+  return new Set([
+    ...orderItems.map((item) => item.productId),
+    ...sales.map((sale) => sale.productId),
+  ]);
+}
+
+async function getVariantsReferencedByOrdersOrSales(ids: string[]) {
+  if (ids.length === 0) {
+    return new Set<string>();
+  }
+
+  const [orderItems, sales] = await Promise.all([
+    db.orderItem.findMany({
+      where: { productVariantId: { in: ids } },
+      select: { productVariantId: true },
+      distinct: ["productVariantId"],
+    }),
+    db.sale.findMany({
+      where: { productVariantId: { in: ids } },
+      select: { productVariantId: true },
+      distinct: ["productVariantId"],
+    }),
+  ]);
+
+  return new Set([
+    ...orderItems.map((item) => item.productVariantId),
+    ...sales.flatMap((sale) =>
+      sale.productVariantId ? [sale.productVariantId] : []
+    ),
+  ]);
+}
+
+async function recordProductDeleted(
+  product: ProductWithRelations,
+  actor: ProductHistoryActor
+) {
+  await writeProductHistory(
+    [
+      {
+        productId: product.id,
+        productCode: productCodeForHistory(product),
+        productTitle: product.title,
+        action: "DELETE",
+        field: "product",
+        oldValue: productDeleteSnapshot(product),
+        newValue: null,
+        variantId: product.variants.find((variant) => variant.isDefault)?.id ?? null,
+        sku: product.variants.find((variant) => variant.isDefault)?.sku ?? null,
+      },
+    ],
+    actor
+  );
 }
 
 function variantAttribute(
@@ -495,101 +977,113 @@ function variantAttribute(
 ) {
   const normalizedNames = names.map((name) => name.toLowerCase());
 
-  return variant.attributes.find((attribute) =>
+  return variant.attributes.find((attribute: ProductInput["variants"][number]["attributes"][number]) =>
     normalizedNames.includes(attribute.name.trim().toLowerCase())
   )?.value;
 }
 
-function serialNumber() {
-  const time = Date.now().toString(36).toUpperCase().slice(-2);
-  const random = Math.random().toString(36).toUpperCase().slice(2, 4);
+async function productCodeExists(productCode: string) {
+  const rows = await db.$queryRaw<{ id: string }[]>`
+    SELECT "id" FROM "Product" WHERE "productCode" = ${productCode} LIMIT 1
+  `;
 
-  return `${time}${random}`;
+  return rows.length > 0;
 }
 
-function generateProductCode({ sellerCode, title }: ProductCodeInput) {
-  const productName = shortCode(title, "PRD");
-  const unique = serialNumber();
+async function generateUniqueProductCode(context: SkuContext) {
+  const prefix = productCodePrefix({
+    vendorCode: context.vendorCode,
+    productTitle: context.productTitle,
+  });
+  const existingCodes = await db.product.findMany({
+    where: {
+      productCode: {
+        startsWith: `${prefix}-`,
+      },
+    },
+    select: { productCode: true },
+  });
+  const maxSerial = existingCodes.reduce((max, row) => {
+    const productCode = row.productCode ?? "";
+    const suffix = productCode.slice(prefix.length + 1);
 
-  return `PRD-${sellerCode}-${productName}-${unique}`;
-}
+    if (!/^\d{3}$/.test(suffix)) {
+      return max;
+    }
 
-async function generateUniqueProductCode(input: ProductCodeInput) {
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const code = generateProductCode(input);
-    const existing = await db.productVariant.findUnique({
-      where: { productCode: code },
-      select: { id: true },
+    return Math.max(max, Number(suffix));
+  }, 0);
+
+  for (let attempt = 1; attempt <= 999; attempt += 1) {
+    const productCode = generateProductCode({
+      vendorCode: context.vendorCode,
+      productTitle: context.productTitle,
+      number: maxSerial + attempt,
     });
 
-    if (!existing) {
-      return code;
+    if (!(await productCodeExists(productCode))) {
+      return productCode;
     }
   }
 
-  const fallbackId = randomUUID().replace(/[^a-z0-9]+/gi, "").toUpperCase().slice(0, 4);
-
-  return `PRD-${input.sellerCode}-${shortCode(input.title, "PRD")}-${fallbackId}`;
+  throw new Error("Unable to generate a unique product code.");
 }
 
-async function generateUniqueBarcode() {
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const barcode = generateBarcode();
-    const existing = await db.productVariant.findUnique({
-      where: { barcode },
-      select: { id: true },
-    });
+async function generateUniqueSku(
+  input: Omit<SkuInput, "number">,
+  reservedSkus: Set<string>,
+  startingSerial: number
+) {
+  for (let serial = startingSerial; serial < startingSerial + 1000; serial += 1) {
+    const sku = generateSku({ ...input, number: serial });
 
-    if (!existing) {
-      return barcode;
+    if (reservedSkus.has(sku)) {
+      continue;
     }
-  }
 
-  return `${Date.now()}${Math.floor(100000 + Math.random() * 900000)}`;
-}
-
-async function generateUniqueSku(parts: string[]) {
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const sku = [...parts, serialNumber()].join("-");
     const existing = await db.productVariant.findUnique({
       where: { sku },
       select: { id: true },
     });
 
     if (!existing) {
+      reservedSkus.add(sku);
       return sku;
     }
   }
 
-  return [...parts, randomUUID().slice(0, 8).toUpperCase()].join("-");
+  throw new Error("Unable to generate a unique SKU.");
+}
+
+async function generateUniqueBarcode(
+  sku: string,
+  reservedBarcodes: Set<string>,
+  ignoredProductId?: string
+) {
+  const barcode = barcodeValueFromSku(sku);
+
+  if (reservedBarcodes.has(barcode)) {
+    throw new Error(`Duplicate generated barcode: ${barcode}`);
+  }
+
+  const existing = await db.productVariant.findFirst({
+    where: {
+      barcode,
+      ...(ignoredProductId ? { productId: { not: ignoredProductId } } : {}),
+    },
+    select: { id: true },
+  });
+
+  if (existing) {
+    throw new Error(`Generated barcode already exists: ${barcode}`);
+  }
+
+  reservedBarcodes.add(barcode);
+  return barcode;
 }
 
 async function getSkuContext(data: ProductInput): Promise<SkuContext> {
-  const [vendor, category, subCategory] = await Promise.all([
-    db.user.findUnique({
-      where: { id: data.userId },
-      select: {
-        id: true,
-        sellerProfile: {
-          select: {
-            code: true,
-          },
-        },
-      },
-    }),
-    db.category.findUnique({
-      where: { id: data.categoryId },
-      select: {
-        id: true,
-        translations: {
-          take: 1,
-          select: {
-            title: true,
-            slug: true,
-          },
-        },
-      },
-    }),
+  const [subCategory, user] = await Promise.all([
     data.subCategoryId
       ? db.subCategory.findUnique({
           where: { id: data.subCategoryId },
@@ -605,22 +1099,35 @@ async function getSkuContext(data: ProductInput): Promise<SkuContext> {
           },
         })
       : null,
+    db.user.findUnique({
+      where: { id: data.userId },
+      select: {
+        id: true,
+        sellerProfile: {
+          select: {
+            code: true,
+          },
+        },
+      },
+    }),
   ]);
 
-  const categoryLabel =
-    category?.translations[0]?.slug ??
-    category?.translations[0]?.title ??
-    category?.id;
   const subCategoryLabel =
     subCategory?.translations[0]?.slug ??
     subCategory?.translations[0]?.title ??
     subCategory?.id;
+  const defaultTranslation =
+    data.translations.find(
+      (translation: ProductInput["translations"][number]) =>
+        translation.locale === "EN"
+    ) ??
+    data.translations[0];
+  const vendorCode = user?.sellerProfile?.code ?? user?.id ?? "VENDOR";
 
   return {
-    sellerCode: shortCode(vendor?.sellerProfile?.code ?? vendor?.id, "SEL", 5),
-    categoryCode: shortCode(categoryLabel, "CAT", 3),
-    subCategoryCode: shortCode(subCategoryLabel, "SUB", 3),
-    productNameCode: shortCode(data.title, "PRD", 5),
+    vendorCode,
+    productTitle: defaultTranslation?.title ?? data.title,
+    subCategory: subCategoryLabel ?? "SUB",
   };
 }
 
@@ -637,51 +1144,52 @@ async function assertProductUser(userId: string) {
 
 async function generateVariantSku(
   variant: ProductInput["variants"][number],
-  context: SkuContext
+  context: SkuContext,
+  reservedSkus: Set<string>,
+  serial: number
 ) {
-  const brandCode = shortCode(
-    variantAttribute(variant, ["brand", "brand code", "brandCode"]),
-    "BRD",
-    5
-  );
-  const color = shortCode(
-    variantAttribute(variant, ["color", "colour"]),
-    "CLR",
-    5
-  );
-  const size = shortCode(variantAttribute(variant, ["size"]), "SIZ", 5);
+  const color = variantAttribute(variant, ["color", "colour"]) ?? "CLR";
+  const size = variantAttribute(variant, ["size"]) ?? "SIZE";
 
-  return generateUniqueSku([
-    context.sellerCode,
-    context.categoryCode,
-    context.subCategoryCode,
-    brandCode,
-    context.productNameCode,
-    color,
-    size,
-  ]);
+  return generateUniqueSku(
+    {
+      ...context,
+      color,
+      size,
+    },
+    reservedSkus,
+    serial
+  );
 }
 
 async function toVariantCreateInput(
   variant: ProductInput["variants"][number],
-  title: string,
-  context: SkuContext
+  context: SkuContext,
+  reservedSkus: Set<string>,
+  reservedBarcodes: Set<string>,
+  serial: number,
+  productCode: string,
+  ignoredProductId?: string
 ): Promise<unknown> {
-  const { attributes, wholesalePricing, ...data } = variant;
-  const productCode =
-    data.productCode ||
-    (await generateUniqueProductCode({
-      sellerCode: context.sellerCode,
-      title,
-    }));
-  const barcode = data.barcode || (await generateUniqueBarcode());
-  const sku = data.sku || (await generateVariantSku(variant, context));
+  const { id: _id, attributes, wholesalePricing, ...data } = variant;
+  void _id;
+  const sku =
+    data.sku ||
+    (await generateVariantSku(variant, context, reservedSkus, serial));
+  const barcode = await generateUniqueBarcode(
+    sku,
+    reservedBarcodes,
+    ignoredProductId
+  );
+  const barcodeUrl = getBarcodeImageUrl(barcode);
+  const variantProductCode = data.productCode || productCode;
 
   return {
     ...data,
     sku,
     barcode,
-    productCode,
+    barcodeUrl,
+    productCode: variantProductCode,
     salePrice: data.salePrice ?? null,
     costPrice: data.costPrice ?? null,
     stock: data.stock ?? null,
@@ -692,26 +1200,89 @@ async function toVariantCreateInput(
   };
 }
 
+async function toVariantUpdateInput(
+  variant: ProductInput["variants"][number],
+  context: SkuContext,
+  reservedSkus: Set<string>,
+  reservedBarcodes: Set<string>,
+  serial: number,
+  productCode: string,
+  productId: string
+): Promise<unknown> {
+  const { id: _id, attributes, wholesalePricing, ...data } = variant;
+  void _id;
+  const sku =
+    data.sku ||
+    (await generateVariantSku(variant, context, reservedSkus, serial));
+  const barcode = await generateUniqueBarcode(sku, reservedBarcodes, productId);
+  const barcodeUrl = getBarcodeImageUrl(barcode);
+  const variantProductCode = data.productCode || productCode;
+
+  return {
+    ...data,
+    sku,
+    barcode,
+    barcodeUrl,
+    productCode: variantProductCode,
+    salePrice: data.salePrice ?? null,
+    costPrice: data.costPrice ?? null,
+    stock: data.stock ?? null,
+    lowStockAlert: data.lowStockAlert ?? null,
+    image: data.image ?? null,
+    attributes: {
+      deleteMany: {},
+      create: attributes,
+    },
+    wholesalePricing: {
+      deleteMany: {},
+      create: wholesalePricing,
+    },
+  };
+}
+
 export async function createProduct(
   input: ProductInput
 ): Promise<ActionResponse<ProductWithRelations>> {
   try {
-    const data = productSchema.parse(input);
-    const { images, variants, translations, imageUrl: _imageUrl, ...productData } = data;
-    void _imageUrl;
+    const data = productSchema.parse(await autoTranslateProductInput(input));
+    const {
+      images,
+      variants,
+      translations,
+      vendorCode: _vendorCode,
+      imageUrl: _imageUrl,
+      ...productData
+    } = data;
+    void _vendorCode;
+    const imageUrl = images[0]?.url ?? _imageUrl;
     await assertProductUser(data.userId);
     const historyActor = await getHistoryActor(data.userId);
     const translationsWithSlug = await withTranslationSlugs(translations);
     const skuContext = await getSkuContext(data);
-    const variantsWithSku = await Promise.all(
-      variants.map((variant) =>
-        toVariantCreateInput(variant, data.title, skuContext)
-      )
-    );
+    const productCode =
+      data.productCode || (await generateUniqueProductCode(skuContext));
+    const reservedSkus = new Set<string>();
+    const reservedBarcodes = new Set<string>();
+    const variantsWithSku = [];
+
+    for (const [index, variant] of variants.entries()) {
+      variantsWithSku.push(
+        await toVariantCreateInput(
+          variant,
+          skuContext,
+          reservedSkus,
+          reservedBarcodes,
+          index + 1,
+          productCode
+        )
+      );
+    }
 
     const product = await db.product.create({
       data: {
         ...productData,
+        imageUrl,
+        productCode,
         images: { create: images },
         variants: {
           create: variantsWithSku,
@@ -721,6 +1292,7 @@ export async function createProduct(
       include: productInclude,
     });
 
+    await createProductBlogAndVlog(product as ProductWithRelations);
     await recordProductCreated(product as ProductWithRelations, historyActor);
 
     return { success: true, data: product as ProductWithRelations };
@@ -854,9 +1426,17 @@ export async function updateProduct(
   input: ProductInput
 ): Promise<ActionResponse<ProductWithRelations>> {
   try {
-    const data = productSchema.parse(input);
-    const { images, variants, translations, imageUrl: _imageUrl, ...productData } = data;
-    void _imageUrl;
+    const data = productSchema.parse(await autoTranslateProductInput(input));
+    const {
+      images,
+      variants,
+      translations,
+      vendorCode: _vendorCode,
+      imageUrl: _imageUrl,
+      ...productData
+    } = data;
+    void _vendorCode;
+    const imageUrl = images[0]?.url ?? _imageUrl;
     await assertProductUser(data.userId);
     const [oldProduct, historyActor] = await Promise.all([
       getProductSnapshot(id),
@@ -864,29 +1444,99 @@ export async function updateProduct(
     ]);
     const translationsWithSlug = await withTranslationSlugs(translations);
     const skuContext = await getSkuContext(data);
-    const variantsWithSku = await Promise.all(
-      variants.map((variant) =>
-        toVariantCreateInput(variant, data.title, skuContext)
-      )
+    const existingProductCode =
+      (oldProduct as { productCode?: string | null } | null)?.productCode ?? null;
+    const productCode =
+      data.productCode ||
+      existingProductCode ||
+      (await generateUniqueProductCode(skuContext));
+    const reservedSkus = new Set<string>();
+    const reservedBarcodes = new Set<string>();
+    const existingVariantIds = new Set(
+      oldProduct?.variants.map((variant: ProductWithRelations["variants"][number]) => variant.id) ?? []
     );
+    const referencedVariantIds = await getVariantsReferencedByOrdersOrSales([
+      ...existingVariantIds,
+    ]);
+    const incomingExistingIds = new Set(
+      variants
+        .map((variant: ProductInput["variants"][number]) => variant.id)
+        .filter((variantId: string | undefined): variantId is string =>
+          Boolean(variantId && existingVariantIds.has(variantId))
+        )
+    );
+    const variantCreates = [];
+    const variantUpdates = [];
+
+    for (const [index, variant] of variants.entries()) {
+      if (variant.id && existingVariantIds.has(variant.id)) {
+        variantUpdates.push({
+          where: { id: variant.id },
+          data: await toVariantUpdateInput(
+            variant,
+            skuContext,
+            reservedSkus,
+            reservedBarcodes,
+            index + 1,
+            productCode,
+            id
+          ),
+        });
+        continue;
+      }
+
+      variantCreates.push(
+        await toVariantCreateInput(
+          variant,
+          skuContext,
+          reservedSkus,
+          reservedBarcodes,
+          index + 1,
+          productCode,
+          id
+        )
+      );
+    }
+
+    const deletableVariantIds = [...existingVariantIds].filter(
+      (variantId) =>
+        !incomingExistingIds.has(variantId) &&
+        !referencedVariantIds.has(variantId)
+    );
+    const productUpdateData: Record<string, unknown> = {
+      ...productData,
+      imageUrl,
+      productCode,
+      images: {
+        deleteMany: {},
+        create: images,
+      },
+      translations: {
+        deleteMany: {},
+        create: translationsWithSlug,
+      },
+    };
+    const variantOperations: Record<string, unknown> = {};
+
+    if (deletableVariantIds.length > 0) {
+      variantOperations.deleteMany = { id: { in: deletableVariantIds } };
+    }
+
+    if (variantUpdates.length > 0) {
+      variantOperations.update = variantUpdates;
+    }
+
+    if (variantCreates.length > 0) {
+      variantOperations.create = variantCreates;
+    }
+
+    if (Object.keys(variantOperations).length > 0) {
+      productUpdateData.variants = variantOperations;
+    }
 
     const product = await db.product.update({
       where: { id },
-      data: {
-        ...productData,
-        images: {
-          deleteMany: {},
-          create: images,
-        },
-        variants: {
-          deleteMany: {},
-          create: variantsWithSku,
-        },
-        translations: {
-          deleteMany: {},
-          create: translationsWithSlug,
-        },
-      } as never,
+      data: productUpdateData as never,
       include: productInclude,
     });
 
@@ -906,6 +1556,24 @@ export async function deleteProduct(
   id: string
 ): Promise<ActionResponse<null>> {
   try {
+    const product = await getProductSnapshot(id);
+
+    if (!product) {
+      return { success: false, error: "Product not found" };
+    }
+
+    const historyActor = await getHistoryActor(product.userId);
+    const referencedIds = await getProductsReferencedByOrdersOrSales([id]);
+
+    if (referencedIds.has(id)) {
+      return {
+        success: false,
+        error:
+          "This product is already used in orders or sales, so it cannot be deleted.",
+      };
+    }
+
+    await recordProductDeleted(product as ProductWithRelations, historyActor);
     await db.product.delete({ where: { id } });
 
     return { success: true, data: null };
@@ -916,13 +1584,64 @@ export async function deleteProduct(
 
 export async function bulkDeleteProduct(
   ids: string[]
-): Promise<ActionResponse<null>> {
+): Promise<
+  ActionResponse<{
+    deletedIds: string[];
+    blockedIds: string[];
+    blockedTitles: string[];
+  }>
+> {
   try {
-    await db.product.deleteMany({
+    const products = await db.product.findMany({
       where: { id: { in: ids } },
+      include: productInclude,
+    });
+    const historyActor = await getHistoryActor(products[0]?.userId ?? null);
+    const referencedIds = await getProductsReferencedByOrdersOrSales(ids);
+    const deletableProducts = (products as ProductWithRelations[]).filter(
+      (product) => !referencedIds.has(product.id)
+    );
+    const blockedProducts = (products as ProductWithRelations[]).filter((product) =>
+      referencedIds.has(product.id)
+    );
+
+    if (deletableProducts.length === 0) {
+      return {
+        success: false,
+        error:
+          blockedProducts.length > 0
+            ? `${blockedProducts.length} selected product(s) are already used in orders or sales, so they cannot be deleted.`
+            : "No matching products found to delete.",
+      };
+    }
+
+    await writeProductHistory(
+      deletableProducts.map((product) => ({
+        productId: product.id,
+        productCode: productCodeForHistory(product),
+        productTitle: product.title,
+        action: "DELETE",
+        field: "product",
+        oldValue: productDeleteSnapshot(product),
+        newValue: null,
+        variantId: product.variants.find((variant) => variant.isDefault)?.id ?? null,
+        sku: product.variants.find((variant) => variant.isDefault)?.sku ?? null,
+      })),
+      historyActor
+    );
+
+    await db.product.deleteMany({
+      where: { id: { in: deletableProducts.map((product) => product.id) } },
     });
 
-    return { success: true, data: null };
+    return {
+      success: true,
+      data: {
+        deletedIds: deletableProducts.map((product) => product.id),
+        blockedIds: blockedProducts.map((product) => product.id),
+        blockedTitles: blockedProducts.map((product) => product.title),
+      },
+    };
   } catch (error: unknown) {
     return productError(error, "BULK_DELETE_PRODUCT_ERROR");
   }
@@ -941,6 +1660,7 @@ function toProductLabelData(
     product: {
       id: string;
       title: string;
+      productCode?: string | null;
     };
   }
 ): ProductLabelData {
@@ -951,7 +1671,7 @@ function toProductLabelData(
     variant: variant.title,
     sku: variant.sku,
     barcode: variant.barcode,
-    productCode: variant.productCode,
+    productCode: variant.product.productCode ?? variant.productCode,
     price: variant.price,
     salePrice: variant.salePrice,
     stock: variant.stock,
@@ -970,13 +1690,19 @@ export async function getProductLabelByCode(
 
     const variant = await db.productVariant.findFirst({
       where: {
-        OR: [{ barcode: scanCode }, { sku: scanCode }, { productCode: scanCode }],
+        OR: [
+          { barcode: scanCode },
+          { sku: scanCode },
+          { productCode: scanCode },
+          { product: { productCode: scanCode } },
+        ],
       },
       include: {
         product: {
           select: {
             id: true,
             title: true,
+            productCode: true,
           },
         },
       },

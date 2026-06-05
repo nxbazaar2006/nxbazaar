@@ -21,11 +21,13 @@ export default function CustomDataTable({ orders }: Props) {
 
   return (
     <div className="mt-10">
-      <h2 className="text-xl font-bold mb-4">Recent Orders</h2>
+      <h2 className="mb-4 bg-gradient-to-r from-orange-400 to-sky-400 bg-clip-text text-xl font-bold text-transparent">
+        Recent Orders
+      </h2>
 
-      <div className="overflow-x-auto shadow-md rounded-lg p-6 bg-card">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs uppercase bg-muted">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm shadow-slate-200/60 dark:border-white/10 dark:bg-slate-900/60 dark:shadow-black/20">
+        <table className="w-full min-w-[760px] text-left text-sm">
+          <thead className="text-xs uppercase text-slate-600 dark:text-sky-200">
             <tr>
               <th className="px-6 py-3">Order ID</th>
               <th className="px-6 py-3">Amount</th>
@@ -36,15 +38,18 @@ export default function CustomDataTable({ orders }: Props) {
 
           <tbody>
             {currentOrders.map((order) => (
-              <tr key={order.id} className="border-b">
+              <tr
+                key={order.id}
+                className="border-b border-slate-200 text-slate-700 transition-colors hover:bg-gradient-to-r hover:from-orange-500/10 hover:to-sky-500/10 dark:border-white/10 dark:text-slate-200"
+              >
                 <td className="px-6 py-4 font-medium">#{order.id}</td>
                 <td className="px-6 py-4">₹ {order.total}</td>
                 <td className="px-6 py-4">
-                  <span className="px-3 py-1 rounded-full bg-green-600 text-white text-xs">
+                  <span className="rounded-full bg-gradient-to-r from-orange-500/20 to-sky-500/20 px-3 py-1 text-xs text-sky-700 dark:text-sky-100">
                     {order.orderStatus}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-blue-600 cursor-pointer">
+                <td className="cursor-pointer px-6 py-4 bg-gradient-to-r from-orange-400 to-sky-400 bg-clip-text font-medium text-transparent">
                   View
                 </td>
               </tr>
@@ -53,8 +58,8 @@ export default function CustomDataTable({ orders }: Props) {
         </table>
 
         {/* Pagination */}
-        <div className="flex justify-between mt-6">
-          <p>
+        <div className="mt-6 flex justify-between text-slate-700 dark:text-slate-300">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             Showing {itemStartIndex}-{itemEndIndex} of {orders.length}
           </p>
 
@@ -62,7 +67,7 @@ export default function CustomDataTable({ orders }: Props) {
             <button
               onClick={() => setCurrentPage((p) => p - 1)}
               disabled={currentPage === 1}
-              className="px-3 py-1 border rounded"
+              className="rounded-xl border border-slate-200 px-3 py-1 text-slate-700 transition-colors hover:bg-sky-500/10 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-slate-200 dark:hover:text-sky-200"
             >
               Prev
             </button>
@@ -70,7 +75,7 @@ export default function CustomDataTable({ orders }: Props) {
             <button
               onClick={() => setCurrentPage((p) => p + 1)}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 border rounded"
+              className="rounded-xl border border-slate-200 px-3 py-1 text-slate-700 transition-colors hover:bg-sky-500/10 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-slate-200 dark:hover:text-sky-200"
             >
               Next
             </button>

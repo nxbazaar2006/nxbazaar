@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { customerSchema, CustomerInput } from "@/lib/validators/customer.schema";
 import { useRouter } from "next/navigation";
 import { useUpdateCustomer } from "@/hooks/useCustomers";
-import { updateCustomer } from "@/services/customerService";
 import ImageInput from "@/components/FormInputs/ImageInput";
 import SubmitButton from "@/components/FormInputs/SubmitButton";
 import TextInput from "@/components/FormInputs/TextInput";
@@ -14,16 +13,27 @@ import TextInput from "@/components/FormInputs/TextInput";
 interface Props {
   user: {
     id: string;
-    name?: string;
-    username?: string;
-    email?: string;
+    name?: string | null;
+    email?: string | null;
+    profile?: {
+      firstName?: string | null;
+      lastName?: string | null;
+      username?: string | null;
+      phone?: string | null;
+      streetAddress?: string | null;
+      city?: string | null;
+      district?: string | null;
+      country?: string | null;
+      dateOfBirth?: Date | null;
+      profileImage?: string | null;
+    } | null;
   };
 }
 
 export default function CustomerForm({ user }: Props) {
 
   const router = useRouter();
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState(user.profile?.profileImage ?? "");
 
   // React Query Mutation Hook
   const mutation = useUpdateCustomer();
@@ -35,17 +45,33 @@ export default function CustomerForm({ user }: Props) {
   } = useForm<CustomerInput>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
-      ...user,
-      userId: user.id
+      name: user.name ?? "",
+      email: user.email ?? "",
+      username: user.profile?.username ?? "",
+      phone: user.profile?.phone ?? "",
+      firstName: user.profile?.firstName ?? "",
+      lastName: user.profile?.lastName ?? "",
+      dateOfBirth: user.profile?.dateOfBirth
+        ? user.profile.dateOfBirth.toISOString().slice(0, 10)
+        : "",
+      streetAddress: user.profile?.streetAddress ?? "",
+      city: user.profile?.city ?? "",
+      district: user.profile?.district ?? "",
+      country: user.profile?.country ?? "",
+      profileImage: user.profile?.profileImage ?? "",
     }
   });
 
-  const onSubmit = async (data) => {
-  await updateCustomer({
-    id: customer.id,
-    ...data
-  });
-};
+  const onSubmit = async (data: CustomerInput) => {
+    await mutation.mutateAsync({
+      id: user.id,
+      ...data,
+      profileImage: imageUrl || data.profileImage,
+    });
+
+    router.push("/dashboard/customers");
+    router.refresh();
+  };
 
   return (
     <form

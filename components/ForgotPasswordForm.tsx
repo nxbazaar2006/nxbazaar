@@ -56,7 +56,7 @@ export default function ForgotPasswordForm() {
           {...register("email")}
           type="email"
           placeholder="name@company.com"
-          className="input"
+          className="w-full rounded-lg border border-input bg-background p-2.5 text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
         />
 
         {errors.email && (
@@ -69,15 +69,15 @@ export default function ForgotPasswordForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full bg-blue-600 text-white py-2 rounded-lg"
+        className="w-full bg-primary text-primary-foreground py-2 rounded-full"
       >
         {isPending ? "Sending..." : "Send Password Reset Email"}
       </button>
 
       <div className="my-6">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Do remember your Password?{" "}
-          <Link href="/login" className="text-blue-600">
+          <Link href="/login" className="text-primary">
             Login
           </Link>
         </p>

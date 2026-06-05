@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import Autoplay from "embla-carousel-autoplay";
 
 import {
   Carousel,
@@ -10,8 +11,6 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-
-import Autoplay from "embla-carousel-autoplay";
 
 type Banner = {
   imageUrl: string;
@@ -26,24 +25,41 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
     <Carousel
       opts={{
         loop: banners.length > 1,
+        align: "start",
       }}
       plugins={[
         Autoplay({
           delay: 3000,
+          stopOnInteraction: false,
+          stopOnMouseEnter: true,
         }),
       ]}
-      className="rounded-md overflow-hidden"
+      className="
+        group relative overflow-hidden rounded-[28px]
+        border border-white/10 bg-white/10
+        shadow-sm backdrop-blur-2xl
+      "
     >
       <CarouselContent>
-        {banners.map((banner, i) => (
-          <CarouselItem key={i}>
-            <Link href={banner.link} className="block">
+        {banners.map((banner, index) => (
+          <CarouselItem key={`${banner.title}-${index}`}>
+            <Link
+              href={banner.link || "#"}
+              aria-label={banner.title}
+              className="block overflow-hidden rounded-[28px]"
+            >
               <Image
                 width={712}
                 height={384}
                 src={banner.imageUrl}
-                className="w-full"
                 alt={banner.title}
+                priority={index === 0}
+                sizes="(max-width: 768px) 100vw, 712px"
+                className="
+                  aspect-[712/384] w-full object-cover
+                  transition-transform duration-700
+                  group-hover:scale-[1.02]
+                "
               />
             </Link>
           </CarouselItem>
@@ -52,8 +68,25 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
 
       {banners.length > 1 && (
         <>
-          <CarouselPrevious />
-          <CarouselNext />
+          <CarouselPrevious
+            className="
+              left-3 hidden md:flex
+              border-white/10 bg-white/10
+              text-foreground backdrop-blur-xl
+              shadow-md transition-all duration-300
+              hover:scale-110 hover:bg-white/20
+            "
+          />
+
+          <CarouselNext
+            className="
+              right-3 hidden md:flex
+              border-white/10 bg-white/10
+              text-foreground backdrop-blur-xl
+              shadow-md transition-all duration-300
+              hover:scale-110 hover:bg-white/20
+            "
+          />
         </>
       )}
     </Carousel>

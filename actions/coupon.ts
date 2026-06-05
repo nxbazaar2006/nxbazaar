@@ -4,7 +4,6 @@ import { db } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { couponSchema } from "@/lib/validators/coupon.schema"
 import { generateCouponCode } from "@/lib/generateCouponCode"
-import { generateIsoFormattedDate } from "@/lib/generateIsoFormattedDate"
 import { CouponResponse, CouponsResponse } from "@/types/coupon"
 
 export async function createCoupon(data: unknown): Promise<CouponResponse> {
@@ -15,8 +14,8 @@ export async function createCoupon(data: unknown): Promise<CouponResponse> {
       return { success: false, error: parsed.error.flatten().fieldErrors.title?.[0] || "Validation failed" }
     }
 
-    const couponCode = generateCouponCode(parsed.data.title, parsed.data.expiryDate)
-    const isoFormattedDate = generateIsoFormattedDate(parsed.data.expiryDate)
+    const couponCode = parsed.data.couponCode || generateCouponCode()
+    const expiryDate = new Date(parsed.data.expiryDate)
 
     // Check if coupon code already exists
     const existing = await db.coupon.findFirst({
@@ -31,7 +30,7 @@ export async function createCoupon(data: unknown): Promise<CouponResponse> {
       data: {
         ...parsed.data,
         couponCode,
-        expiryDate: new Date(isoFormattedDate),
+        expiryDate,
       },
       include: { vendor: true },
     })
@@ -51,15 +50,15 @@ export async function updateCoupon(id: string, data: unknown): Promise<CouponRes
       return { success: false, error: parsed.error.flatten().fieldErrors.title?.[0] || "Validation failed" }
     }
 
-    const couponCode = generateCouponCode(parsed.data.title, parsed.data.expiryDate)
-    const isoFormattedDate = generateIsoFormattedDate(parsed.data.expiryDate)
+    const couponCode = parsed.data.couponCode || generateCouponCode()
+    const expiryDate = new Date(parsed.data.expiryDate)
 
     const coupon = await db.coupon.update({
       where: { id },
       data: {
         ...parsed.data,
         couponCode,
-        expiryDate: new Date(isoFormattedDate),
+        expiryDate,
       },
       include: { vendor: true },
     })
@@ -101,7 +100,7 @@ export async function getCoupons(): Promise<CouponsResponse> {
   try {
     const coupons = await db.coupon.findMany({
       include: { vendor: true },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { expiryDate: "desc" },
     })
     return { success: true, data: coupons }
   } catch (error: any) {

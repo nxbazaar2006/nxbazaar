@@ -1,44 +1,42 @@
 "use client";
 
+import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { useAppSelector } from "@/redux/hooks";
-import { useEffect, useState } from "react";
-import Link from "next/link";
 
 export default function CartCount() {
-  // ✅ Always safe selector
   const cartItems = useAppSelector((state) => state.cart || []);
-
-  // ✅ Fix hydration issue
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // 🚨 Prevent SSR mismatch
-  if (!mounted) return null;
-
-  // ✅ Force number
-  const count = cartItems.length || 0;
-
-  // ✅ Debug (remove later)
-  console.log("CartCount Updated:", cartItems);
+  const count = cartItems.length;
 
   return (
-    <Link href="/cart">
-      <div className="relative cursor-pointer">
-        <ShoppingCart className="w-6 h-6" />
+    <Link
+      href="/cart"
+      aria-label={`Cart items: ${count}`}
+      className="
+        group relative inline-flex h-11 w-11 items-center justify-center
+        apple-glass-control
+        transition-all duration-300
+        hover:scale-105 hover:bg-gradient-to-br
+        hover:from-pink-500/20 hover:via-purple-500/20 hover:to-orange-500/20
+        hover:shadow-lg
+      "
+    >
+      <ShoppingCart className="h-5 w-5 text-foreground transition-transform duration-300 group-hover:scale-110" />
 
-        {/* ✅ Always render span → no hydration issue */}
-        <span
-          className={`absolute -top-2 -right-2 text-white text-xs px-2 py-1 rounded-full transition-all ${
-            count > 0 ? "bg-red-500 scale-100" : "bg-gray-400 scale-75"
-          }`}
-        >
-          {count}
-        </span>
-      </div>
+      <span
+        className={`
+          absolute -right-1.5 -top-1.5 flex min-h-5 min-w-5 items-center justify-center
+          rounded-full px-1.5 text-[11px] font-bold text-white shadow-md
+          transition-all duration-300
+          ${
+            count > 0
+              ? "scale-100 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500"
+              : "scale-75 bg-gray-400"
+          }
+        `}
+      >
+        {count}
+      </span>
     </Link>
   );
 }

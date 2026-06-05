@@ -31,7 +31,7 @@ export const useCreateVlog = () => {
 
   return useMutation<Vlog, Error, VlogInput>({
     mutationFn: (data) =>
-      apiClient.post<Vlog>("/vlogs", data),
+      apiClient.post<Vlog, VlogInput>("/vlogs", data),
 
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: vlogKeys.all });
@@ -54,7 +54,7 @@ export const useUpdateVlog = () => {
     { id: string; data: VlogInput }
   >({
     mutationFn: ({ id, data }) =>
-      apiClient.put<Vlog>(`/vlogs/${id}`, data),
+      apiClient.put<Vlog, VlogInput>(`/vlogs/${id}`, data),
 
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: vlogKeys.all });
@@ -75,7 +75,7 @@ export const useUpdateVlog = () => {
 export const useDeleteVlog = () => {
   const qc = useQueryClient();
 
-  return useMutation<void, Error, string>({
+  return useMutation<void, Error, string, { prev?: Vlog[] }>({
     mutationFn: (id) =>
       apiClient.delete<void>(`/vlogs/${id}`),
 

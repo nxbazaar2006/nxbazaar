@@ -68,20 +68,20 @@ export default function SelectInput<T extends FieldValues>({
         {...register(name)}
         defaultValue=""
         className={cn(
-          "w-full px-3 py-2 rounded-xl border transition-all",
-          "bg-white/40 backdrop-blur-md text-black",
-          "border-white/20 shadow-sm",
-          "focus:outline-none focus:ring-2 focus:ring-orange-500",
-          "hover:border-orange-400",
+          "w-full px-3 py-2 rounded-md border transition-all",
+          "bg-transparent text-slate-950 dark:text-white",
+          "border-slate-200 shadow-sm dark:border-white/10",
+          "focus:outline-none focus:ring-2 focus:ring-orange-500/20",
+          "hover:border-orange-400 focus:border-orange-400",
           error && "border-red-400"
         )}
       >
-        <option value="" disabled hidden>
+        <option className="bg-white text-slate-950 dark:bg-slate-900 dark:text-white" value="" disabled hidden>
           {placeholder}
         </option>
 
         {uniqueOptions.map((opt) => (
-          <option key={opt.value} value={opt.value}>
+          <option className="bg-white text-slate-950 dark:bg-slate-900 dark:text-white" key={opt.value} value={opt.value}>
             {opt.label}
           </option>
         ))}

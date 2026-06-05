@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Check, X } from "lucide-react";
+import { formatINR } from "@/lib/currency";
 
 type Plan = {
   title: string;
@@ -20,7 +21,7 @@ export default function Pricing() {
       title: "Free",
       isRecommended: false,
       description: "+5% transaction fee. Its Good For Starters",
-      price: "$0",
+      price: formatINR(0),
       features: ["All features", "Unlimited products", "Unlimited revenue"],
       nonFeatures: [],
       link: "/register-seller?plan=free",
@@ -31,8 +32,8 @@ export default function Pricing() {
       title: "Silver",
       isRecommended: true,
       description:
-        "+2% transaction fee. Its Good if your revenue is above $500",
-      price: "$20",
+        "+2% transaction fee. Its Good if your revenue is above ₹500",
+      price: formatINR(20),
       features: ["All features", "Unlimited products", "Unlimited revenue"],
       nonFeatures: [],
       link: "/register-seller?plan=silver",
@@ -43,8 +44,8 @@ export default function Pricing() {
       title: "Gold",
       isRecommended: false,
       description:
-        "No transaction fee. Is Good if your earning more than $5000 in revenue",
-      price: "$99",
+        "No transaction fee. Is Good if your earning more than ₹5000 in revenue",
+      price: formatINR(99),
       features: ["All features", "Unlimited products", "Unlimited revenue"],
       nonFeatures: [],
       link: "/register-seller?plan=gold",

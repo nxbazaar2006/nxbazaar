@@ -1,15 +1,16 @@
 "use client"
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
+import { FormProvider, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 
+import GlassCard from "@/components/GlassCard"
 import ImageInput from "@/components/FormInputs/ImageInput"
 import SubmitButton from "@/components/FormInputs/SubmitButton"
 import TextInput from "@/components/FormInputs/TextInput"
 import ToggleInput from "@/components/FormInputs/ToggleInput"
+import { getErrorMessage } from "@/lib/error-message"
 
 import { bannerSchema, BannerInput } from "@/lib/validators/banner.schema"
 import { useCreateBanner, useUpdateBanner } from "@/hooks/useBannerMutation"
@@ -25,15 +26,7 @@ export default function BannerForm({ updateData }: BannerFormProps) {
   const createMutation = useCreateBanner()
   const updateMutation = useUpdateBanner()
 
-  const [imageUrl, setImageUrl] = useState(updateData?.imageUrl || "")
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    reset,
-  } = useForm<BannerInput>({
+  const form = useForm<BannerInput>({
     resolver: zodResolver(bannerSchema),
     defaultValues: {
       title: updateData?.title || "",
@@ -44,15 +37,9 @@ export default function BannerForm({ updateData }: BannerFormProps) {
   })
 
   const onSubmit = async (data: BannerInput) => {
-
-    if (!imageUrl) {
+    if (!data.imageUrl) {
       toast.error("Banner image is required")
       return
-    }
-
-    const bannerData: BannerInput = {
-      ...data,
-      imageUrl,
     }
 
     try {
@@ -61,7 +48,7 @@ export default function BannerForm({ updateData }: BannerFormProps) {
 
         const result = await updateMutation.mutateAsync({
           id: updateData.id,
-          ...bannerData,
+          ...data,
         })
 
         if (result.success) {
@@ -73,12 +60,11 @@ export default function BannerForm({ updateData }: BannerFormProps) {
 
       } else {
 
-        const result = await createMutation.mutateAsync(bannerData)
+        const result = await createMutation.mutateAsync(data)
 
         if (result.success) {
           toast.success("Banner created successfully")
-          reset()
-          setImageUrl("")
+          form.reset()
           router.push("/dashboard/banners")
         } else {
           toast.error(result.error ?? "Failed to create banner")
@@ -87,72 +73,57 @@ export default function BannerForm({ updateData }: BannerFormProps) {
       }
 
     } catch (error: unknown) {
-
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error("Something went wrong")
-      }
-
+      toast.error(getErrorMessage(error, "Something went wrong"))
     }
-
   }
 
+  const isLoading =
+    form.formState.isSubmitting ||
+    createMutation.isPending ||
+    updateMutation.isPending
+
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="max-w-4xl mx-auto p-6 rounded-lg 
-bg-orange-500 dark:bg-orange-500 
-border border-orange-300 dark:border-orange-900 
-text-foreground"
-    >
+    <GlassCard className="mx-auto max-w-4xl">
+      <FormProvider {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
 
-      <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
+            <TextInput<BannerInput>
+              label="Banner Title"
+              name="title"
+            />
 
-        <TextInput
-          label="Banner Title"
-          name="title"
-          register={register}
-          errors={errors}
-        />
+            <TextInput<BannerInput>
+              label="Banner Link"
+              name="link"
+              type="url"
+            />
 
-        <TextInput
-          label="Banner Link"
-          name="link"
-          type="url"
-          register={register}
-          errors={errors}
-        />
+            <div className="sm:col-span-2">
+              <ImageInput<BannerInput>
+                label="Banner Image"
+                name="imageUrl"
+                endpoint="bannerImageUploader"
+              />
+            </div>
 
-        <div className="sm:col-span-2">
+            <ToggleInput<BannerInput>
+              label="Publish your Banner"
+              name="isActive"
+              trueTitle="Active"
+              falseTitle="Draft"
+            />
 
-          <ImageInput
-            label="Banner Image"
-            imageUrl={imageUrl}
-            setImageUrl={(url: string) => {
-              setImageUrl(url)
-              setValue("imageUrl", url)
-            }}
+          </div>
+
+          <SubmitButton
+            isLoading={isLoading}
+            buttonTitle={updateData?.id ? "Update Banner" : "Create Banner"}
+            loadingButtonTitle={`${updateData?.id ? "Updating" : "Creating"} Banner please wait...`}
           />
 
-        </div>
-
-        <ToggleInput
-          label="Publish your Banner"
-          name="isActive"
-          trueTitle="Active"
-          falseTitle="Draft"
-          register={register}
-        />
-
-      </div>
-
-      <SubmitButton
-        isLoading={createMutation.isPending || updateMutation.isPending}
-        buttonTitle={updateData?.id ? "Update Banner" : "Create Banner"}
-        loadingButtonTitle={`${updateData?.id ? "Updating" : "Creating"} Banner please wait...`}
-      />
-
-    </form>
+        </form>
+      </FormProvider>
+    </GlassCard>
   )
 }

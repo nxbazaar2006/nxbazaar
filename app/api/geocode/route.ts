@@ -22,6 +22,7 @@ export async function POST(req: Request) {
         "",
       state: components?.state || "",
       country: components?.country || "",
+      pincode: components?.postcode || "",
     });
   } catch (error) {
     return NextResponse.json(

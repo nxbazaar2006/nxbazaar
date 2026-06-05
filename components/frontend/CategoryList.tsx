@@ -1,41 +1,61 @@
 import Link from "next/link";
 import CategoryCarousel from "./CategoryCarousel";
 
-export default function CategoryList({ category, isMarketPage }) {
+type Props = {
+  category: {
+    title: string;
+    slug: string;
+    products?: React.ComponentProps<typeof CategoryCarousel>["products"];
+  };
+  isMarketPage?: boolean;
+  lang?: string;
+};
 
+export default function CategoryList({
+  category,
+  isMarketPage = false,
+  lang,
+}: Props) {
   if (!category) return null;
 
+  const categoryHref = `/category/${category.slug}${
+    lang ? `?lang=${lang}` : ""
+  }`;
+
   return (
-    <div className="bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-700 text-slate-800 overflow-hidden">
-
-      {/* Header */}
-
-      <div className="bg-slate-100 dark:bg-gray-800 py-3 px-6 font-semibold border-b border-gray-300 dark:border-gray-600 text-slate-800 dark:text-slate-100 flex flex-wrap justify-between items-center gap-2">
-
-        <h2 className="text-lg">
+    <section
+      className="
+        apple-glass overflow-hidden text-foreground
+      "
+    >
+      <div
+        className="
+          flex flex-wrap items-center justify-between gap-3
+          border-b border-white/10 px-5 py-4 md:px-6
+        "
+      >
+        <h2 className="text-lg font-semibold tracking-tight">
           {category.title}
         </h2>
 
         <Link
-          href={`/category/${category.slug}`}
-          className="bg-lime-600 hover:bg-lime-700 transition-colors text-white rounded-md px-4 py-2 text-sm"
+          href={categoryHref}
+          className="
+            apple-glass-control px-4 py-2 text-sm font-medium
+            transition-all duration-300 hover:-translate-y-0.5 hover:bg-gradient-to-r
+            hover:from-orange-500/20 hover:via-pink-500/20 hover:to-purple-500/20
+          "
         >
           See All
         </Link>
-
       </div>
 
-      {/* Products */}
-
-      <div className="bg-white dark:bg-slate-700 p-4">
-
+      <div className="p-4 md:p-5">
         <CategoryCarousel
           isMarketPage={isMarketPage}
-          products={category?.products || []}
+          products={category.products ?? []}
         />
-
       </div>
-
-    </div>
+    </section>
   );
 }

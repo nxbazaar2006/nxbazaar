@@ -6,6 +6,7 @@ import base64url from "base64url";
 import { Resend } from "resend";
 import EmailTemplate from "@/components/email-template";
 import { registerSchema } from "@/lib/validators/registerSchema";
+import { getErrorMessage } from "@/lib/error-message";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -95,12 +96,12 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
 
     return NextResponse.json(
       {
-        message: error?.message || "Server Error",
+        message: getErrorMessage(error, "Server Error"),
       },
       { status: 500 }
     );

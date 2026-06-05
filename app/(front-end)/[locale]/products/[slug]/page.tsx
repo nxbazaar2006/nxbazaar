@@ -1,33 +1,59 @@
-import { db } from "@/lib/db";
-import { getSafeTranslation } from "@/lib/getTranslation";
-import { findEntityByTranslationSlug } from "@/lib/slug/translationSlug.service";
+import { getProductBySlug, getSimilarProducts } from "@/actions/products";
+import ProductDetailView from "@/components/frontend/ProductDetailView";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
 
-interface Props {
-  params: {
+type PageProps = {
+  params: Promise<{
     locale: string;
     slug: string;
+  }>;
+};
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const product = await getProductBySlug(slug, locale);
+
+  if (!product) {
+    return {
+      title: "Product",
+      description: "Product details",
+    };
+  }
+
+  return {
+    title: product.title,
+    description: product.metaDescription || "Product details",
+    openGraph: {
+      images: [product.imageUrl || ""],
+    },
   };
 }
 
-export default async function ProductLocalePage({ params }: Props) {
-  const product = await findEntityByTranslationSlug(
-    "product",
-    params.locale,
-    params.slug
-  );
+export default async function ProductLocalePage({ params }: PageProps) {
+  const { locale, slug } = await params;
+  const product = await getProductBySlug(slug, locale);
 
-  const productData =
-    product ??
-    (await db.product.findFirst({
-      where: { slug: params.slug },
-      include: { translations: true },
-    }));
-
-  if (!productData) {
-    return <div>Product not found</div>;
+  if (!product) {
+    return notFound();
   }
 
-  const t = getSafeTranslation(productData.translations, params.locale);
+  const products = await getSimilarProducts(
+    product.categoryId,
+    product.id,
+    locale
+  );
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+  const urlToShare = `${baseUrl}/${locale}/products/${slug}`;
 
-  return <div>{t?.title ?? "Product"}</div>;
+  return (
+    <ProductDetailView
+      product={product}
+      similarProducts={products}
+      urlToShare={urlToShare}
+      currentLocale={locale}
+    />
+  );
 }

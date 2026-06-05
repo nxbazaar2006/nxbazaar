@@ -2,43 +2,49 @@ import React from "react";
 import Product from "../Product";
 import Paginate from "./Paginate";
 
-// ✅ Product Type (extend as needed)
 type ProductType = {
   id: string;
+  userId?: string;
   title: string;
-  price?: number;
-  imageUrl?: string;
+  slug: string;
+  salePrice: number;
+  imageUrl: string;
 };
 
-// ✅ Props Type
 type FilteredProductsProps = {
   products: ProductType[];
   productCount: number;
   isSearch?: boolean;
+  pageSize?: number;
 };
 
 export default function FilteredProducts({
   products,
   productCount,
-  isSearch,
+  isSearch = false,
+  pageSize = 12,
 }: FilteredProductsProps) {
-  // ✅ PAGINATION
-  const pageSize = 3;
   const totalPages = Math.ceil(productCount / pageSize);
 
   return (
-    <div>
-      {/* 🔹 Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {products.map((product) => (
-          <Product product={product} key={product.id} />
-        ))}
-      </div>
+    <div className="space-y-8">
+      {products.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {products.map((product) => (
+            <Product product={product} key={product.id} />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl border bg-card p-8 text-center text-muted-foreground">
+          No products found.
+        </div>
+      )}
 
-      {/* 🔹 Pagination */}
-      <div className="p-8 mx-auto flex items-center justify-center w-full">
-        <Paginate totalPages={totalPages} isSearch={isSearch} />
-      </div>
+      {totalPages > 1 && (
+        <div className="flex w-full items-center justify-center">
+          <Paginate totalPages={totalPages} isSearch={isSearch} />
+        </div>
+      )}
     </div>
   );
 }

@@ -7,7 +7,10 @@ export default async function CustomersPage() {
 
   const customers = await db.user.findMany({
     where: {
-      role: UserRole.CUSTOMER,
+      role: UserRole.USER,
+    },
+    include: {
+      profile: true,
     },
   });
 

@@ -114,10 +114,10 @@ export async function GET(req: Request) {
         hasPrevPage: page > 1,
       },
     });
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: error.flatten() },
+        { success: false, error: (error as Error).message },
         { status: 400 }
       );
     }

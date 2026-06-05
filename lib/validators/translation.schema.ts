@@ -20,7 +20,7 @@ export const TranslationSchema = z.object({
 
   parentId: z.string().min(1, "Parent ID is required"),
 
-  locale: z.enum(["EN", "HI", "MR", "TA", "TE", "KN", "GU"]),
+  locale: z.enum(["EN", "HI", "MR"]),
 
   title: z.string().min(2, "Title too short"),
 
@@ -28,6 +28,6 @@ export const TranslationSchema = z.object({
 
   slug: z
     .string()
-    .regex(/^[a-z0-9-]+$/, "Invalid slug format")
+    .regex(/^[\p{L}\p{N}-]+$/u, "Invalid slug format")
     .optional(),
 });

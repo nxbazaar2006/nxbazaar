@@ -1,20 +1,21 @@
 "use client";
 
 import { useDispatch, useSelector } from "react-redux";
-import { setLocale } from "@/redux/slices/localeSlice";
+import { setLanguage } from "@/redux/slices/languageSlice";
+import type { RootState } from "@/redux/store";
 
 const locales = ["en", "hi", "mr"];
 
 export default function LocaleSwitcher() {
   const dispatch = useDispatch();
-  const locale = useSelector((state: any) => state.locale.locale);
+  const locale = useSelector((state: RootState) => state.language.locale);
 
   return (
     <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl">
       {locales.map((l) => (
         <button
           key={l}
-          onClick={() => dispatch(setLocale(l))}
+          onClick={() => dispatch(setLanguage(l))}
           className={`px-3 py-1 text-sm rounded-lg transition-all ${
             locale === l
               ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"

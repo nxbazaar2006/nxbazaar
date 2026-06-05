@@ -1,4 +1,4 @@
-import { getData } from "@/lib/getData";
+import { db } from "@/lib/db";
 import { Info } from "lucide-react";
 
 interface VerifyMailPageProps {
@@ -16,7 +16,14 @@ export default async function VerifyMailPage({
     return null;
   }
 
-  const user = await getData(`users/${userId}`);
+  const user = await db.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      email: true,
+    },
+  });
 
   const email = user?.email;
 

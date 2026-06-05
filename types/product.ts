@@ -2,8 +2,16 @@ import type { Prisma } from "@prisma/client";
 
 export type Product = Prisma.ProductGetPayload<{
   include: {
-    category: true;
-    subCategory: true;
+    category: {
+      include: {
+        translations: true;
+      };
+    };
+    subCategory: {
+      include: {
+        translations: true;
+      };
+    };
     hsnCode: true;
     images: true;
     variants: {

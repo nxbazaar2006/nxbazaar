@@ -52,7 +52,7 @@ export default function ArrayItemsInput({
               <button
                 type="button"
                 onClick={addItem}
-                className="px-3 bg-black text-white rounded"
+                className="rounded-full bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-fuchsia-500/20 transition hover:from-orange-400 hover:via-fuchsia-400 hover:to-sky-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-300"
               >
                 Add
               </button>

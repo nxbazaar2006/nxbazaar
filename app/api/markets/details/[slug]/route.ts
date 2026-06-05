@@ -1,6 +1,5 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { marketSchema } from "@/lib/validators/market.schema";
 import { z } from "zod";
 
 type Params = {
@@ -19,9 +18,13 @@ export async function GET(_: Request, { params }: Params) {
     /* -----------------------------
        FETCH MARKET
     ------------------------------ */
-    const market = await db.market.findUnique({
+    const market = await db.market.findFirst({
       where: {
-        slug,
+        translations: {
+          some: {
+            slug,
+          },
+        },
       },
 
       include: {
@@ -47,27 +50,10 @@ export async function GET(_: Request, { params }: Params) {
       );
     }
 
-    /* -----------------------------
-       OPTIONAL VALIDATION
-       (response safety)
-    ------------------------------ */
-    const validatedMarket = marketSchema
-      .partial()
-      .safeParse({
-        ...market,
-        categoryIds: market.categories.map((category) => category.id),
-      });
-
-    if (!validatedMarket.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Market response validation failed",
-          errors: validatedMarket.error.flatten(),
-        },
-        { status: 500 }
-      );
-    }
+    const data = {
+      ...market,
+      categoryIds: market.categories.map((category) => category.id),
+    };
 
     /* -----------------------------
        SUCCESS
@@ -75,7 +61,7 @@ export async function GET(_: Request, { params }: Params) {
     return NextResponse.json(
       {
         success: true,
-        data: market,
+        data,
         message: "Market fetched successfully",
       },
       { status: 200 }

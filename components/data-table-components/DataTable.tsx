@@ -1,5 +1,4 @@
 "use client";
-"use no memo";
 
 import * as React from "react";
 import {
@@ -17,7 +16,6 @@ import {
 } from "@tanstack/react-table";
 
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -33,6 +31,10 @@ import toast from "react-hot-toast";
 interface DataTableProps<TData extends { id: string }> {
   columns: ColumnDef<TData>[];
   data: TData[];
+  endpoint?: string;
+  queryKey?: readonly unknown[];
+  filterKeys?: string[];
+  isLoading?: boolean;
 
   onDeleteMany?: (ids: string[]) => Promise<void>;
   isDeleting?: boolean;
@@ -41,9 +43,13 @@ interface DataTableProps<TData extends { id: string }> {
 export default function DataTable<TData extends { id: string }>({
   columns,
   data: initialData,
+  endpoint,
+  queryKey,
   onDeleteMany,
   isDeleting,
 }: DataTableProps<TData>) {
+  "use no memo";
+
   const [data, setData] = React.useState(initialData);
 
   const [rowSelection, setRowSelection] =
@@ -120,14 +126,24 @@ export default function DataTable<TData extends { id: string }>({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
 
-      <div className="flex justify-between items-center">
-        <DataTableToolbar table={table} />
+      <div className="flex items-center justify-between gap-3">
+        <DataTableToolbar
+          table={table}
+          endpoint={endpoint}
+          queryKey={queryKey}
+          onDeleteSuccess={(ids) => {
+            setData((prev) =>
+              prev.filter((item) => !ids.includes(item.id))
+            );
+          }}
+        />
 
         {selectedIds.length > 0 && onDeleteMany && (
           <Button
             variant="destructive"
+            className="bg-gradient-to-r from-orange-500 to-sky-500 text-white shadow-sm hover:from-orange-400 hover:to-sky-400"
             onClick={handleDelete}
             disabled={isDeleting}
           >
@@ -136,13 +152,19 @@ export default function DataTable<TData extends { id: string }>({
         )}
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
+      <div className="max-h-[560px] w-full max-w-full overflow-auto rounded-2xl border border-slate-200 bg-white/90 shadow-xl shadow-slate-200/60 [scrollbar-color:#f97316_#fed7aa] [scrollbar-width:thin] dark:border-white/10 dark:bg-slate-900/60 dark:shadow-black/20 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-orange-500 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-orange-200 dark:[&::-webkit-scrollbar-thumb]:bg-orange-400 dark:[&::-webkit-scrollbar-track]:bg-slate-800">
+        <table className="min-w-[2300px] caption-bottom text-sm">
+          <TableHeader className="sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
+              <TableRow
+                key={hg.id}
+                className="border-slate-200 bg-slate-50/80 hover:bg-transparent dark:border-white/10 dark:bg-white/5"
+              >
                 {hg.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead
+                    key={header.id}
+                    className="whitespace-nowrap bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 dark:bg-slate-900 dark:text-sky-200"
+                  >
                     {flexRender(
                       header.column.columnDef.header,
                       header.getContext()
@@ -156,9 +178,12 @@ export default function DataTable<TData extends { id: string }>({
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+              <TableRow
+                key={row.id}
+                className="border-slate-200 text-slate-700 hover:bg-gradient-to-r hover:from-orange-500/10 hover:to-sky-500/10 data-[state=selected]:bg-sky-500/10 dark:border-white/10 dark:text-slate-200"
+              >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="whitespace-nowrap px-3 py-2">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -169,13 +194,16 @@ export default function DataTable<TData extends { id: string }>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length}>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-28 text-center text-slate-600 dark:text-slate-400"
+                >
                   No results.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
-        </Table>
+        </table>
       </div>
 
       <DataTablePagination table={table} />

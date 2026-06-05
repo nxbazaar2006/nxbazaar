@@ -6,7 +6,7 @@ type ApiError = {
   statusCode?: number;
 };
 
-/* 🔥 Backend response type (no any) */
+/* Backend response type */
 type ErrorResponse = {
   message?: string;
   errors?: {

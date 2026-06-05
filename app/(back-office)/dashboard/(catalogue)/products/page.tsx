@@ -1,4 +1,5 @@
 import PageHeader from "@/components/backoffice/PageHeader";
+import ProductImportButton from "@/components/backoffice/ProductImportButton";
 import DataTable from "@/components/data-table-components/DataTable";
 import { columns } from "./columns";
 import { getProducts } from "@/actions/product";
@@ -23,7 +24,7 @@ export default async function ProductsPage({ searchParams }: Props) {
   /* ================= ERROR ================= */
   if (!res.success) {
     return (
-      <div className="p-6 text-sm text-red-500">
+      <div className="space-y-4 text-sm text-red-500">
         ❌ Failed to load products: {res.error}
       </div>
     );
@@ -35,14 +36,17 @@ export default async function ProductsPage({ searchParams }: Props) {
   /* ================= EMPTY ================= */
   if (data.length === 0) {
     return (
-      <div className="p-6 space-y-4">
+      <div className="min-w-0 space-y-4">
         <PageHeader
           heading="Products"
           href="/dashboard/products/new"
           linkTitle="Add Product"
         />
+        <div className="flex justify-end">
+          <ProductImportButton />
+        </div>
 
-        <div className="text-sm text-muted-foreground border rounded-lg p-6 text-center">
+        <div className="rounded-2xl border border-slate-200 bg-white/90 p-6 text-center text-sm text-slate-600 shadow-sm shadow-slate-200/60 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-400 dark:shadow-black/20">
           No products found 🚀 <br />
           Try changing search or add a new product.
         </div>
@@ -52,19 +56,24 @@ export default async function ProductsPage({ searchParams }: Props) {
 
   /* ================= UI ================= */
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-w-0 space-y-4">
       <PageHeader
         heading="Products"
         href="/dashboard/products/new"
         linkTitle="Add Product"
       />
+      <div className="flex justify-end">
+        <ProductImportButton />
+      </div>
 
       <DataTable
         columns={columns}
         data={data}
+        endpoint="products"
+        queryKey={["products"]}
       />
 
-      <div className="flex justify-end text-xs text-muted-foreground">
+      <div className="flex justify-end text-xs text-slate-600 dark:text-slate-400">
         Page: {page} | Limit: {limit} | Total: {total}
       </div>
     </div>

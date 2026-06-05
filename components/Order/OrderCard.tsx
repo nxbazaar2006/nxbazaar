@@ -1,15 +1,16 @@
 import { convertIsoDatetoNormal } from "@/lib/convertIsoDatetoNormal";
 import { generateSlug } from "@/lib/generateSlug";
+import { formatINR } from "@/lib/currency";
 import Link from "next/link";
-import { Order } from "@/types/order";
+import type { InvoiceOrder } from "@/types/order";
 
 type Props = {
-  order: Order;
+  order: InvoiceOrder;
 };
 
 export default function OrderCard({ order }: Props) {
 
-  const orderCreationDate = convertIsoDateToNormal(order.createdAt);
+  const orderCreationDate = convertIsoDatetoNormal(order.createdAt);
 
   if (order.orderItems.length === 0) return null;
 
@@ -39,28 +40,28 @@ export default function OrderCard({ order }: Props) {
               <div>
                 <p className="text-sm text-gray-500">Subtotal</p>
                 <p className="text-sm font-bold text-gray-900">
-                  ${order.subTotal.toFixed(2)}
+                  {formatINR(order.subTotal)}
                 </p>
               </div>
 
               <div>
                 <p className="text-sm text-gray-500">GST ({order.gstRate}%)</p>
                 <p className="text-sm font-bold text-gray-900">
-                  ${order.gstAmount.toFixed(2)}
+                  {formatINR(order.gstAmount)}
                 </p>
               </div>
 
               <div>
                 <p className="text-sm text-gray-500">Shipping</p>
                 <p className="text-sm font-bold text-gray-900">
-                  ${order.shippingCost.toFixed(2)}
+                  {formatINR(order.shippingCost)}
                 </p>
               </div>
 
               <div>
                 <p className="text-sm text-gray-500">Total</p>
                 <p className="text-sm font-bold text-gray-900">
-                  ${order.totalAmount.toFixed(2)}
+                  {formatINR(order.totalAmount)}
                 </p>
               </div>
 
@@ -80,7 +81,9 @@ export default function OrderCard({ order }: Props) {
 
             {order.orderItems.map((item) => {
 
-              const slug = generateSlug(item.title);
+              const slug = generateSlug(item.title ?? "product");
+              const itemTitle = item.title ?? "Order item";
+              const itemImageUrl = item.imageUrl || "/placeholder.png";
 
               return (
                 <li key={item.id} className="relative flex pb-10 sm:pb-0">
@@ -88,8 +91,8 @@ export default function OrderCard({ order }: Props) {
                   <div className="flex-shrink-0">
                     <img
                       className="object-cover rounded-lg w-28 h-28"
-                      src={item.imageUrl}
-                      alt={item.title}
+                      src={itemImageUrl}
+                      alt={itemTitle}
                     />
                   </div>
 
@@ -99,7 +102,7 @@ export default function OrderCard({ order }: Props) {
 
                       <div>
                         <p className="text-base font-bold text-gray-900">
-                          {item.title}
+                          {itemTitle}
                         </p>
                       </div>
 
@@ -109,7 +112,7 @@ export default function OrderCard({ order }: Props) {
                         </p>
 
                         <p className="text-base font-bold text-gray-900">
-                          ${item.price}
+                          {formatINR(item.price)}
                         </p>
                       </div>
 

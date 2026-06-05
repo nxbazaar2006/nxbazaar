@@ -3,13 +3,14 @@ import NewSellerForm from "@/components/backoffice/NewSellerForm";
 import { getSellerById } from "@/actions/Seller";
 
 type Props = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export default async function UpdateSeller({ params }: Props) {
-  const response = await getSellerById(params.id);
+  const { id } = await params;
+  const response = await getSellerById(id);
 
   // ✅ proper error handling
   if (!response.success) {

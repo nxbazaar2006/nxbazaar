@@ -9,10 +9,15 @@ import {
   ChartOptions,
 } from "chart.js";
 import { Pie } from "react-chartjs-2";
+import { useTheme } from "next-themes";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function BestSellingProductsChart() {
+  const { theme, resolvedTheme } = useTheme();
+  const currentTheme = theme === "system" ? resolvedTheme : theme;
+  const isDark = currentTheme === "dark";
+
   const data = {
     labels: ["Cabbage", "Watermelon", "Broccoli", "Maize"],
     datasets: [
@@ -37,7 +42,7 @@ export default function BestSellingProductsChart() {
       legend: {
         position: "bottom",
         labels: {
-          color: "#94a3b8",
+          color: isDark ? "#cbd5e1" : "#475569",
           padding: 20,
           font: {
             size: 12,
@@ -45,9 +50,11 @@ export default function BestSellingProductsChart() {
         },
       },
       tooltip: {
-        backgroundColor: "#0f172a",
-        titleColor: "#fff",
-        bodyColor: "#cbd5f5",
+        backgroundColor: isDark ? "#0f172a" : "#ffffff",
+        titleColor: isDark ? "#fff" : "#0f172a",
+        bodyColor: isDark ? "#cbd5e1" : "#334155",
+        borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(148,163,184,0.28)",
+        borderWidth: 1,
         padding: 10,
         cornerRadius: 8,
       },
@@ -55,11 +62,11 @@ export default function BestSellingProductsChart() {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex h-full flex-col">
       
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-white">
+        <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
           Best Selling Products
         </h2>
       </div>

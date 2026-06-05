@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { couponSchema } from "@/lib/validators/coupon.schema";
+import { getErrorMessage } from "@/lib/error-message";
 
 // ================= GET ONE =================
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const coupon = await db.coupon.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { vendor: true },
     });
 
@@ -31,14 +33,15 @@ export async function GET(
 // ================= UPDATE =================
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await req.json();
     const validated = couponSchema.parse(body);
 
     const updated = await db.coupon.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...validated,
         expiryDate: new Date(validated.expiryDate),
@@ -46,9 +49,9 @@ export async function PUT(
     });
 
     return NextResponse.json(updated);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { message: error.message || "Failed to update coupon" },
+      { message: getErrorMessage(error, "Failed to update coupon") },
       { status: 500 }
     );
   }
@@ -57,11 +60,12 @@ export async function PUT(
 // ================= DELETE =================
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await db.coupon.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({

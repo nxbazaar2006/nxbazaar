@@ -2,25 +2,26 @@
 
 import { Column } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 
-type Props<TData> = {
+interface SortableColumnProps<TData> {
   column: Column<TData, unknown>;
   title: string;
-};
+}
 
 export default function SortableColumn<TData>({
   column,
   title,
-}: Props<TData>) {
+}: SortableColumnProps<TData>) {
   return (
     <Button
+      type="button"
       variant="ghost"
-      onClick={() =>
-        column.toggleSorting(column.getIsSorted() === "asc")
-      }
+      className="-ml-3 h-8 px-2"
+      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
     >
-      {title}
+      <span>{title}</span>
       <ArrowUpDown className="ml-2 h-4 w-4" />
     </Button>
   );

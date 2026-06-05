@@ -7,13 +7,16 @@ import { getSellers } from "@/actions/Seller";
 
 type Seller = {
   id: string;
-  name: string;
-  email: string;
+  name: string | null;
+  email: string | null;
   role: string;
+  plan: string | null;
+  status: boolean;
   createdAt: Date;
   sellerProfile?: {
-    contactPerson: string;
-    phone: string;
+    contactPerson: string | null;
+    phone: string | null;
+    mainProduct: string | null;
   } | null;
 };
 
@@ -46,7 +49,6 @@ export default async function Page() {
       <DataTable
         data={sellers}
         columns={columns}
-        filterKeys={["name"]}
       />
     </div>
   );

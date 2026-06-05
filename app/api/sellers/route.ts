@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { SellerSchema } from "@/lib/validations/seller";
+import { SellerSchema } from "@/lib/validators/seller.schema";
 import { UserRole } from "@prisma/client";
 
 /* ---------------- CREATE SELLER ---------------- */

@@ -1,15 +1,27 @@
 import { getCategories } from "@/actions/category";
 import NewMarketForm from "@/components/backoffice/NewMarketForm";
-import type { Category } from "@/types/category";
+
+type CategoryOptionSource = {
+  id: string;
+  title?: string | null;
+  translations?: {
+    title?: string | null;
+    slug?: string | null;
+  }[];
+};
 
 export default async function NewMarket() {
   const categoriesResponse = await getCategories();
-  const categoriesData = Array.isArray(categoriesResponse)
-    ? (categoriesResponse as Category[])
+  const categoriesData: CategoryOptionSource[] = Array.isArray(categoriesResponse)
+    ? categoriesResponse
     : [];
 
   const categories = categoriesData.map((category) => ({
-    label: category.title,
+    label:
+      category.title ??
+      category.translations?.[0]?.title ??
+      category.translations?.[0]?.slug ??
+      "Untitled category",
     value: category.id,
   }));
 

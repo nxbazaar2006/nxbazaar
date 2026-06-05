@@ -5,30 +5,29 @@ import {
   incrementQty,
   removeFromCart,
 } from "@/redux/slices/cartSlice";
+import { useAppDispatch } from "@/redux/hooks";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import Image from "next/image";
-import React from "react";
 import toast from "react-hot-toast";
-import { useAppDispatch } from "@/redux/hooks";
-
-/* ================= TYPES ================= */
 
 type CartItem = {
   id: string;
   title: string;
-  salePrice: number; // ✅ FIX
-  imageUrl?: string; // ✅ FIX
+  salePrice: number;
+  imageUrl?: string;
   qty: number;
 };
-
-/* ================= COMPONENT ================= */
 
 export default function CartProduct({ cartItem }: { cartItem: CartItem }) {
   const dispatch = useAppDispatch();
 
+  const price = Number(cartItem.salePrice || 0);
+  const qty = Number(cartItem.qty || 0);
+  const total = price * qty;
+
   function handleCartItemDelete(cartId: string) {
     dispatch(removeFromCart(cartId));
-    toast.success("Item removed Successfully");
+    toast.success("Item removed successfully");
   }
 
   function handleQtyIncrement(cartId: string) {
@@ -36,83 +35,99 @@ export default function CartProduct({ cartItem }: { cartItem: CartItem }) {
   }
 
   function handleQtyDecrement(cartId: string) {
-    if (cartItem.qty <= 1) return;
+    if (qty <= 1) return;
     dispatch(decrementQty(cartId));
   }
 
-  // ✅ SAFE calculation
-  const price = Number(cartItem.salePrice || 0);
-  const qty = Number(cartItem.qty || 0);
-  const total = price * qty;
-
   return (
-    <div className="flex items-center justify-between border-b border-slate-300 pb-4 mb-4">
-      
-      {/* LEFT */}
-      <div className="flex items-center gap-3">
-        
-        {/* IMAGE */}
+    <div
+      className="
+        grid grid-cols-1 gap-4 rounded-2xl border border-white/10
+        bg-white/10 p-4 shadow-sm backdrop-blur-xl
+        transition-all duration-300
+        hover:bg-gradient-to-br hover:from-orange-500/10
+        hover:via-blue-500/10 hover:to-purple-500/10
+        md:grid-cols-12 md:items-center
+      "
+    >
+      <div className="flex items-center gap-4 md:col-span-6">
         {cartItem.imageUrl ? (
-          <Image
-            src={cartItem.imageUrl}
-            width={80}
-            height={80}
-            alt={cartItem.title}
-            className="rounded-lg object-cover"
-          />
+          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-muted">
+            <Image
+              src={cartItem.imageUrl}
+              fill
+              sizes="80px"
+              alt={cartItem.title}
+              className="object-cover"
+            />
+          </div>
         ) : (
-          <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center text-xs">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-muted text-xs text-muted-foreground">
             No Image
           </div>
         )}
 
-        <div className="flex flex-col">
-          <h2 className="font-medium text-sm line-clamp-2">
+        <div>
+          <h2 className="line-clamp-2 text-sm font-semibold">
             {cartItem.title}
           </h2>
+
+          <p className="mt-1 text-xs text-muted-foreground">
+            ₹{price.toFixed(2)} each
+          </p>
         </div>
       </div>
 
-      {/* CENTER - QTY */}
-      <div className="flex items-center border rounded-lg overflow-hidden">
-        <button
-          onClick={() => handleQtyDecrement(cartItem.id)}
-          disabled={qty <= 1}
-          className="px-3 py-2 border-r disabled:opacity-40"
-        >
-          <Minus size={14} />
-        </button>
+      <div className="flex items-center justify-between md:col-span-3 md:justify-center">
+        <span className="text-xs font-medium text-muted-foreground md:hidden">
+          Quantity
+        </span>
 
-        <p className="px-4 text-sm">{qty}</p>
+        <div className="flex items-center overflow-hidden rounded-2xl border border-white/10 bg-white/10">
+          <button
+            type="button"
+            onClick={() => handleQtyDecrement(cartItem.id)}
+            disabled={qty <= 1}
+            className="flex h-9 w-9 items-center justify-center transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Minus size={14} />
+          </button>
 
-        <button
-          onClick={() => handleQtyIncrement(cartItem.id)}
-          className="px-3 py-2 border-l"
-        >
-          <Plus size={14} />
-        </button>
+          <span className="min-w-10 text-center text-sm font-semibold">
+            {qty}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => handleQtyIncrement(cartItem.id)}
+            className="flex h-9 w-9 items-center justify-center transition hover:bg-white/10"
+          >
+            <Plus size={14} />
+          </button>
+        </div>
       </div>
 
-      {/* RIGHT */}
-      <div className="flex items-center gap-3">
-        <div className="flex flex-col text-right">
-          
-          {/* ✅ TOTAL */}
-          <h4 className="font-semibold text-green-600 text-sm">
+      <div className="flex items-center justify-between md:col-span-3 md:justify-end">
+        <div className="text-left md:text-right">
+          <h4 className="text-sm font-bold text-green-600">
             ₹{total.toFixed(2)}
           </h4>
 
-          {/* ✅ UNIT PRICE */}
-          <p className="text-xs text-gray-400">
-            ₹{price} × {qty}
+          <p className="text-xs text-muted-foreground">
+            ₹{price.toFixed(2)} × {qty}
           </p>
         </div>
 
         <button
+          type="button"
           onClick={() => handleCartItemDelete(cartItem.id)}
-          className="hover:scale-110 transition"
+          className="
+            ml-4 flex h-9 w-9 items-center justify-center rounded-xl
+            text-red-500 transition-all duration-300
+            hover:scale-110 hover:bg-red-500/10
+          "
         >
-          <Trash2 className="text-red-600 w-5 h-5" />
+          <Trash2 className="h-5 w-5" />
         </button>
       </div>
     </div>

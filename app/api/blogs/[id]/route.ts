@@ -5,14 +5,15 @@ import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
 import { Language } from "@prisma/client";
 
 type Params = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 // ================= GET SINGLE =================
 export async function GET(_: NextRequest, { params }: Params) {
   try {
+    const { id } = await params;
     const blog = await db.blog.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         translations: true,
         category: true,
@@ -42,12 +43,13 @@ export async function GET(_: NextRequest, { params }: Params) {
 // ================= UPDATE =================
 export async function PUT(req: NextRequest, { params }: Params) {
   try {
+    const { id } = await params;
     const body: unknown = await req.json();
     const data = blogSchema.parse(body);
 
     // 🔥 generate slug per translation
     const translationsWithSlug = await Promise.all(
-      data.translations.map(async (t) => ({
+      data.translations.map(async (t: (typeof data.translations)[number]) => ({
         ...t,
         locale: t.locale.toUpperCase() as Language,
         slug: await generateUniqueSlug(
@@ -59,8 +61,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
     );
 
     const updated = await db.blog.update({
-      where: { id: params.id },
+      where: { id },
       data: {
+        slug: data.slug ?? translationsWithSlug[0]?.slug ?? "blog",
         imageUrl: data.imageUrl,
         isActive: data.isActive,
         isFeatured: data.isFeatured,
@@ -105,8 +108,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
 // ================= DELETE =================
 export async function DELETE(_: NextRequest, { params }: Params) {
   try {
+    const { id } = await params;
     await db.blog.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({

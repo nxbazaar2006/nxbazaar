@@ -2,11 +2,9 @@
 
 import * as React from "react";
 import { Command } from "cmdk";
-import { useRouter } from "next/navigation";
 
 export default function CommandMenu() {
   const [open, setOpen] = React.useState(false);
-  const router = useRouter();
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -24,8 +22,8 @@ export default function CommandMenu() {
       <Command className="bg-zinc-900 text-white rounded-xl w-[500px] p-4">
         <Command.Input placeholder="Search..." className="mb-3 bg-transparent outline-none" />
         <Command.List>
-          <Command.Item onSelect={() => router.push("/dashboard")}>Dashboard</Command.Item>
-          <Command.Item onSelect={() => router.push("/dashboard/products")}>Products</Command.Item>
+          <Command.Item onSelect={() => window.location.assign("/dashboard")}>Dashboard</Command.Item>
+          <Command.Item onSelect={() => window.location.assign("/dashboard/products")}>Products</Command.Item>
         </Command.List>
       </Command>
     </Command.Dialog>

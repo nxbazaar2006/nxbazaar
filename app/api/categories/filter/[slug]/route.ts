@@ -2,9 +2,9 @@ import {db} from "@/lib/db";
 import { NextResponse } from "next/server";
 
 interface Params {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export async function GET(
@@ -12,9 +12,10 @@ export async function GET(
   { params }: Params
 ) {
   try {
+    const { slug } = await params;
     const category = await db.category.findUnique({
       where: {
-        slug: params.slug,
+        slug,
       },
       include: {
         products: {
