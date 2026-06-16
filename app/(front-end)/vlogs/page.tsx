@@ -31,7 +31,7 @@ export default async function VlogsPage() {
             return (
               <article
                 key={vlog.id}
-                className="glass-card space-y-3 transition hover:-translate-y-0.5"
+                className="border bg-card text-card-foreground shadow-sm space-y-3 transition hover:-translate-y-0.5"
               >
                 <h2 className="text-lg font-semibold">{title}</h2>
 
@@ -53,7 +53,7 @@ export default async function VlogsPage() {
           })}
         </div>
       ) : (
-        <div className="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground">
+        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
           No vlogs found.
         </div>
       )}

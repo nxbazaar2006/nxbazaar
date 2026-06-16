@@ -29,7 +29,7 @@ export default function SubmitButton({
         type="submit"
         disabled={loading}
         className={cn(
-          "relative w-full overflow-hidden bg-gradient-to-r from-orange-500 via-sky-500 to-emerald-500 text-base font-semibold text-white shadow-sm shadow-sky-500/20 hover:from-orange-600 hover:via-sky-600 hover:to-emerald-600 disabled:cursor-not-allowed disabled:opacity-60",
+          "relative w-full overflow-hidden bg-primary text-base font-semibold text-white shadow-sm  hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60",
           className
         )}
       >

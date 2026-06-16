@@ -11,18 +11,18 @@ export default function LargeCards({ sales }: Props) {
   const totalSales = sales.length;
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2">
       <LargeCard
         title="Total Revenue"
-        value={`₹ ${totalRevenue}`}
-        icon={<DollarSign className="w-6 h-6 text-cyan-300" />}
+        value={`₹ ${totalRevenue.toLocaleString("en-IN")}`}
+        icon={<DollarSign className="h-6 w-6 text-emerald-500" />}
         className=""
       />
 
       <LargeCard
         title="Total Sales"
         value={totalSales}
-        icon={<ShoppingCart className="w-6 h-6 text-cyan-300" />}
+        icon={<ShoppingCart className="h-6 w-6 text-foreground" />}
         className=""
       />
     </div>

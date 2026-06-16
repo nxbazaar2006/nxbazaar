@@ -13,32 +13,28 @@ import {
   LogOut,
   Settings,
   User,
+  Package,
+  Store,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { generateInitials } from "@/lib/generateInitials";
-import { motion } from "framer-motion";
-
-/* ================= TYPES ================= */
 
 type UserType = {
   name?: string | null;
   image?: string | null;
-  email?: string | null;
-  role?: "USER" | "ADMIN" | string;
+  role?: "USER" | "SELLER" | "ADMIN" | string;
 };
 
 type Props = {
   user?: UserType;
+  profileHref?: string;
 };
 
-/* ================= COMPONENT ================= */
-
-export default function UserAvatar({ user }: Props) {
+export default function UserAvatar({ user, profileHref: profileHrefOverride }: Props) {
   const name = user?.name ?? "";
-  const email = user?.email ?? "";
   const image = user?.image ?? "";
   const role = user?.role ?? "USER";
 
@@ -50,13 +46,18 @@ export default function UserAvatar({ user }: Props) {
     router.push("/");
   };
 
+  const profileHref =
+    profileHrefOverride ??
+    (role === "SELLER"
+      ? "/dashboard/seller-profile"
+      : "/dashboard/profile");
+
   return (
     <DropdownMenu>
-      {/* 🔥 TRIGGER */}
       <DropdownMenuTrigger asChild>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          className="relative rounded-full hover:scale-105 transition"
+        <button
+          type="button"
+          className="relative rounded-full transition hover:scale-105"
         >
           {image ? (
             <Image
@@ -64,113 +65,137 @@ export default function UserAvatar({ user }: Props) {
               alt={name || "User"}
               width={36}
               height={36}
-              className="w-9 h-9 rounded-full object-cover border border-white/10"
+              className="h-9 w-9 rounded-full object-cover border border-white/10"
             />
           ) : (
-            <div className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white text-sm border border-white/10">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white/70 text-sm font-medium text-slate-700 dark:border-white/10 dark:bg-white/10 dark:text-white">
               {initials}
             </div>
           )}
 
-          {/* 🟢 ONLINE DOT */}
-          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-black" />
-        </motion.button>
+          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-white bg-green-500 dark:border-slate-950" />
+        </button>
       </DropdownMenuTrigger>
 
-      {/* 🔥 PRO CARD */}
       <DropdownMenuContent
         align="end"
         sideOffset={12}
         className="
-          w-[260px]
-          bg-popover shadow-sm
-          border border-white/10
+          w-[270px]
           rounded-2xl
+          border border-slate-300
+          bg-slate-200
           p-3
-          animate-in fade-in zoom-in-95
+          text-slate-950
+          shadow-xl shadow-slate-900/20
+          dark:border-white/10
+          dark:bg-slate-900
+          dark:text-white
+          dark:shadow-black/40
         "
       >
-        {/* 👤 HEADER */}
-        <div className="flex items-center gap-3 p-2 rounded-xl">
-
+        {/* Header */}
+        <div className="flex items-center gap-3 rounded-2xl p-2">
           {image ? (
             <Image
               src={image}
               alt={name}
               width={44}
               height={44}
-              className="w-11 h-11 rounded-full object-cover"
+              className="h-11 w-11 rounded-full object-cover"
             />
           ) : (
-            <div className="w-11 h-11 flex items-center justify-center rounded-full bg-white/10 text-white text-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-sm font-medium text-slate-700 dark:bg-white/10 dark:text-white">
               {initials}
             </div>
           )}
 
-          <div className="flex flex-col">
-            <span className="text-sm font-medium truncate">
+          <div className="min-w-0 flex flex-col">
+            <span className="truncate text-sm font-medium">
               {name || "Guest"}
-            </span>
-            <span className="text-xs text-white/60 truncate">
-              {email || "No email"}
             </span>
           </div>
         </div>
 
-        {/* ROLE BADGE */}
-        <div className="px-2 mt-1">
-          <span className="text-[10px] px-2 py-1 rounded-full bg-white/10 border border-white/10">
+        {/* Role */}
+        <div className="mt-2 px-2">
+          <span className="rounded-full border border-white/10 bg-white/10 px-2 py-1 text-[10px] font-medium">
             {role}
           </span>
         </div>
 
-        <DropdownMenuSeparator className="bg-white/10 my-2" />
+        <DropdownMenuSeparator className="my-2" />
 
-        {/* MENU */}
+        {/* Dashboard */}
         <DropdownMenuItem asChild>
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent"
+            className="flex items-center gap-2"
           >
             <LayoutDashboard className="h-4 w-4" />
-            Dashboard
+            <span className="text-foreground font-medium">Dashboard</span>
           </Link>
         </DropdownMenuItem>
 
+        {/* Profile */}
         <DropdownMenuItem asChild>
           <Link
-            href="/dashboard/profile"
-            className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent"
+            href={profileHref}
+            className="flex items-center gap-2"
           >
             <Settings className="h-4 w-4" />
-            Profile Settings
+            <span className="text-foreground font-medium">
+              {role === "SELLER" ? "Seller Profile" : "Profile Settings"}
+            </span>
           </Link>
         </DropdownMenuItem>
 
+        {/* User Orders */}
         {role === "USER" && (
           <DropdownMenuItem asChild>
             <Link
               href="/dashboard/orders"
-              className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-accent"
+              className="flex items-center gap-2"
             >
               <User className="h-4 w-4" />
-              My Orders
+              <span className="text-foreground font-medium">My Orders</span>
             </Link>
           </DropdownMenuItem>
         )}
 
-        <DropdownMenuSeparator className="bg-white/10 my-2" />
+        {/* Seller Menu */}
+        {role === "SELLER" && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link
+                href="/dashboard/products"
+                className="flex items-center gap-2"
+              >
+                <Package className="h-4 w-4" />
+                <span className="text-foreground font-medium">My Products</span>
+              </Link>
+            </DropdownMenuItem>
 
-        {/* LOGOUT */}
+            <DropdownMenuItem asChild>
+              <Link
+                href="/dashboard/sales"
+                className="flex items-center gap-2"
+              >
+                <Store className="h-4 w-4" />
+                <span className="text-foreground font-medium">Sales</span>
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+
+        <DropdownMenuSeparator className="my-2" />
+
+        {/* Logout */}
         <DropdownMenuItem
           onClick={handleLogout}
-          className="
-            flex items-center gap-2 px-2 py-2
-            rounded-md text-red-400
-            hover:bg-red-500/10 transition cursor-pointer
-          "
+          className="cursor-pointer text-red-500 focus:text-red-500"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="mr-2 h-4 w-4" />
           Logout
         </DropdownMenuItem>
       </DropdownMenuContent>

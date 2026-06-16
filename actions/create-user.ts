@@ -1,6 +1,6 @@
 "use server";
 
-import { createUserSchema } from "@/lib/validators/user";
+import { createUserSchema } from "@/lib/validators/userSchema";
 import bcrypt from "bcrypt";
 import {db} from "@/lib/db";
 
@@ -11,7 +11,7 @@ export async function createUser(data: unknown) {
     throw new Error("Invalid input");
   }
 
-  const { name, email, password, role, plan } = parsed.data;
+  const { name, email, password, role } = parsed.data;
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -21,7 +21,6 @@ export async function createUser(data: unknown) {
       email,
       password: hashedPassword,
       role,
-      plan,
     },
   });
 

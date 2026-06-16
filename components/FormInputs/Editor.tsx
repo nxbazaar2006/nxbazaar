@@ -27,7 +27,7 @@ export default function Editor({
   if (!editor) return null;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card">
+    <div className="overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm">
       <div className="flex gap-2 border-b border-border bg-muted p-2">
         {resolvedFeatures.toolbar && <EditorToolbar editor={editor} />}
 

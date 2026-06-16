@@ -1,4 +1,6 @@
 import { auth } from "@/auth";
+import ProfileSettingsForm from "@/components/backoffice/ProfileSettingsForm";
+import { db } from "@/lib/db";
 import { Mail, Shield, UserRound } from "lucide-react";
 
 export default async function Page() {
@@ -12,7 +14,36 @@ export default async function Page() {
     );
   }
 
-  const { user } = session;
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    include: {
+      profile: {
+        select: {
+          firstName: true,
+          lastName: true,
+          username: true,
+          phone: true,
+          streetAddress: true,
+          city: true,
+          district: true,
+          state: true,
+          country: true,
+          zip: true,
+          dateOfBirth: true,
+          profileImage: true,
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-100">
+        User not found
+      </div>
+    );
+  }
+
   const detailItems = [
     {
       label: "Name",
@@ -32,26 +63,24 @@ export default async function Page() {
   ];
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <p className="text-sm font-medium text-sky-700 dark:text-cyan-200">
-          Account
-        </p>
-        <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">
+       
+        <h1 className="text-foreground text-2xl font-semibold">
           Profile Settings
         </h1>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-          Review your account information and access level.
+          Review and update your account information.
         </p>
       </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm shadow-slate-200/60 dark:border-white/10 dark:bg-slate-900/60 dark:shadow-black/20">
         <div className="flex items-center gap-4 border-b border-slate-200 pb-5 dark:border-white/10">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 via-sky-500 to-emerald-500 text-lg font-semibold text-white">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-lg font-semibold text-white">
             {(user?.name ?? user?.email ?? "U").slice(0, 1).toUpperCase()}
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
+            <h2 className="text-foreground text-lg font-semibold">
               {user?.name ?? "User"}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -67,9 +96,9 @@ export default async function Page() {
             return (
               <div
                 key={item.label}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5"
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5"
               >
-                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 text-sky-700 dark:bg-cyan-500/10 dark:text-cyan-200">
+                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 text-foreground dark:bg-cyan-500/10 dark:text-cyan-200">
                   <Icon className="h-4 w-4" />
                 </div>
                 <p className="text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
@@ -83,6 +112,8 @@ export default async function Page() {
           })}
         </div>
       </section>
+
+      <ProfileSettingsForm user={user} />
     </div>
   );
 }

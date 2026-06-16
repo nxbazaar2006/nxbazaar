@@ -76,7 +76,7 @@ export default function ProductShareButton({
               alt={title}
               width={60}
               height={60}
-              className="rounded-xl object-cover"
+              className="rounded-2xl object-cover"
             />
           )}
           <p className="text-sm font-medium line-clamp-2">

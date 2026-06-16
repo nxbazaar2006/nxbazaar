@@ -4,7 +4,6 @@ import { FormProvider, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
-import GlassCard from "@/components/GlassCard"
 import TextInput from "@/components/FormInputs/TextInput"
 import ToggleInput from "@/components/FormInputs/ToggleInput"
 import SubmitButton from "@/components/FormInputs/SubmitButton"
@@ -79,7 +78,7 @@ export default function CouponForm({ updateData, vendorId }: CouponFormProps) {
     updateMutation.isPending
 
   return (
-    <GlassCard className="mx-auto max-w-4xl">
+    <div className="border bg-card text-card-foreground shadow-sm mx-auto max-w-4xl rounded-2xl p-4">
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
@@ -115,6 +114,6 @@ export default function CouponForm({ updateData, vendorId }: CouponFormProps) {
           />
         </form>
       </FormProvider>
-    </GlassCard>
+    </div>
   )
 }

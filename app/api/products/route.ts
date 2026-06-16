@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { createProduct } from "@/actions/product";
+import { productSchema } from "@/lib/validators/productSchema";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
@@ -76,8 +78,9 @@ export async function GET(req: Request) {
     const skip = (page - 1) * limit;
 
     /* ================= SAFE SORT ================= */
-    const sortField: SortField = isSortField(parsed.sort ?? "")
-      ? parsed.sort
+    const requestedSort = parsed.sort ?? "";
+    const sortField: SortField = isSortField(requestedSort)
+      ? requestedSort
       : "createdAt";
 
     const where = buildWhere(parsed);
@@ -121,6 +124,50 @@ export async function GET(req: Request) {
         { status: 400 }
       );
     }
+
+    return NextResponse.json(
+      { success: false, error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const body: unknown = await req.json();
+    const parsed = productSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid product payload",
+          issues: parsed.error.flatten(),
+        },
+        { status: 400 }
+      );
+    }
+
+    const result = await createProduct(parsed.data);
+
+    if (!result.success) {
+      return NextResponse.json(result, { status: 400 });
+    }
+
+    return NextResponse.json(result, { status: 201 });
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid product payload",
+          issues: error.flatten(),
+        },
+        { status: 400 }
+      );
+    }
+
+    console.error("CREATE_PRODUCT_API_ERROR", error);
 
     return NextResponse.json(
       { success: false, error: "Internal Server Error" },

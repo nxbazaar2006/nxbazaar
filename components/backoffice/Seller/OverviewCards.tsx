@@ -1,81 +1,119 @@
-import { ChevronRight } from "lucide-react";
+import {
+  ChevronRight,
+  Package,
+  ShoppingCart,
+  IndianRupee,
+} from "lucide-react";
 import Link from "next/link";
-import React from "react";
 
-export default function OverviewCards({ sales, products }) {
+type Sale = {
+  total: number;
+};
+
+type Product = {
+  id: string;
+};
+
+type OverviewCardsProps = {
+  sales: Sale[];
+  products: Product[];
+};
+
+export default function OverviewCards({
+  sales = [],
+  products = [],
+}: OverviewCardsProps) {
   const productsCount = products.length.toString().padStart(2, "0");
   const salesCount = sales.length.toString().padStart(2, "0");
-  const totalSales = sales.reduce((acc, item) => acc + item.total, 0);
+
+  const totalSales = sales.reduce(
+    (acc, item) => acc + Number(item.total || 0),
+    0
+  );
+
   const analytics = [
     {
       title: "Products",
       count: productsCount,
       unit: "",
-      link: "/dashboard/products",
-      icon: "",
+      link: "/dashboard/products?report=1",
+      icon: Package,
+      gradient: "from-orange-500/20 via-blue-500/20 to-purple-500/20",
     },
     {
       title: "Sales",
       count: salesCount,
       unit: "",
       link: "/dashboard/sales",
-      icon: "",
+      icon: ShoppingCart,
+      gradient: "from-pink-500/20 via-purple-500/20 to-orange-500/20",
     },
     {
       title: "Total Revenue",
-      count: totalSales,
-      unit: "",
+      count: totalSales.toLocaleString("en-IN"),
+      unit: "₹",
       link: "/dashboard/sales",
-      icon: "",
+      icon: IndianRupee,
+      gradient: "from-emerald-500/20 via-cyan-500/20 to-blue-500/20",
     },
   ];
+
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-      {analytics.map((item, i) => {
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {analytics.map((item) => {
+        const Icon = item.icon;
+
         return (
           <div
-            key={i}
-            className="flex flex-col bg-white border shadow-sm rounded-xl dark:bg-slate-900 dark:border-gray-800"
+            key={item.title}
+            className={`
+              group overflow-hidden rounded-2xl border border-white/10
+              bg-white/70 shadow-sm backdrop-blur-xl transition-all duration-300
+              hover:-translate-y-1 hover:shadow-xl
+              dark:bg-slate-950/60 dark:border-white/10
+            `}
           >
-            <div className="p-4 md:p-5 flex justify-between gap-x-3">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-500">
-                  {item.title}
-                </p>
-                <div className="mt-1 flex items-center gap-x-2">
-                  <h3 className="mt-1 text-xl font-medium text-gray-800 dark:text-gray-200">
-                    {item.count}
+            <div
+              className={`
+                p-5 bg-gradient-to-br ${item.gradient}
+              `}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-foreground text-xs font-semibold uppercase tracking-wider">
+                    {item.title}
+                  </p>
+
+                  <h3 className="text-foreground mt-3 text-2xl font-bold">
                     {item.unit}
+                    {item.count}
                   </h3>
                 </div>
-              </div>
-              <div className="flex-shrink-0 flex justify-center items-center w-[46px] h-[46px] bg-blue-600 text-white rounded-full dark:bg-blue-900 dark:text-blue-200">
-                <svg
-                  className="flex-shrink-0 w-5 h-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+
+                <div
+                  className="
+                    flex h-12 w-12 items-center justify-center rounded-2xl
+                    border border-white/20 bg-white/30 text-slate-900
+                    shadow-sm backdrop-blur-xl
+                    dark:bg-white/10 dark:text-white
+                  "
                 >
-                  <path d="M5 22h14" />
-                  <path d="M5 2h14" />
-                  <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
-                  <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
-                </svg>
+                  <Icon className="h-5 w-5" />
+                </div>
               </div>
             </div>
 
             <Link
-              className="py-3 px-4 md:px-5 inline-flex justify-between items-center text-sm text-gray-600 border-t border-gray-200 hover:bg-gray-50 rounded-b-xl dark:border-gray-700 dark:text-gray-400 dark:hover:bg-slate-800 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
               href={item.link}
+              className="
+                flex items-center justify-between border-t border-white/10
+                px-5 py-3 text-sm font-medium text-muted-foreground
+                transition-colors hover:bg-white/40 hover:text-foreground
+                dark:hover:bg-white/5
+              "
             >
               View reports
-              <ChevronRight className="flex-shrink-0 w-4 h-4" />
+              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
         );

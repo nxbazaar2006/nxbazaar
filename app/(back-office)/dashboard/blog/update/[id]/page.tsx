@@ -29,7 +29,14 @@ export default async function Page({
           content: blog.content,
           userId: blog.userId,
           categoryId: blog.categoryId ?? "",
-          translations: blog.translations,
+          translations: blog.translations.map((translation) => ({
+            locale: translation.locale.toLowerCase(),
+            title: translation.title,
+            slug: translation.slug ?? undefined,
+            description: translation.description ?? undefined,
+            metaTitle: translation.metaTitle ?? undefined,
+            metaDescription: translation.metaDescription ?? undefined,
+          })),
         }}
       />
     </>

@@ -56,7 +56,7 @@ export default async function BlogsPage() {
           ))}
         </div>
       ) : (
-        <div className="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground">
+        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
           No blog posts found.
         </div>
       )}

@@ -6,10 +6,18 @@ import React from "react";
 
 interface MarketPageProps {
   params: Promise<{ slug: string }> | { slug: string };
+  searchParams?: Promise<{ lang?: string }>;
 }
 
-export default async function Page({ params }: MarketPageProps) {
+function normalizeLocale(locale?: string) {
+  return ["hi", "mr"].includes(locale ?? "") ? locale!.toUpperCase() : "EN";
+}
+
+export default async function Page({ params, searchParams }: MarketPageProps) {
   const { slug } = await params;
+  const { lang } = (await searchParams) ?? {};
+  const locale = normalizeLocale(lang);
+
   const market = await db.market.findFirst({
     where: {
       translations: {
@@ -54,12 +62,14 @@ export default async function Page({ params }: MarketPageProps) {
   }
 
   const marketTranslation =
+    market.translations.find((translation) => translation.locale === locale) ??
     market.translations.find((translation) => translation.locale === "EN") ??
     market.translations[0];
 
   const marketCategories = market.categories
     .map((category) => {
       const categoryTranslation =
+        category.translations.find((translation) => translation.locale === locale) ??
         category.translations.find((translation) => translation.locale === "EN") ??
         category.translations[0];
 
@@ -69,6 +79,7 @@ export default async function Page({ params }: MarketPageProps) {
         slug: categoryTranslation?.slug ?? category.id,
         products: category.products.map((product) => {
           const productTranslation =
+            product.translations.find((translation) => translation.locale === locale) ??
             product.translations.find((translation) => translation.locale === "EN") ??
             product.translations[0];
           const variant = product.variants[0];
@@ -92,7 +103,7 @@ export default async function Page({ params }: MarketPageProps) {
   return (
     <div className="space-y-6">
       <Breadcrumb />
-      <div className="glass-card flex items-center gap-6 overflow-hidden p-4 text-slate-800 dark:text-slate-200">
+      <div className="border bg-card text-card-foreground shadow-sm flex items-center gap-6 overflow-hidden p-4 text-slate-800 dark:text-slate-200">
         <div className="">
           <Image
             src={market.logoUrl || "/placeholder.png"}
@@ -114,11 +125,11 @@ export default async function Page({ params }: MarketPageProps) {
         </div>
       </div>
       <div className="grid grid-cols-12 gap-6 py-8 w-full">
-        <div className="col-span-full sm:col-span-12 rounded-md">
+        <div className="col-span-full sm:col-span-12 rounded-2xl">
           {marketCategories.map((category, i) => {
             return (
               <div className="space-y-8" key={i}>
-                <CategoryList isMarketPage={false} category={category} />
+                <CategoryList isMarketPage={false} category={category} lang={lang} />
               </div>
             );
           })}

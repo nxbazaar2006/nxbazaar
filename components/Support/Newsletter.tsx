@@ -53,7 +53,7 @@ export default function Newsletter() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="Enter your email..."
-                className="block w-full px-4 py-2 text-sm font-medium text-gray-800 placeholder-gray-400 bg-white border border-gray-300 rounded-md focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
+                className="block w-full px-4 py-2 text-sm font-medium text-gray-800 placeholder-gray-400 bg-white border border-gray-300 rounded-2xl focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
               />
 
               <button

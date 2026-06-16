@@ -12,7 +12,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { generateSlug } from "@/lib/generateSlug";
 import { toast } from "sonner";
-import GlassCard from "@/components/GlassCard";
 import FormHeader from "@/components/backoffice/FormHeader";
 
 import {
@@ -164,7 +163,7 @@ export default function SubCategoryForm({
         title={updateData ? "Update SubCategory" : "Create SubCategory"}
       />
 
-      <GlassCard className="max-w-7xl mx-auto space-y-6">
+      <div className="border bg-card text-card-foreground shadow-sm mx-auto max-w-7xl space-y-6 rounded-3xl p-4 sm:p-6">
         <FormProvider {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
@@ -245,7 +244,7 @@ export default function SubCategoryForm({
             />
           </form>
         </FormProvider>
-      </GlassCard>
+      </div>
     </div>
   );
 }

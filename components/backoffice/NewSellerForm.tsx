@@ -21,10 +21,24 @@ type SellerUser = {
   email?: string | null;
   sellerProfile?: {
     code?: string | null;
+    businessName?: string | null;
+    legalName?: string | null;
+    businessType?: string | null;
+    gstNumber?: string | null;
+    panNumber?: string | null;
     contactPerson?: string | null;
     contactPersonPhone?: string | null;
     phone?: string | null;
     physicalAddress?: string | null;
+    pickupAddress?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+    zip?: string | null;
+    bankAccountName?: string | null;
+    bankAccountNumber?: string | null;
+    bankIfscCode?: string | null;
+    bankName?: string | null;
     profileImageUrl?: string | null;
     notes?: string | null;
     isActive?: boolean | null;
@@ -46,10 +60,24 @@ function defaultValues(user?: SellerUser): SellerFormInput {
     name: user?.name ?? "",
     email: user?.email ?? "",
     code: profile?.code ?? "",
+    businessName: profile?.businessName ?? "",
+    legalName: profile?.legalName ?? "",
+    businessType: profile?.businessType ?? "",
+    gstNumber: profile?.gstNumber ?? "",
+    panNumber: profile?.panNumber ?? "",
     contactPerson: profile?.contactPerson ?? "",
     contactPersonPhone: profile?.contactPersonPhone ?? "",
     phone: profile?.phone ?? "",
     physicalAddress: profile?.physicalAddress ?? "",
+    pickupAddress: profile?.pickupAddress ?? "",
+    city: profile?.city ?? "",
+    state: profile?.state ?? "",
+    country: profile?.country ?? "India",
+    zip: profile?.zip ?? "",
+    bankAccountName: profile?.bankAccountName ?? "",
+    bankAccountNumber: profile?.bankAccountNumber ?? "",
+    bankIfscCode: profile?.bankIfscCode ?? "",
+    bankName: profile?.bankName ?? "",
     profileImageUrl: profile?.profileImageUrl ?? "",
     notes: profile?.notes ?? "",
     isActive: profile?.isActive ?? true,
@@ -62,6 +90,8 @@ function defaultValues(user?: SellerUser): SellerFormInput {
 }
 
 export default function NewSellerForm({ user, isEdit = false }: Props) {
+  const shouldUpdate = isEdit || Boolean(user?.sellerProfile);
+
   const form = useForm<SellerFormInput>({
     resolver: zodResolver(SellerSchema) as unknown as Resolver<SellerFormInput>,
     defaultValues: defaultValues(user),
@@ -69,7 +99,7 @@ export default function NewSellerForm({ user, isEdit = false }: Props) {
 
   async function onSubmit(data: SellerFormInput) {
     const response =
-      isEdit && user?.id
+      shouldUpdate && user?.id
         ? await updateSeller(user.id, data)
         : await createSeller(data);
 
@@ -78,7 +108,7 @@ export default function NewSellerForm({ user, isEdit = false }: Props) {
       return;
     }
 
-    toast.success(isEdit ? "Seller updated" : "Seller created");
+    toast.success(shouldUpdate ? "Seller updated" : "Seller created");
     window.location.assign("/dashboard/sellers");
   }
 
@@ -86,7 +116,7 @@ export default function NewSellerForm({ user, isEdit = false }: Props) {
     <FormProvider {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="mx-auto max-w-5xl space-y-6 rounded-lg border border-white/10 bg-white/5 p-6"
+        className="mx-auto max-w-5xl space-y-6 rounded-2xl border border-white/10 bg-white/5 p-6"
       >
         <div className="grid gap-4 md:grid-cols-2">
           <TextInput<SellerFormInput>
@@ -105,6 +135,36 @@ export default function NewSellerForm({ user, isEdit = false }: Props) {
           <TextInput<SellerFormInput>
             label="Seller Code"
             name="code"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+          <TextInput<SellerFormInput>
+            label="Business Name"
+            name="businessName"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+          <TextInput<SellerFormInput>
+            label="Legal Name"
+            name="legalName"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+          <TextInput<SellerFormInput>
+            label="Business Type"
+            name="businessType"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+          <TextInput<SellerFormInput>
+            label="GST Number"
+            name="gstNumber"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+          <TextInput<SellerFormInput>
+            label="PAN Number"
+            name="panNumber"
             register={form.register}
             errors={form.formState.errors}
           />
@@ -148,6 +208,63 @@ export default function NewSellerForm({ user, isEdit = false }: Props) {
           errors={form.formState.errors}
         />
 
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextInput<SellerFormInput>
+            label="Pickup Address"
+            name="pickupAddress"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+          <TextInput<SellerFormInput>
+            label="City"
+            name="city"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+          <TextInput<SellerFormInput>
+            label="State"
+            name="state"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+          <TextInput<SellerFormInput>
+            label="Country"
+            name="country"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+          <TextInput<SellerFormInput>
+            label="ZIP"
+            name="zip"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+          <TextInput<SellerFormInput>
+            label="Bank Name"
+            name="bankName"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+          <TextInput<SellerFormInput>
+            label="Bank Account Name"
+            name="bankAccountName"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+          <TextInput<SellerFormInput>
+            label="Bank Account Number"
+            name="bankAccountNumber"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+          <TextInput<SellerFormInput>
+            label="Bank IFSC Code"
+            name="bankIfscCode"
+            register={form.register}
+            errors={form.formState.errors}
+          />
+        </div>
+
         <TextInput<SellerFormInput>
           label="Notes"
           name="notes"
@@ -169,8 +286,8 @@ export default function NewSellerForm({ user, isEdit = false }: Props) {
         />
 
         <SubmitButton
-          buttonTitle={isEdit ? "Update Seller" : "Create Seller"}
-          loadingButtonTitle={isEdit ? "Updating..." : "Creating..."}
+          buttonTitle={shouldUpdate ? "Update Seller" : "Create Seller"}
+          loadingButtonTitle={shouldUpdate ? "Updating..." : "Creating..."}
           isLoading={form.formState.isSubmitting}
         />
       </form>

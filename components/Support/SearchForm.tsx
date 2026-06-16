@@ -51,14 +51,14 @@ export default function SearchForm({
           type="text"
           id="search-input"
           placeholder={placeholderContent}
-          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-lime-500 focus:border-lime-500 block w-full pl-10 pr-3 py-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-2xl focus:ring-lime-500 focus:border-lime-500 block w-full pl-10 pr-3 py-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
         />
       </div>
 
       {/* BUTTON */}
       <button
         type="submit"
-        className="inline-flex items-center py-2.5 px-4 ml-2 text-sm font-medium text-white bg-lime-700 rounded-lg border border-lime-700 hover:bg-lime-800 focus:ring-4 focus:outline-none focus:ring-lime-300"
+        className="inline-flex items-center py-2.5 px-4 ml-2 text-sm font-medium text-white bg-lime-700 rounded-2xl border border-lime-700 hover:bg-lime-800 focus:ring-4 focus:outline-none focus:ring-lime-300"
       >
         <Search className="w-4 h-4 mr-2" />
         Search

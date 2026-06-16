@@ -122,7 +122,7 @@ function extractAiText(payload: unknown): string {
 
 function editorButtonClass(active = false) {
   return cn(
-    "inline-flex h-8 w-8 items-center justify-center rounded-lg border text-xs shadow-sm transition",
+    "inline-flex h-8 w-8 items-center justify-center rounded-2xl border text-xs shadow-sm transition",
     active
       ? "border-cyan-300 bg-cyan-400/20 text-cyan-100"
       : "border-white/15 bg-white/5 text-gray-700 hover:bg-white/10 dark:text-gray-200"
@@ -294,7 +294,7 @@ export default function TextareaInput<T extends FieldValues>({
 
         <div className="flex flex-wrap items-center gap-2">
           {enabled.language && (
-            <label className="inline-flex items-center gap-1 rounded-lg border border-gray-200  px-2 py-1 text-xs text-gray-700 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+            <label className="inline-flex items-center gap-1 rounded-2xl border border-gray-200  px-2 py-1 text-xs text-gray-700 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
               <Languages className="h-3.5 w-3.5" aria-hidden="true" />
               <select
                 value={locale}
@@ -317,7 +317,7 @@ export default function TextareaInput<T extends FieldValues>({
               onClick={() =>
                 setMode((current) => (current === "editor" ? "textarea" : "editor"))
               }
-              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-transparent px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200"
+              className="inline-flex items-center gap-1 rounded-2xl border border-gray-200 bg-transparent px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200"
               title={mode === "editor" ? "Use plain text" : "Use rich editor"}
             >
               {mode === "editor" ? (
@@ -334,7 +334,7 @@ export default function TextareaInput<T extends FieldValues>({
               type="button"
               onClick={handleVoice}
               className={cn(
-                "inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs shadow-sm transition",
+                "inline-flex items-center gap-1 rounded-2xl border px-2 py-1 text-xs shadow-sm transition",
                 isListening
                   ? "border-red-200 bg-red-50 text-red-700"
                   : "border-gray-200  text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
@@ -355,7 +355,7 @@ export default function TextareaInput<T extends FieldValues>({
               type="button"
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-transparent px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-gray-200"
+              className="inline-flex items-center gap-1 rounded-2xl border border-gray-200 bg-transparent px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-gray-200"
               title="Generate with AI"
             >
               <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />

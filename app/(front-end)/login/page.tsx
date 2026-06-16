@@ -4,7 +4,7 @@ export default function LoginPage() {
   return (
     <section className="flex min-h-screen items-center justify-center px-6 py-8">
       
-      <div className="glass-card w-full max-w-md">
+      <div className="auth-border bg-card text-card-foreground shadow-sm w-full max-w-md">
         
         <div className="p-6 space-y-6 sm:p-8">
           

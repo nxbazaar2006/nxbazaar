@@ -13,6 +13,7 @@ import {
 import type { ChartOptions, ScriptableContext } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { useTheme } from "next-themes";
+import type { Order, Sale } from "@/types/dashboard";
 
 ChartJS.register(
   CategoryScale,
@@ -23,21 +24,76 @@ ChartJS.register(
   Filler
 );
 
-export default function WeeklySalesChart() {
+type Props = {
+  orders: Order[];
+  sales: Sale[];
+};
+
+const formatDayKey = (date: Date) => date.toISOString().slice(0, 10);
+
+const getDateValue = (value: string | Date) =>
+  value instanceof Date ? value : new Date(value);
+
+export default function WeeklySalesChart({ orders = [], sales = [] }: Props) {
   const [activeTab, setActiveTab] = useState("sales");
   const { theme, resolvedTheme } = useTheme();
   const currentTheme = theme === "system" ? resolvedTheme : theme;
   const isDark = currentTheme === "dark";
 
-  const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
+  const dayBuckets = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat("en", {
+      day: "2-digit",
+      month: "short",
+    });
+    const today = new Date();
 
-  const generateData = () =>
-    labels.map((_, i) => 500 + i * 200 + Math.floor(Math.random() * 300));
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(today);
+      date.setHours(0, 0, 0, 0);
+      date.setDate(today.getDate() - (6 - index));
 
-  const tabs = [
-    { title: "Sales", type: "sales", color: "#0ea5e9" },
-    { title: "Orders", type: "orders", color: "#f97316" },
-  ];
+      return {
+        key: formatDayKey(date),
+        label: formatter.format(date),
+      };
+    });
+  }, []);
+
+  const labels = dayBuckets.map((day) => day.label);
+
+  const salesData = useMemo(() => {
+    const totals = new Map(dayBuckets.map((day) => [day.key, 0]));
+
+    sales.forEach((sale) => {
+      if (!sale.createdAt) return;
+
+      const key = formatDayKey(getDateValue(sale.createdAt));
+      totals.set(key, (totals.get(key) ?? 0) + sale.total);
+    });
+
+    return dayBuckets.map((day) => totals.get(day.key) ?? 0);
+  }, [dayBuckets, sales]);
+
+  const ordersData = useMemo(() => {
+    const totals = new Map(dayBuckets.map((day) => [day.key, 0]));
+
+    orders.forEach((order) => {
+      if (!order.createdAt) return;
+
+      const key = formatDayKey(getDateValue(order.createdAt));
+      totals.set(key, (totals.get(key) ?? 0) + 1);
+    });
+
+    return dayBuckets.map((day) => totals.get(day.key) ?? 0);
+  }, [dayBuckets, orders]);
+
+  const tabs = useMemo(
+    () => [
+      { title: "Sales", type: "sales", color: "#0ea5e9" },
+      { title: "Orders", type: "orders", color: "#f97316" },
+    ],
+    []
+  );
 
   const chartData = useMemo(() => {
     const tab = tabs.find((t) => t.type === activeTab);
@@ -47,7 +103,7 @@ export default function WeeklySalesChart() {
       labels,
       datasets: [
         {
-          data: generateData(),
+          data: activeTab === "sales" ? salesData : ordersData,
           borderColor: tab?.color,
           borderWidth: 2,
           tension: 0.4,
@@ -62,7 +118,7 @@ export default function WeeklySalesChart() {
         },
       ],
     };
-  }, [activeTab, isDark]);
+  }, [activeTab, isDark, labels, ordersData, salesData, tabs]);
 
   const options: ChartOptions<"line"> = {
     responsive: true,
@@ -96,21 +152,21 @@ export default function WeeklySalesChart() {
   };
 
   return (
-    <div className="rounded-xl">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">
+    <div className="relative z-10 flex h-full w-full flex-col">
+      <div className="mb-5 flex min-h-8 items-center justify-between">
+        <h2 className="text-base font-semibold tracking-tight text-foreground">
           Weekly Analytics
         </h2>
 
-        <div className="flex gap-2">
+        <div className="flex h-8 gap-1 rounded-full border border-slate-950/10 bg-white p-1 shadow-sm dark:border-white/10 dark:bg-white/10">
           {tabs.map((tab) => (
             <button
               key={tab.type}
               onClick={() => setActiveTab(tab.type)}
-              className={`rounded-md px-3 py-1 text-xs transition-all duration-200 ${
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${
                 activeTab === tab.type
-                  ? "bg-cyan-500 text-slate-950"
-                  : "bg-slate-100 text-slate-700 hover:text-cyan-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-cyan-100"
+                  ? "bg-slate-950 text-white shadow-sm dark:bg-white dark:text-slate-950"
+                  : "text-slate-500 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
               }`}
             >
               {tab.title}
@@ -119,7 +175,7 @@ export default function WeeklySalesChart() {
         </div>
       </div>
 
-      <div className="h-[220px]">
+      <div className="min-h-0 flex-1">
         <Line data={chartData} options={options} />
       </div>
     </div>

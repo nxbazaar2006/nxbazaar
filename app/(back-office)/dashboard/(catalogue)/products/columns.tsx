@@ -75,14 +75,14 @@ function ProductImageCell({ product }: { product: Product }) {
 
   if (!imageUrl) {
     return (
-      <div className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-muted text-xs text-muted-foreground">
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border bg-card text-card-foreground shadow-sm text-xs text-muted-foreground">
         -
       </div>
     );
   }
 
   return (
-    <div className="h-11 w-11 overflow-hidden rounded-md border border-border bg-card shadow-sm">
+    <div className="h-11 w-11 overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm">
       <img
         src={imageUrl}
         alt={product.title}

@@ -39,8 +39,8 @@ export default function DeliverToButton({ iconOnly = false }: DeliverToButtonPro
         onClick={() => setOpen(true)}
         className={
           iconOnly
-            ? "apple-glass-control inline-flex h-11 w-11 items-center justify-center text-slate-950 transition-colors hover:bg-white/10 dark:text-white"
-            : "flex max-w-[180px] items-center gap-1.5 rounded-full px-3 py-2 text-sm text-foreground transition-colors hover:bg-white/50 dark:hover:bg-white/10"
+            ? "soft-button soft-icon-btn"
+            : "soft-button max-w-[180px] gap-1.5 rounded-full px-3 py-2 text-sm"
         }
         aria-label={label}
         title={label}

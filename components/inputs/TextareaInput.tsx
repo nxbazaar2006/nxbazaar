@@ -35,7 +35,7 @@ function RichField({ value, onChange }: { value: string; onChange: (value: strin
     }
   }, [editor, value]);
 
-  return <EditorContent editor={editor} className="min-h-36 rounded-md border p-3" />;
+  return <EditorContent editor={editor} className="min-h-36 rounded-2xl border p-3" />;
 }
 
 export default function TextareaInput<T extends FieldValues>({
@@ -89,7 +89,7 @@ export default function TextareaInput<T extends FieldValues>({
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value as SupportedLanguage)}
-            className="rounded-md border px-2 py-1 text-xs"
+            className="rounded-2xl border px-2 py-1 text-xs"
           >
             {LANGUAGES.map((l) => (
               <option key={l.value} value={l.value}>{l.label}</option>
@@ -101,7 +101,7 @@ export default function TextareaInput<T extends FieldValues>({
       {(canAI || canVoice) && (
         <div className="flex flex-wrap gap-2">
           {canAI && (["product", "rewrite", "seo", "continue"] as AIRequestType[]).map((type) => (
-            <button key={type} type="button" disabled={aiLoading} onClick={() => runAI(type)} className="rounded border px-2 py-1 text-xs">
+            <button key={type} type="button" disabled={aiLoading} onClick={() => runAI(type)} className="rounded-2xl border px-2 py-1 text-xs">
               {aiLoading ? "Generating..." : `AI ${type}`}
             </button>
           ))}
@@ -116,7 +116,7 @@ export default function TextareaInput<T extends FieldValues>({
                   applyValue(appendText);
                 },
               })}
-              className="rounded border px-2 py-1 text-xs"
+              className="rounded-2xl border px-2 py-1 text-xs"
             >
               {isListening ? "Stop Voice" : "Start Voice"}
             </button>
@@ -136,7 +136,7 @@ export default function TextareaInput<T extends FieldValues>({
               value={(field.value as string) ?? ""}
               placeholder={placeholder}
               rows={5}
-              className="w-full rounded-md border p-3"
+              className="w-full rounded-2xl border p-3"
             />
           )
         )}

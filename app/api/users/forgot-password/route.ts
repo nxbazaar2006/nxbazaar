@@ -50,7 +50,7 @@ export async function PUT(req: Request) {
       from: "Desishub <info@jazzafricaadventures.com>",
       to: email,
       subject: "Password Reset - Limi Ecommerce",
-      react: EmailTemplate({
+      react: await EmailTemplate({
         name: existingUser.name ?? "User",
         redirectUrl,
         linkText: "Reset Password",

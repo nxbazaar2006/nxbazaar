@@ -3,6 +3,7 @@ export type BlogLocale = "en" | "hi" | "mr";
 export type BlogTranslation = {
   id?: string;
   locale: BlogLocale | string;
+  slug?: string | null;
   title: string;
   description?: string | null;
   metaTitle?: string | null;
@@ -21,22 +22,22 @@ export type BlogType = {
   translations: BlogTranslation[];
   relatedProducts?: {
     id: string;
-    title: string;
-    slug: string;
+    title?: string;
+    slug?: string;
     productCode?: string | null;
     imageUrl?: string | null;
     hsnCode?: {
       code: string;
     } | null;
     category?: {
-      title: string;
+      title?: string;
       translations?: {
         locale: string;
         title: string;
       }[];
     } | null;
     subCategory?: {
-      title: string;
+      title?: string;
       translations?: {
         locale: string;
         title: string;

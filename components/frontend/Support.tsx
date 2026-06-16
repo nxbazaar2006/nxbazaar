@@ -80,7 +80,7 @@ export default function Support() {
               <Link
                 key={index}
                 href={item.href}
-                className="group flex flex-col items-center justify-center gap-3 bg-white dark:bg-primaryColor text-black dark:text-white p-6 rounded-xl shadow-md hover:shadow-xl transition duration-300 hover:-translate-y-1"
+                className="group flex flex-col items-center justify-center gap-3 bg-white dark:bg-primaryColor text-black dark:text-white p-6 rounded-2xl shadow-md hover:shadow-xl transition duration-300 hover:-translate-y-1"
               >
                 <Icon className="w-9 h-9 text-primaryColor group-hover:scale-110 transition" />
 

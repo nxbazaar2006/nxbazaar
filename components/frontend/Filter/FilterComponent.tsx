@@ -38,21 +38,21 @@ export default function FilterComponent({
   return (
     <div>
       {/* 🔹 Top Section */}
-      <div className="bg-white space-y-6 text-slate-900 py-8 px-4">
+      <div className="neumorphic-card space-y-6 px-4 py-8">
         <Breadcrumb title={title} resultCount={productCount} />
 
         <Sorting isSearch={isSearch} title={title} slug={slug} />
       </div>
 
       {/* 🔹 Main Layout */}
-      <div className="grid grid-cols-12 py-8 gap-4">
+      <div className="grid grid-cols-1 gap-4 py-8 lg:grid-cols-12">
         {/* Filters */}
-        <div className="col-span-3">
+        <div className="lg:col-span-3">
           <Filters slug={slug} isSearch={isSearch} />
         </div>
 
         {/* Products */}
-        <div className="col-span-9">
+        <div className="lg:col-span-9">
           <FilteredProducts
             isSearch={isSearch}
             productCount={productCount}

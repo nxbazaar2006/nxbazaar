@@ -143,7 +143,7 @@ export default function DataTable<TData extends { id: string }>({
         {selectedIds.length > 0 && onDeleteMany && (
           <Button
             variant="destructive"
-            className="bg-gradient-to-r from-orange-500 to-sky-500 text-white shadow-sm hover:from-orange-400 hover:to-sky-400"
+            className="shadow-sm"
             onClick={handleDelete}
             disabled={isDeleting}
           >
@@ -152,18 +152,18 @@ export default function DataTable<TData extends { id: string }>({
         )}
       </div>
 
-      <div className="max-h-[560px] w-full max-w-full overflow-auto rounded-2xl border border-slate-200 bg-white/90 shadow-xl shadow-slate-200/60 [scrollbar-color:#f97316_#fed7aa] [scrollbar-width:thin] dark:border-white/10 dark:bg-slate-900/60 dark:shadow-black/20 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-orange-500 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-orange-200 dark:[&::-webkit-scrollbar-thumb]:bg-orange-400 dark:[&::-webkit-scrollbar-track]:bg-slate-800">
+      <div className="liquid-glass-table max-h-[560px] w-full max-w-full overflow-auto rounded-3xl [scrollbar-color:#94a3b8_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-400 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent dark:[&::-webkit-scrollbar-thumb]:bg-slate-600">
         <table className="min-w-[2300px] caption-bottom text-sm">
           <TableHeader className="sticky top-0 z-10">
             {table.getHeaderGroups().map((hg) => (
               <TableRow
                 key={hg.id}
-                className="border-slate-200 bg-slate-50/80 hover:bg-transparent dark:border-white/10 dark:bg-white/5"
+                className="border-white/10 bg-white/10 backdrop-blur-2xl hover:bg-white/10"
               >
                 {hg.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="whitespace-nowrap bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 dark:bg-slate-900 dark:text-sky-200"
+                    className="text-foreground whitespace-nowrap px-3 py-3 text-xs font-semibold uppercase tracking-wide"
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -180,10 +180,10 @@ export default function DataTable<TData extends { id: string }>({
               table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
-                className="border-slate-200 text-slate-700 hover:bg-gradient-to-r hover:from-orange-500/10 hover:to-sky-500/10 data-[state=selected]:bg-sky-500/10 dark:border-white/10 dark:text-slate-200"
+                className="liquid-glass-row border-white/10 text-foreground transition hover:bg-white/20 data-[state=selected]:bg-white/20"
               >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="whitespace-nowrap px-3 py-2">
+                    <TableCell key={cell.id} className="whitespace-nowrap px-3 py-3">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

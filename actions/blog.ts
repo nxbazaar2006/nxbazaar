@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { blogSchema } from "@/lib/validators/blog.schema";
 import { generateUniqueSlug } from "@/lib/generateUniqueSlug";
 import { auth } from "@/auth";
+import { Language } from "@prisma/client";
 
 export async function createBlog(data: unknown) {
   const parsed = blogSchema.parse(data);
@@ -16,14 +17,19 @@ export async function createBlog(data: unknown) {
 
   // 🔥 generate slug per translation
   const translationsWithSlug = await Promise.all(
-    parsed.translations.map(async (t: (typeof parsed.translations)[number]) => ({
-      ...t,
-      slug: await generateUniqueSlug(
-        "blog",
-        t.locale,
-        t.slug ?? t.title
-      ),
-    }))
+    parsed.translations.map(async (t: (typeof parsed.translations)[number]) => {
+      const locale = t.locale.toUpperCase() as Language;
+
+      return {
+        ...t,
+        locale,
+        slug: await generateUniqueSlug(
+          "blog",
+          locale,
+          t.slug ?? t.title
+        ),
+      };
+    })
   );
 
   const blog = await db.blog.create({

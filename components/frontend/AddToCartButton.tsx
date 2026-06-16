@@ -65,7 +65,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
     <button
       type="button"
       onClick={handleAddToCart}
-      className="inline-flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-fuchsia-500/20 transition hover:from-orange-400 hover:via-fuchsia-400 hover:to-sky-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-300 focus:ring-offset-2 active:scale-[0.98] dark:shadow-sky-950/40 dark:focus:ring-sky-400 dark:focus:ring-offset-slate-950"
+      className="soft-button inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold"
     >
       <BaggageClaim className="h-4 w-4" />
       <span>Add to Cart</span>

@@ -8,10 +8,13 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const validated = couponSchema.parse(body);
+    const couponCode =
+      validated.couponCode ??
+      validated.title.replace(/[^a-z0-9]/gi, "").toUpperCase();
 
     // Unique check
     const existing = await db.coupon.findFirst({
-      where: { couponCode: validated.couponCode },
+      where: { couponCode },
     });
 
     if (existing) {
@@ -36,6 +39,7 @@ export async function POST(req: Request) {
     const coupon = await db.coupon.create({
       data: {
         ...validated,
+        couponCode,
         expiryDate: new Date(validated.expiryDate),
       },
       include: {

@@ -1,37 +1,56 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+import { getFrontendText, normalizeFrontendLocale } from "@/lib/frontendI18n";
 
 const currentYear = new Date().getFullYear();
 
 const footerLinks = {
   company: [
-    { label: "Blog", href: "/blogs" },
-    { label: "Vlog", href: "/vlogs" },
-    { label: "About", href: "#" },
-    { label: "Features", href: "#" },
-    { label: "Works", href: "#" },
-    { label: "Career", href: "#" },
+    { labelKey: "blog", href: "/blogs" },
+    { labelKey: "vlog", href: "/vlogs" },
+    { labelKey: "about", href: "#" },
+    { labelKey: "features", href: "#" },
+    { labelKey: "works", href: "#" },
+    { labelKey: "career", href: "#" },
   ],
   help: [
-    { label: "Customer Support", href: "#" },
-    { label: "Delivery Details", href: "#" },
-    { label: "Terms & Conditions", href: "#" },
-    { label: "Privacy Policy", href: "#" },
+    { labelKey: "customerSupport", href: "#" },
+    { labelKey: "deliveryDetails", href: "#" },
+    { labelKey: "terms", href: "#" },
+    { labelKey: "privacy", href: "#" },
   ],
-};
+} as const;
 
 const socialClass =
-  "apple-glass-soft flex h-10 w-10 items-center justify-center text-foreground transition-all duration-300 hover:-translate-y-1 hover:bg-gradient-to-br hover:from-orange-500/20 hover:via-pink-500/20 hover:to-purple-500/20";
+  "border bg-background text-foreground shadow-xs flex h-10 w-10 items-center justify-center rounded-2xl text-foreground transition-all duration-300 hover:-translate-y-1 hover:bg-gradient-to-br hover:from-orange-500/20 hover:via-pink-500/20 hover:to-purple-500/20";
 
 const linkClass =
   "flex text-sm text-foreground transition-all duration-300 hover:translate-x-1 hover:text-orange-500";
 
 export default function Footer() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const pathLocale = pathname.split("/")[1];
+  const locale = normalizeFrontendLocale(
+    searchParams.get("lang") ?? pathLocale
+  );
+  const text = getFrontendText(locale);
+
+  const localizedHref = (href: string) => {
+    if (href === "#" || locale === "en") return href;
+
+    const separator = href.includes("?") ? "&" : "?";
+    return `${href}${separator}lang=${locale}`;
+  };
+
   return (
     <section
       className="
         relative mt-20 overflow-hidden border-t border-white/10
-        bg-white/5 py-12 text-foreground backdrop-blur-3xl
+        border bg-card text-card-foreground shadow-sm py-12 text-foreground
         sm:pt-16 lg:pt-24
       "
     >
@@ -50,8 +69,7 @@ export default function Footer() {
             />
 
             <p className="mt-7 text-sm leading-7 text-muted-foreground">
-              Discover premium products, trusted sellers, and a smooth shopping
-              experience with NXBazaar.
+              {text.footer.description}
             </p>
 
             <ul className="mt-9 flex items-center gap-3">
@@ -97,14 +115,14 @@ export default function Footer() {
 
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-muted-foreground">
-              Company
+              {text.footer.company}
             </p>
 
             <ul className="mt-6 space-y-4">
               {footerLinks.company.map((item) => (
-                <li key={item.label}>
-                  <Link href={item.href} className={linkClass}>
-                    {item.label}
+                <li key={item.labelKey}>
+                  <Link href={localizedHref(item.href)} className={linkClass}>
+                    {text.footer[item.labelKey]}
                   </Link>
                 </li>
               ))}
@@ -113,14 +131,14 @@ export default function Footer() {
 
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-muted-foreground">
-              Help
+              {text.footer.help}
             </p>
 
             <ul className="mt-6 space-y-4">
               {footerLinks.help.map((item) => (
-                <li key={item.label}>
-                  <Link href={item.href} className={linkClass}>
-                    {item.label}
+                <li key={item.labelKey}>
+                  <Link href={localizedHref(item.href)} className={linkClass}>
+                    {text.footer[item.labelKey]}
                   </Link>
                 </li>
               ))}
@@ -129,21 +147,21 @@ export default function Footer() {
 
           <div className="col-span-2 lg:col-span-2 lg:pl-8">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-muted-foreground">
-              Subscribe to newsletter
+              {text.footer.newsletter}
             </p>
 
             <form action="#" method="POST" className="mt-6">
               <label htmlFor="email" className="sr-only">
-                Email
+                {text.footer.email}
               </label>
 
               <input
                 type="email"
                 name="email"
                 id="email"
-                placeholder="Enter your email"
+                placeholder={text.footer.emailPlaceholder}
                 className="
-                  apple-glass-soft block w-full p-4 text-foreground
+                  border bg-background text-foreground shadow-xs block w-full p-4 text-foreground
                   outline-none placeholder:text-muted-foreground
                   focus:border-orange-500/40 focus:ring-2
                   focus:ring-orange-500/20
@@ -161,7 +179,7 @@ export default function Footer() {
                   hover:shadow-xl
                 "
               >
-                Subscribe
+                {text.footer.subscribe}
               </button>
             </form>
           </div>
@@ -170,7 +188,7 @@ export default function Footer() {
         <hr className="my-12 border-white/10" />
 
         <p className="text-center text-sm text-muted-foreground">
-          © {currentYear} NXBazaar. All rights reserved.
+          © {currentYear} NXBazaar. {text.footer.rights}
         </p>
       </div>
     </section>

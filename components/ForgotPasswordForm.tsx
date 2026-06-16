@@ -1,7 +1,6 @@
 "use client";
 
 import { Info } from "lucide-react";
-import { Alert } from "flowbite-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
@@ -42,9 +41,10 @@ export default function ForgotPasswordForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {showNotification && (
-        <Alert color="failure" icon={Info}>
+        <div className="flex items-center gap-2 rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <Info className="h-4 w-4" />
           <span className="font-medium">Please Check your Email!</span>
-        </Alert>
+        </div>
       )}
 
       <div>
@@ -56,7 +56,7 @@ export default function ForgotPasswordForm() {
           {...register("email")}
           type="email"
           placeholder="name@company.com"
-          className="w-full rounded-lg border border-input bg-background p-2.5 text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
+          className="w-full rounded-2xl border border-input bg-background p-2.5 text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
         />
 
         {errors.email && (

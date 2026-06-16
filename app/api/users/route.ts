@@ -56,6 +56,20 @@ export async function POST(request: Request) {
         role,
         plan,
         verificationToken: token,
+        profile: {
+          create: {},
+        },
+        ...(role === "SELLER"
+          ? {
+              sellerProfile: {
+                create: {},
+              },
+            }
+          : {}),
+      },
+      include: {
+        profile: true,
+        sellerProfile: true,
       },
     });
 
@@ -76,7 +90,7 @@ export async function POST(request: Request) {
         from: "Acme <onboarding@resend.dev>",
         to: "rcvs.online@gmail.com",
         subject,
-        react: EmailTemplate({
+        react: await EmailTemplate({
           name,
           redirectUrl,
           linkText,

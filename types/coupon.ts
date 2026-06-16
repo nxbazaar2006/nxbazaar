@@ -5,12 +5,12 @@ export interface Coupon {
   expiryDate: Date | string;
   isActive: boolean;
   vendorId: string;
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
   vendor?: {
     id: string;
-    name?: string;
-    email: string;
+    name?: string | null;
+    email?: string | null;
   };
 }
 

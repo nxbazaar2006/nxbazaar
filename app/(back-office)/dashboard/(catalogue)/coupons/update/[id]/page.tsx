@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import FormHeader from "@/components/backoffice/FormHeader"
 import CouponForm from "@/components/backoffice/Forms/CouponForm"
 import { db } from "@/lib/db"
+import { notFound } from "next/navigation"
 
 export default async function UpdateCoupon({
   params,
@@ -19,10 +20,20 @@ export default async function UpdateCoupon({
     where: { id },
   })
 
+  if (!coupon) {
+    notFound()
+  }
+
   return (
     <div>
       <FormHeader title="Update Coupon" />
-      <CouponForm updateData={coupon} vendorId={session.user.id} />
+      <CouponForm
+        updateData={{
+          ...coupon,
+          expiryDate: coupon.expiryDate.toISOString(),
+        }}
+        vendorId={session.user.id}
+      />
     </div>
   )
 }

@@ -2,6 +2,11 @@ import { z } from "zod";
 
 export const SellerSchema = z.object({
   code: z.string().optional(),
+  businessName: z.string().optional(),
+  legalName: z.string().optional(),
+  businessType: z.string().optional(),
+  gstNumber: z.string().optional(),
+  panNumber: z.string().optional(),
 
   contactPerson: z.string().min(2, "Contact person is required"),
 
@@ -18,6 +23,16 @@ export const SellerSchema = z.object({
   phone: z.string().min(10, "Phone is required"),
 
   physicalAddress: z.string().min(5, "Address is required"),
+  pickupAddress: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().optional(),
+  zip: z.string().optional(),
+
+  bankAccountName: z.string().optional(),
+  bankAccountNumber: z.string().optional(),
+  bankIfscCode: z.string().optional(),
+  bankName: z.string().optional(),
 
   isActive: z.boolean().default(true),
 
@@ -27,7 +42,7 @@ export const SellerSchema = z.object({
   turnover: z
     .string()
     .min(1, "Land size is required")
-    .transform((val) => Number(val)),
+    .transform((val: string) => Number(val)),
 
   mainProduct: z.string().optional(),
 

@@ -14,12 +14,12 @@ export default function CartSubTotalCard({ subTotal }: Props) {
   return (
     <div
       className="
-        col-span-full rounded-3xl border border-white/10
-        bg-white/10 p-5 shadow-sm backdrop-blur-xl
+        neumorphic-card col-span-full rounded-3xl
+        p-5
         md:col-span-4
       "
     >
-      <h2 className="border-b border-white/10 pb-3 text-2xl font-semibold tracking-tight">
+      <h2 className="text-foreground border-b border-white/10 pb-3 text-2xl font-semibold tracking-tight">
         Cart Summary
       </h2>
 
@@ -52,11 +52,8 @@ export default function CartSubTotalCard({ subTotal }: Props) {
       <Link
         href="/checkout"
         className="
-          block rounded-2xl bg-gradient-to-r
-          from-orange-500 via-pink-500 to-purple-500
-          py-3 text-center font-semibold text-white shadow-md
-          transition-all duration-300
-          hover:scale-[1.02] hover:shadow-lg
+          soft-button w-full rounded-2xl
+          py-3 text-center font-semibold
         "
       >
         Continue to Checkout

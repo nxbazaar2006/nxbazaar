@@ -1,9 +1,16 @@
 import { getCategories } from "@/actions/category";
+import { getFrontendText, normalizeFrontendLocale } from "@/lib/frontendI18n";
 import Image from "next/image";
 import Link from "next/link";
 
-export default async function SidebarCategories() {
-  const categoriesData = await getCategories("");
+type Props = {
+  lang?: string;
+};
+
+export default async function SidebarCategories({ lang }: Props) {
+  const locale = normalizeFrontendLocale(lang);
+  const text = getFrontendText(locale);
+  const categoriesData = await getCategories("", locale.toUpperCase());
 
   // Only categories with products
   const categories = Array.isArray(categoriesData)
@@ -11,18 +18,18 @@ export default async function SidebarCategories() {
     : [];
 
   return (
-    <div className="apple-glass hidden overflow-hidden sm:col-span-3 sm:block">
+    <div className="border bg-card text-card-foreground shadow-sm min-w-0 overflow-hidden hidden overflow-hidden rounded-3xl sm:col-span-3 sm:block">
       
       <h2 className="border-b border-white/30 px-6 py-4 font-semibold text-foreground dark:border-white/10">
-        Shop By Category ({categories.length})
+        {text.sidebar.shopByCategory} ({categories.length})
       </h2>
 
       <div className="flex h-[300px] flex-col gap-2 overflow-y-auto px-4 py-3">
         {categories.map((category) => (
           <Link
             key={category.id}
-            href={`/category/${category.slug}`}
-            className="apple-glass-soft flex items-center gap-3 p-2 text-foreground/90 transition hover:-translate-y-0.5 hover:bg-white/75 dark:hover:bg-white/10"
+            href={`/category/${category.slug}${locale === "en" ? "" : `?lang=${locale}`}`}
+            className="border bg-card text-card-foreground shadow-sm min-w-0 overflow-hidden flex items-center gap-3 rounded-2xl p-2 text-foreground/90 transition hover:-translate-y-0.5"
           >
             <Image
               width={40}

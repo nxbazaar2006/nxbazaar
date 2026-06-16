@@ -35,7 +35,7 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
         }),
       ]}
       className="
-        group relative overflow-hidden rounded-[28px]
+        group relative overflow-hidden rounded-2xl
         border border-white/10 bg-white/10
         shadow-sm backdrop-blur-2xl
       "
@@ -46,7 +46,7 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
             <Link
               href={banner.link || "#"}
               aria-label={banner.title}
-              className="block overflow-hidden rounded-[28px]"
+              className="block overflow-hidden rounded-2xl"
             >
               <Image
                 width={712}

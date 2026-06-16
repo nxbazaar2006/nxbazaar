@@ -74,7 +74,7 @@ export default function ResetPasswordForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full bg-blue-600 text-white py-2 rounded-lg"
+        className="w-full bg-blue-600 text-white py-2 rounded-2xl"
       >
         {isPending ? "Updating..." : "Reset Password"}
       </button>

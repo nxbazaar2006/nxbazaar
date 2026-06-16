@@ -10,7 +10,7 @@ function cleanSkuPart(value?: string | null) {
 
 export function generateSku({
   vendorCode,
-  productTitle,
+  productTitle: _productTitle,
   subCategory,
   color,
   size,
@@ -31,7 +31,6 @@ export function generateSku({
 
   return [
     vendorCode,
-    productTitle,
     subCategory,
     color,
     size,

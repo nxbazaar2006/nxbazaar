@@ -11,18 +11,23 @@ export default async function SellerDashboard() {
   //products
   const session = await auth();
   const user = session?.user;
-  // console.log(session?.user);
-  const { name, email, id, role, emailVerified, status = false } = user;
+  const { id, status = false } = user ?? {};
+
+  if (!id) {
+    return null;
+  }
+
   const sales = await getSales();
   const salesById = sales.filter((sale) => sale.vendorId === id);
-  const products = await getProducts();
-  const productsById = products.filter((product) => product.productId === id);
+  const productsResponse = await getProducts();
+  const products = productsResponse.success ? productsResponse.data : [];
+  const productsById = products.filter((product) => product.userId === id);
   if (!status) {
     return (
       <div className="max-w-2xl mx-auto min-h-screen mt-8">
         <div
           id="alert-additional-content-1"
-          className="p-4 mb-4 text-red-800 border border-red-300 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 dark:border-red-800"
+          className="p-4 mb-4 text-red-800 border border-red-300 rounded-2xl bg-red-50 dark:bg-gray-800 dark:text-red-400 dark:border-red-800"
           role="alert"
         >
           <div className="flex items-center">

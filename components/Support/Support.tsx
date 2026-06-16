@@ -77,7 +77,7 @@ export default function Support() {
               <Link
                 key={link.title}
                 href={link.href}
-                className="bg-white dark:bg-slate-800 dark:text-white text-black flex flex-col items-center justify-center gap-2 py-12 px-6 rounded-md shadow-md hover:shadow-xl transition"
+                className="bg-white dark:bg-slate-800 dark:text-white text-black flex flex-col items-center justify-center gap-2 py-12 px-6 rounded-2xl shadow-md hover:shadow-xl transition"
               >
                 <Icon className="w-8 h-8" />
                 <span className="text-sm font-medium text-center">

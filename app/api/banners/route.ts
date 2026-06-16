@@ -10,7 +10,10 @@ export async function POST(req: Request) {
     const validated = bannerSchema.parse(body);
 
     const banner = await db.banner.create({
-      data: validated,
+      data: {
+        ...validated,
+        link: validated.link ?? "",
+      },
     });
 
     return NextResponse.json(banner, { status: 201 });

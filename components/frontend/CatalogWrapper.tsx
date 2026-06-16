@@ -7,7 +7,10 @@ import { getSafeTranslation } from "@/lib/getTranslation";
 interface Props {
   data: Array<{
     id: string;
-    translations?: Parameters<typeof getSafeTranslation>[0];
+    translations?: Array<{
+      locale: string;
+      title?: string | null;
+    }>;
   }>;
   type: "category" | "product" | "market";
 }
@@ -20,14 +23,14 @@ export default function CatalogWrapper({ data }: Props) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {data.map((item) => {
-        const t = getSafeTranslation(item.translations, locale);
+        const t = getSafeTranslation(item.translations ?? [], locale);
 
         return (
           <div
             key={item.id}
             className="
               group relative overflow-hidden
-              rounded-3xl border border-white/10
+              rounded-2xl border border-white/10
               bg-white/10 p-5
               backdrop-blur-xl
               shadow-sm
@@ -56,7 +59,7 @@ export default function CatalogWrapper({ data }: Props) {
 
             <div className="relative z-10">
               <h3 className="text-base font-semibold tracking-tight">
-                {t?.name ?? "Untitled"}
+                {t?.title ?? "Untitled"}
               </h3>
 
               <p className="mt-2 text-sm text-muted-foreground">

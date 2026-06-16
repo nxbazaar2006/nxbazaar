@@ -12,12 +12,13 @@ import SubmitButton from "../FormInputs/SubmitButton";
 
 type Props = {
   role?: "USER" | "SELLER" | "ADMIN";
+  plan?: string;
 };
 
-export default function RegisterForm({ role = "USER" }: Props) {
+export default function RegisterForm({ role = "USER", plan: planProp }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const plan = searchParams.get("plan");
+  const plan = planProp ?? searchParams.get("plan");
 
   const { mutateAsync, isPending } = useRegister();
 
@@ -68,7 +69,7 @@ export default function RegisterForm({ role = "USER" }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="glass-card p-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="border bg-card text-card-foreground shadow-sm p-6">
       <input type="hidden" {...register("role")} value={role} />
 
       <TextInput

@@ -120,7 +120,7 @@ export default function PriceFilter({ slug, isSearch }: PriceFilterProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/70 p-4 shadow-sm backdrop-blur-xl dark:bg-white/5">
+    <div className="neumorphic-card p-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
           Price
@@ -128,7 +128,7 @@ export default function PriceFilter({ slug, isSearch }: PriceFilterProps) {
 
         <Link
           href={resetUrl()}
-          className="rounded-full bg-black/5 px-4 py-2 text-xs font-medium text-slate-700 transition hover:bg-black/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+          className="soft-button rounded-full px-4 py-2 text-xs font-medium"
         >
           Reset
         </Link>
@@ -143,10 +143,10 @@ export default function PriceFilter({ slug, isSearch }: PriceFilterProps) {
             <Link
               key={range.display}
               href={createUrl(range)}
-              className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition ${
+              className={`flex items-center gap-2 rounded-full px-3 py-2 text-sm transition ${
                 active
-                  ? "bg-primary/10 text-primary"
-                  : "text-slate-700 hover:bg-black/5 dark:text-slate-300 dark:hover:bg-white/10"
+                  ? "bg-white/20 text-foreground"
+                  : "text-muted-foreground hover:bg-white/20 hover:text-foreground"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -166,7 +166,7 @@ export default function PriceFilter({ slug, isSearch }: PriceFilterProps) {
             type="number"
             placeholder="Min"
             min={0}
-            className="col-span-1 rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
+            className="inset-input col-span-1 rounded-full px-3 py-2 text-sm"
           />
 
           <input
@@ -174,12 +174,12 @@ export default function PriceFilter({ slug, isSearch }: PriceFilterProps) {
             type="number"
             placeholder="Max"
             min={0}
-            className="col-span-1 rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
+            className="inset-input col-span-1 rounded-full px-3 py-2 text-sm"
           />
 
           <button
             type="submit"
-            className="col-span-1 rounded-xl bg-primary text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+            className="soft-button col-span-1 rounded-full text-sm font-medium"
           >
             Go
           </button>

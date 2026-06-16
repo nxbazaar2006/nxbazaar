@@ -42,11 +42,8 @@ export default function CartProduct({ cartItem }: { cartItem: CartItem }) {
   return (
     <div
       className="
-        grid grid-cols-1 gap-4 rounded-2xl border border-white/10
-        bg-white/10 p-4 shadow-sm backdrop-blur-xl
-        transition-all duration-300
-        hover:bg-gradient-to-br hover:from-orange-500/10
-        hover:via-blue-500/10 hover:to-purple-500/10
+        neumorphic-card grid grid-cols-1 gap-4 rounded-3xl
+        p-4
         md:grid-cols-12 md:items-center
       "
     >
@@ -83,12 +80,12 @@ export default function CartProduct({ cartItem }: { cartItem: CartItem }) {
           Quantity
         </span>
 
-        <div className="flex items-center overflow-hidden rounded-2xl border border-white/10 bg-white/10">
+        <div className="raised-panel flex items-center overflow-hidden rounded-2xl">
           <button
             type="button"
             onClick={() => handleQtyDecrement(cartItem.id)}
             disabled={qty <= 1}
-            className="flex h-9 w-9 items-center justify-center transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-9 w-9 items-center justify-center transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Minus size={14} />
           </button>
@@ -100,7 +97,7 @@ export default function CartProduct({ cartItem }: { cartItem: CartItem }) {
           <button
             type="button"
             onClick={() => handleQtyIncrement(cartItem.id)}
-            className="flex h-9 w-9 items-center justify-center transition hover:bg-white/10"
+            className="flex h-9 w-9 items-center justify-center transition hover:bg-white/20"
           >
             <Plus size={14} />
           </button>
@@ -122,7 +119,7 @@ export default function CartProduct({ cartItem }: { cartItem: CartItem }) {
           type="button"
           onClick={() => handleCartItemDelete(cartItem.id)}
           className="
-            ml-4 flex h-9 w-9 items-center justify-center rounded-xl
+            soft-button soft-icon-btn ml-4 h-9 w-9
             text-red-500 transition-all duration-300
             hover:scale-110 hover:bg-red-500/10
           "

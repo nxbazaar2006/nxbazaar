@@ -46,13 +46,13 @@ export default function ArrayItemsInput({
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 placeholder={placeholder}
-                className="border rounded-md p-2 w-full"
+                className="border rounded-2xl p-2 w-full"
               />
 
               <button
                 type="button"
                 onClick={addItem}
-                className="rounded-full bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-fuchsia-500/20 transition hover:from-orange-400 hover:via-fuchsia-400 hover:to-sky-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-300"
+                className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm  transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 Add
               </button>
@@ -62,7 +62,7 @@ export default function ArrayItemsInput({
               {items.map((item, i) => (
                 <span
                   key={i}
-                  className="bg-gray-200 px-2 py-1 rounded flex items-center gap-2"
+                  className="bg-gray-200 px-2 py-1 rounded-2xl flex items-center gap-2"
                 >
                   {item}
 

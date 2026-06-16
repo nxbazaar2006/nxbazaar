@@ -31,7 +31,7 @@ export default function SearchForm({
   return (
     <form
       onSubmit={handleSubmit(handleSearch)}
-      className="apple-glass-control flex w-full items-center gap-2 p-2"
+      className="raised-panel flex w-full items-center gap-2 rounded-3xl p-2"
     >
       <label htmlFor="search" className="sr-only">
         Search
@@ -52,7 +52,7 @@ export default function SearchForm({
           type="text"
           id="search"
           placeholder={placeholderContent}
-          className="block w-full rounded-full border-0 bg-transparent p-2.5 ps-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-0"
+          className="block w-full rounded-2xl border-0 bg-transparent p-2.5 ps-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-0"
         />
       </div>
 
@@ -60,7 +60,7 @@ export default function SearchForm({
 
       <button
         type="submit"
-        className="inline-flex items-center rounded-full bg-white px-4 py-2.5 text-sm font-medium text-slate-950 shadow-sm transition-colors hover:bg-slate-200 focus:outline-none focus:ring-4 focus:ring-white/20"
+        className="soft-button px-4 py-2.5 text-sm font-medium"
       >
         <Search className="w-4 h-4 me-2" />
         Search

@@ -59,7 +59,6 @@ export default async function NewSubCategoryPage({
     <div className="space-y-4">
       <SubCategoryForm
         categories={uniqueCategories}
-        hsnCodes={hsnCodes}
       />
     </div>
   );

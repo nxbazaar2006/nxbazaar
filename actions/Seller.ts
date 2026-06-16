@@ -1,23 +1,43 @@
 "use server";
 
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { SellerSchema } from "@/lib/validators/seller.schema";
 import { UserRole } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 
+function emptyToNull(value?: string) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
 function getSellerProfileData(sellerData: ReturnType<typeof SellerSchema.parse>) {
   return {
-    code: sellerData.code,
+    code: emptyToNull(sellerData.code),
+    businessName: emptyToNull(sellerData.businessName),
+    legalName: emptyToNull(sellerData.legalName),
+    businessType: emptyToNull(sellerData.businessType),
+    gstNumber: emptyToNull(sellerData.gstNumber),
+    panNumber: emptyToNull(sellerData.panNumber),
     contactPerson: sellerData.contactPerson,
     contactPersonPhone: sellerData.contactPersonPhone,
     phone: sellerData.phone,
     physicalAddress: sellerData.physicalAddress,
+    pickupAddress: emptyToNull(sellerData.pickupAddress),
+    city: emptyToNull(sellerData.city),
+    state: emptyToNull(sellerData.state),
+    country: emptyToNull(sellerData.country),
+    zip: emptyToNull(sellerData.zip),
+    bankAccountName: emptyToNull(sellerData.bankAccountName),
+    bankAccountNumber: emptyToNull(sellerData.bankAccountNumber),
+    bankIfscCode: emptyToNull(sellerData.bankIfscCode),
+    bankName: emptyToNull(sellerData.bankName),
     profileImageUrl: sellerData.profileImageUrl,
-    notes: sellerData.notes,
+    notes: emptyToNull(sellerData.notes),
     isActive: sellerData.isActive,
     turnover: sellerData.turnover,
-    mainProduct: sellerData.mainProduct,
+    mainProduct: emptyToNull(sellerData.mainProduct),
   };
 }
 
@@ -48,11 +68,13 @@ export async function createSeller(data: unknown) {
             },
           });
 
-      const profile = await tx.sellerProfile.create({
-        data: {
+      const profile = await tx.sellerProfile.upsert({
+        where: { userId: user.id },
+        create: {
           ...getSellerProfileData(sellerData),
           userId: user.id,
         },
+        update: getSellerProfileData(sellerData),
       });
 
       return profile;
@@ -194,6 +216,66 @@ export async function updateSeller(id: string, data: unknown) {
     return {
       success: false,
       error: error instanceof Error ? error.message : "Update failed",
+    };
+  }
+}
+
+/* ---------------- UPDATE CURRENT SELLER PROFILE ---------------- */
+
+export async function updateSellerProfileSettings(data: unknown) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    const sellerData = SellerSchema.parse(data);
+
+    await db.$transaction(async (tx) => {
+      const existingUser = await tx.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+      });
+
+      if (
+        !existingUser ||
+        (existingUser.role !== UserRole.SELLER &&
+          existingUser.role !== UserRole.ADMIN)
+      ) {
+        throw new Error("Seller access required");
+      }
+
+      await tx.user.update({
+        where: { id: session.user.id },
+        data: {
+          name: sellerData.name,
+          email: sellerData.email,
+          emailVerified: true,
+        },
+      });
+
+      await tx.sellerProfile.upsert({
+        where: { userId: session.user.id },
+        create: {
+          ...getSellerProfileData(sellerData),
+          userId: session.user.id,
+        },
+        update: getSellerProfileData(sellerData),
+      });
+    });
+
+    revalidatePath("/dashboard/seller-profile");
+    revalidatePath("/dashboard/profile");
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Seller profile update failed",
     };
   }
 }

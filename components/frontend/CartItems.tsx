@@ -23,12 +23,11 @@ export default function CartItems({ cartItems }: Props) {
       {hasItems ? (
         <div
           className="
-            rounded-3xl border border-white/10
-            bg-white/10 backdrop-blur-xl
+            neumorphic-card rounded-3xl
             p-4 shadow-sm md:p-6
           "
         >
-          <h2 className="mb-6 text-2xl font-semibold tracking-tight">
+          <h2 className="text-foreground mb-6 text-2xl font-semibold tracking-tight">
             Shopping Cart
           </h2>
 
@@ -39,9 +38,9 @@ export default function CartItems({ cartItems }: Props) {
               text-muted-foreground md:grid
             "
           >
-            <h2 className="col-span-6">Product</h2>
-            <h2 className="col-span-3 text-center">Quantity</h2>
-            <h2 className="col-span-3 text-right">Price</h2>
+            <h2 className="text-foreground col-span-6">Product</h2>
+            <h2 className="text-foreground col-span-3 text-center">Quantity</h2>
+            <h2 className="text-foreground col-span-3 text-right">Price</h2>
           </div>
 
           <div className="space-y-4">

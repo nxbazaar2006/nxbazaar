@@ -34,11 +34,7 @@ type Props = {
   market?: MarketFormData;
 };
 
-const locales = [
-  { locale: "en", label: "English" },
-  { locale: "hi", label: "Hindi" },
-  { locale: "mr", label: "Marathi" },
-] as const;
+const locales = [{ locale: "en", label: "English" }] as const;
 
 function normalizeMarket(market?: MarketFormData): MarketInput {
   return {
@@ -46,9 +42,10 @@ function normalizeMarket(market?: MarketFormData): MarketInput {
     isActive: market?.isActive ?? true,
     categoryIds: market?.categoryIds ?? [],
     translations: locales.map(({ locale }) => {
-      const translation = market?.translations?.find(
-        (item) => item.locale.toLowerCase() === locale
-      );
+      const translation =
+        market?.translations?.find(
+          (item) => item.locale.toLowerCase() === locale
+        ) ?? market?.translations?.[0];
 
       return {
         locale,
@@ -91,7 +88,7 @@ export default function NewMarketForm({ categories, market }: Props) {
     <FormProvider {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="mx-auto max-w-5xl space-y-8 rounded-lg border border-white/10 bg-white/5 p-6"
+        className="border bg-card text-card-foreground shadow-sm mx-auto max-w-5xl space-y-8 rounded-3xl p-4 sm:p-6"
       >
         <div className="grid gap-6 md:grid-cols-2">
           <ImageInput<MarketInput>
@@ -100,7 +97,7 @@ export default function NewMarketForm({ categories, market }: Props) {
             label="Market Logo"
           />
 
-          <div className="space-y-6">
+          <div className="border bg-card text-card-foreground shadow-sm space-y-6 rounded-3xl p-4">
             <ToggleInput<MarketInput>
               label="Status"
               name="isActive"
@@ -120,9 +117,9 @@ export default function NewMarketForm({ categories, market }: Props) {
           {locales.map((item, index) => (
             <section
               key={item.locale}
-              className="space-y-4 rounded-md border border-white/10 p-4"
+              className="border bg-card text-card-foreground shadow-sm space-y-4 rounded-3xl p-4"
             >
-              <h2 className="text-base font-semibold">{item.label}</h2>
+              <h2 className="text-foreground text-base font-semibold">{item.label}</h2>
 
               <input
                 type="hidden"

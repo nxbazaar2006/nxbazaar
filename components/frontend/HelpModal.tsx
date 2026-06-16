@@ -38,10 +38,10 @@ export default function HelpModal() {
 
       <DialogContent
         className="
-          rounded-3xl border border-white/10
-          bg-background/95
-          backdrop-blur-3xl
-          shadow-2xl
+          border bg-card text-card-foreground shadow-sm
+          rounded-3xl border-white/20
+          bg-white/10
+          shadow-2xl dark:bg-slate-950/20
           sm:max-w-md
         "
       >

@@ -4,6 +4,7 @@ import Link from "next/link";
 
 type ProductsPageProps = {
   searchParams?: Promise<{
+    lang?: string;
     sort?: string;
     min?: string;
     max?: string;
@@ -24,15 +25,24 @@ function mapProduct(product: {
     isDefault: boolean;
   }[];
   images: { url: string; isPrimary: boolean }[];
+  translations: {
+    locale: string;
+    title: string;
+    slug: string | null;
+  }[];
 }) {
+  const translation =
+    product.translations.find(
+      (item) => item.locale.toUpperCase() === "EN"
+    ) ?? product.translations[0];
   const variant =
     product.variants.find((item) => item.isDefault) ?? product.variants[0];
 
   return {
     id: product.id,
     userId: product.userId,
-    title: product.title,
-    slug: product.slug,
+    title: translation?.title ?? product.title,
+    slug: translation?.slug ?? product.slug,
     imageUrl:
       variant?.image ??
       product.imageUrl ??
@@ -45,22 +55,29 @@ function mapProduct(product: {
 
 function buildPageUrl(
   page: number,
-  params: { sort: string; min: number; max?: number }
+  params: { lang?: string; sort: string; min: number; max?: number }
 ) {
   const query = new URLSearchParams();
 
   query.set("page", page.toString());
   query.set("sort", params.sort);
+  if (params.lang) query.set("lang", params.lang);
   if (params.min > 0) query.set("min", params.min.toString());
   if (params.max !== undefined) query.set("max", params.max.toString());
 
   return `/products?${query.toString()}`;
 }
 
+function normalizeLocale(locale?: string) {
+  return ["hi", "mr"].includes(locale ?? "") ? locale!.toUpperCase() : "EN";
+}
+
 export default async function ProductsPage({
   searchParams,
 }: ProductsPageProps) {
   const resolvedParams = (await searchParams) ?? {};
+  const lang = resolvedParams.lang;
+  const locale = normalizeLocale(lang);
   const sort = resolvedParams.sort === "desc" ? "desc" : "asc";
   const min = Number(resolvedParams.min ?? 0);
   const max = resolvedParams.max ? Number(resolvedParams.max) : undefined;
@@ -85,6 +102,7 @@ export default async function ProductsPage({
           isPrimary: "desc",
         },
       },
+      translations: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -92,7 +110,17 @@ export default async function ProductsPage({
   });
 
   const filteredProducts = productsData
-    .map(mapProduct)
+    .map((product) => {
+      const translation =
+        product.translations.find((item) => item.locale === locale) ??
+        product.translations.find((item) => item.locale === "EN") ??
+        product.translations[0];
+
+      return mapProduct({
+        ...product,
+        translations: translation ? [translation] : [],
+      });
+    })
     .filter((product) => product.salePrice >= min)
     .filter((product) => (max === undefined ? true : product.salePrice <= max))
     .sort((a, b) =>
@@ -117,19 +145,19 @@ export default async function ProductsPage({
 
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <Link
-            href="/products"
+            href={lang ? `/products?lang=${lang}` : "/products"}
             className="rounded-full border border-black/10 bg-white/60 px-3 py-1.5 text-slate-700 transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-white/70 dark:hover:bg-white/15"
           >
             Relevance
           </Link>
           <Link
-            href={buildPageUrl(1, { sort: "desc", min, max })}
+            href={buildPageUrl(1, { lang, sort: "desc", min, max })}
             className="rounded-full border border-black/10 bg-white/60 px-3 py-1.5 text-slate-700 transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-white/70 dark:hover:bg-white/15"
           >
             Price - High to Low
           </Link>
           <Link
-            href={buildPageUrl(1, { sort: "asc", min, max })}
+            href={buildPageUrl(1, { lang, sort: "asc", min, max })}
             className="rounded-full border border-black/10 bg-white/60 px-3 py-1.5 text-slate-700 transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-white/70 dark:hover:bg-white/15"
           >
             Price - Low to High
@@ -144,7 +172,7 @@ export default async function ProductsPage({
           ))}
         </div>
       ) : (
-        <div className="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground">
+        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
           No products found.
         </div>
       )}
@@ -153,6 +181,7 @@ export default async function ProductsPage({
         <div className="flex items-center justify-center gap-3">
           <Link
             href={buildPageUrl(Math.max(currentPage - 1, 1), {
+              lang,
               sort,
               min,
               max,
@@ -166,6 +195,7 @@ export default async function ProductsPage({
           </span>
           <Link
             href={buildPageUrl(Math.min(currentPage + 1, totalPages), {
+              lang,
               sort,
               min,
               max,

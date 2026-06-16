@@ -1,19 +1,21 @@
 export type Sale = {
   id: string;
   total: number;
-  createdAt: string;
+  createdAt: string | Date;
+  productTitle?: string;
+  productQty?: number;
 };
 
 export type Order = {
   id: string;
-  total: number;
+  total?: number;
   orderStatus:
     | "PENDING"
     | "PROCESSING"
     | "SHIPPED"
     | "DELIVERED"
     | "CANCELED";
-  createdAt: string;
+  createdAt: string | Date;
 };
 
 export type Product = {

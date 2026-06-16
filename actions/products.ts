@@ -27,11 +27,36 @@ function mapProduct(product: {
   title: string;
   slug: string;
   productCode?: string | null;
+  unit?: string | null;
+  currency: string;
   userId: string;
   categoryId: string;
   imageUrl?: string | null;
   isWholesale: boolean;
   images: { url: string; isPrimary: boolean }[];
+  category?: {
+    id: string;
+    translations: {
+      locale: string;
+      title: string;
+      slug: string | null;
+      description?: string | null;
+    }[];
+  } | null;
+  subCategory?: {
+    id: string;
+    translations: {
+      locale: string;
+      title: string;
+      slug: string | null;
+      description?: string | null;
+    }[];
+  } | null;
+  user?: {
+    id: string;
+    name: string | null;
+    email: string | null;
+  } | null;
   translations: {
     locale: string;
     title: string;
@@ -49,10 +74,18 @@ function mapProduct(product: {
     stock: number | null;
     image: string | null;
     isDefault: boolean;
+    attributes?: { name: string; value: string }[];
+    barcode?: string | null;
+    barcodeUrl?: string | null;
     wholesalePricing: { minQty: number; price: number }[];
   }[];
 }, locale = "EN") {
   const translation = getTranslation(product.translations, locale);
+  const categoryTranslation = getTranslation(product.category?.translations ?? [], locale);
+  const subCategoryTranslation = getTranslation(
+    product.subCategory?.translations ?? [],
+    locale
+  );
   const variant =
     product.variants.find((item) => item.isDefault) ?? product.variants[0];
   const primaryImage =
@@ -72,6 +105,16 @@ function mapProduct(product: {
     productImages: product.images.map((image) => image.url),
     sku: variant?.sku ?? "",
     productCode: product.productCode ?? variant?.productCode ?? "",
+    barcode: variant?.barcode ?? "",
+    barcodeUrl: variant?.barcodeUrl ?? "",
+    categoryName: categoryTranslation?.title ?? "",
+    categorySlug: categoryTranslation?.slug ?? "",
+    subCategoryName: subCategoryTranslation?.title ?? "",
+    subCategorySlug: subCategoryTranslation?.slug ?? "",
+    sellerName: product.user?.name ?? "NX Bazaar seller",
+    sellerCode: "",
+    sellerLocation: "",
+    sellerVerified: false,
     productPrice: variant?.price ?? 0,
     price: variant?.price ?? 0,
     salePrice: variant?.salePrice ?? variant?.price ?? 0,
@@ -98,9 +141,27 @@ export async function getProductBySlug(slug: string, locale = "EN") {
       images: {
         orderBy: { isPrimary: "desc" },
       },
+      category: {
+        include: {
+          translations: true,
+        },
+      },
+      subCategory: {
+        include: {
+          translations: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
       translations: true,
       variants: {
         include: {
+          attributes: true,
           wholesalePricing: {
             orderBy: { minQty: "asc" },
           },
@@ -129,9 +190,27 @@ export async function getSimilarProducts(
       images: {
         orderBy: { isPrimary: "desc" },
       },
+      category: {
+        include: {
+          translations: true,
+        },
+      },
+      subCategory: {
+        include: {
+          translations: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
       translations: true,
       variants: {
         include: {
+          attributes: true,
           wholesalePricing: {
             orderBy: { minQty: "asc" },
           },
@@ -155,9 +234,27 @@ export async function getSimilarProducts(
       images: {
         orderBy: { isPrimary: "desc" },
       },
+      category: {
+        include: {
+          translations: true,
+        },
+      },
+      subCategory: {
+        include: {
+          translations: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
       translations: true,
       variants: {
         include: {
+          attributes: true,
           wholesalePricing: {
             orderBy: { minQty: "asc" },
           },

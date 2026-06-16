@@ -68,7 +68,7 @@ export default function SelectInput<T extends FieldValues>({
         {...register(name)}
         defaultValue=""
         className={cn(
-          "w-full px-3 py-2 rounded-md border transition-all",
+          "w-full px-3 py-2 rounded-2xl border transition-all",
           "bg-transparent text-slate-950 dark:text-white",
           "border-slate-200 shadow-sm dark:border-white/10",
           "focus:outline-none focus:ring-2 focus:ring-orange-500/20",

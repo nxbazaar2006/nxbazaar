@@ -11,7 +11,7 @@ export default function LanguageSwitcher({
     <select
       value={locale}
       onChange={(e) => setLocale(e.target.value)}
-      className="border p-2 rounded"
+      className="border p-2 rounded-2xl"
     >
       <option value="en">English</option>
       <option value="hi">Hindi</option>

@@ -29,7 +29,7 @@ export default function Breadcrumb() {
           <Link
             href="/"
             className="
-              inline-flex items-center gap-2 rounded-xl px-2 py-1
+              inline-flex items-center gap-2 rounded-2xl px-2 py-1
               text-sm font-medium text-muted-foreground
               transition-all hover:bg-white/10 hover:text-primary
             "
@@ -50,7 +50,7 @@ export default function Breadcrumb() {
               {isLast ? (
                 <span
                   className="
-                    rounded-xl bg-gradient-to-r from-orange-500/20
+                    rounded-2xl bg-gradient-to-r from-orange-500/20
                     via-blue-500/20 to-purple-500/20 px-3 py-1
                     text-sm font-semibold text-foreground
                   "
@@ -61,7 +61,7 @@ export default function Breadcrumb() {
                 <Link
                   href={href}
                   className="
-                    rounded-xl px-2 py-1 text-sm font-medium
+                    rounded-2xl px-2 py-1 text-sm font-medium
                     text-muted-foreground transition-all
                     hover:bg-white/10 hover:text-primary
                   "

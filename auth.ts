@@ -1,10 +1,12 @@
 // auth.ts
 import NextAuth from "next-auth";
+import type { Adapter } from "next-auth/adapters";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { compare } from "bcryptjs";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { UserRole } from "@prisma/client";
 
 // ✅ Zod Schema
 const loginSchema = z.object({
@@ -13,7 +15,7 @@ const loginSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(db),
+  adapter: PrismaAdapter(db) as Adapter,
 
   secret:
     process.env.AUTH_SECRET ??
@@ -75,7 +77,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           role: user.role,
           status: user.status,
-          emailVerified: user.emailVerified,
+          emailVerified: user.emailVerified ? new Date() : null,
         };
       },
     }),
@@ -95,7 +97,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        session.user.role = token.role as UserRole;
         session.user.status = token.status as boolean;
         session.user.emailVerified =
           token.emailVerified as Date | null;

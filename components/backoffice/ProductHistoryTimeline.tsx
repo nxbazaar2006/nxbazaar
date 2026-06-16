@@ -1,5 +1,4 @@
 import type { ProductHistoryItem } from "@/actions/product";
-import GlassCard from "@/components/GlassCard";
 import {
   Table,
   TableBody,
@@ -32,16 +31,16 @@ function formatAction(action: string) {
 
 export default function ProductHistoryTimeline({ history }: Props) {
   return (
-    <GlassCard className="max-w-7xl mx-auto space-y-4">
+    <div className="border bg-card text-card-foreground shadow-sm mx-auto max-w-7xl space-y-4 rounded-2xl p-4">
       <div>
-        <h2 className="text-xl font-semibold text-slate-950 dark:text-white">Product History</h2>
+        <h2 className="text-foreground text-xl font-semibold">Product History</h2>
         <p className="text-sm text-slate-600 dark:text-gray-300">
           Product, variant, price, stock, status, and image changes.
         </p>
       </div>
 
       {history.length === 0 ? (
-        <div className="rounded-lg border border-slate-200 p-4 text-sm text-slate-600 dark:border-white/10 dark:text-gray-300">
+        <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-600 dark:border-white/10 dark:text-gray-300">
           No product history found.
         </div>
       ) : (
@@ -91,6 +90,6 @@ export default function ProductHistoryTimeline({ history }: Props) {
           </TableBody>
         </Table>
       )}
-    </GlassCard>
+    </div>
   );
 }

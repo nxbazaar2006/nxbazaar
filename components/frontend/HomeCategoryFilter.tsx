@@ -44,17 +44,17 @@ export default function HomeCategoryFilter({ categories, lang }: Props) {
 
   return (
     <section className="space-y-6 py-8">
-      <div className="apple-glass flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="border bg-card text-card-foreground shadow-sm flex flex-col gap-4 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
             Browse Products
           </p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+          <h2 className="text-foreground mt-1 text-xl font-semibold tracking-tight">
             Filter home categories
           </h2>
         </div>
 
-        <label className="apple-glass-control flex w-full items-center gap-2 px-4 py-2 sm:max-w-sm">
+        <label className="flex w-full items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm dark:bg-white/10 sm:max-w-sm">
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="sr-only">Filter categories and products</span>
           <input
@@ -77,7 +77,7 @@ export default function HomeCategoryFilter({ categories, lang }: Props) {
         </label>
       </div>
 
-      <div className="apple-glass px-12 py-4">
+      <div className="border bg-card text-card-foreground shadow-sm rounded-2xl px-12 py-4">
         <Carousel opts={{ align: "start", containScroll: "trimSnaps" }}>
           <CarouselContent>
             <CarouselItem className="basis-auto">
@@ -85,7 +85,7 @@ export default function HomeCategoryFilter({ categories, lang }: Props) {
                 type="button"
                 onClick={() => setSelectedSlug(null)}
                 className={cn(
-                  "apple-glass-control whitespace-nowrap px-5 py-2.5 text-sm font-medium transition hover:-translate-y-0.5",
+                  "outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] whitespace-nowrap rounded-full bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 dark:bg-white/10 dark:text-slate-200",
                   selectedSlug === null &&
                     "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
                 )}
@@ -100,7 +100,7 @@ export default function HomeCategoryFilter({ categories, lang }: Props) {
                   type="button"
                   onClick={() => setSelectedSlug(category.slug)}
                   className={cn(
-                    "apple-glass-control whitespace-nowrap px-5 py-2.5 text-sm font-medium text-foreground transition hover:-translate-y-0.5",
+                    "outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] whitespace-nowrap rounded-full bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 dark:bg-white/10 dark:text-slate-200",
                     selectedSlug === category.slug &&
                       "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
                   )}
@@ -127,7 +127,7 @@ export default function HomeCategoryFilter({ categories, lang }: Props) {
           </div>
         ))
       ) : (
-        <div className="apple-glass p-8 text-center text-sm text-muted-foreground">
+        <div className="border bg-card text-card-foreground shadow-sm rounded-2xl p-8 text-center text-sm text-muted-foreground">
           No matching categories or products found.
         </div>
       )}

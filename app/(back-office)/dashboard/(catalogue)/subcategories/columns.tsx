@@ -3,16 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import ActionColumn from "@/components/DataTableColumns/ActionColumn";
-
-export type SubCategory = {
-  id: string;
-  slug: string;
-  isActive: boolean;
-  category: { title: string };
-  hsnCode?: { code: string };
-  translations: { title: string }[];
-  createdAt: string;
-};
+import type { SubCategory } from "@/types/subcategory";
 
 export const columns: ColumnDef<SubCategory>[] = [
   {

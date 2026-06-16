@@ -25,7 +25,7 @@ export default async function VerifyMail({ searchParams }: Props) {
   return (
     <div className="max-w-2xl mx-auto min-h-screen mt-8">
       <div
-        className="p-4 mb-4 text-red-800 border border-red-300 rounded-lg bg-red-50"
+        className="p-4 mb-4 text-red-800 border border-red-300 rounded-2xl bg-red-50"
         role="alert"
       >
         <div className="flex items-center">

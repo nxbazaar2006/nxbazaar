@@ -9,6 +9,7 @@ import advert from "@/public/adv.gif";
 import { CircleDollarSign, FolderSync, HelpCircle } from "lucide-react";
 
 import { getBanners } from "@/actions/banner";
+import { getFrontendText, normalizeFrontendLocale } from "@/lib/frontendI18n";
 
 interface Banner {
   id: string;
@@ -18,18 +19,24 @@ interface Banner {
 }
 
 const actionCardClass =
-  "apple-glass-soft group mb-3 flex items-center gap-3 p-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg";
+  "group mb-3 flex items-center gap-3 rounded-2xl bg-white/78 p-3 shadow-[0_1px_0_rgba(255,255,255,0.8)_inset] transition-all duration-300 hover:-translate-y-0.5 dark:bg-white/5";
 
-export default async function Hero() {
+type Props = {
+  lang?: string;
+};
+
+export default async function Hero({ lang }: Props) {
+  const locale = normalizeFrontendLocale(lang);
+  const text = getFrontendText(locale);
   const banners: Banner[] = await getBanners("");
 
   return (
-    <div className="mb-8 grid grid-cols-12 gap-6">
-      <SidebarCategories />
+    <div className="grid grid-cols-12 gap-4 mb-8">
+      <SidebarCategories lang={lang} />
 
       <div
         className="
-          apple-glass col-span-full overflow-hidden p-3 sm:col-span-7
+          border bg-card text-card-foreground shadow-sm min-w-0 overflow-hidden col-span-full overflow-hidden rounded-2xl p-3 sm:col-span-7
         "
       >
         <HeroCarousel banners={banners} />
@@ -37,18 +44,18 @@ export default async function Hero() {
 
       <div
         className="
-          apple-glass col-span-2 hidden p-3 sm:block
+          border bg-card text-card-foreground shadow-sm min-w-0 overflow-hidden col-span-2 hidden rounded-2xl p-3 sm:block
         "
       >
         <Link href="#" className={actionCardClass}>
           <HelpCircle className="h-5 w-5 shrink-0 text-orange-500" />
 
           <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wide">
-              Help Center
+            <h2 className="text-foreground text-xs font-semibold uppercase tracking-wide">
+              {text.sidebar.helpCenter}
             </h2>
             <p className="text-[0.65rem] text-muted-foreground">
-              Guide to customer care
+              {text.sidebar.customerCare}
             </p>
           </div>
         </Link>
@@ -57,29 +64,29 @@ export default async function Hero() {
           <FolderSync className="h-5 w-5 shrink-0 text-blue-500" />
 
           <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wide">
-              Easy Return
+            <h2 className="text-foreground text-xs font-semibold uppercase tracking-wide">
+              {text.sidebar.easyReturn}
             </h2>
             <p className="text-[0.65rem] text-muted-foreground">
-              Quick return
+              {text.sidebar.quickReturn}
             </p>
           </div>
         </Link>
 
-        <Link href="/register-seller" className="apple-glass-soft group mb-6 flex items-center gap-3 bg-gradient-to-r from-orange-500/15 via-pink-500/15 to-purple-500/15 p-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+        <Link href="/register-seller" className={actionCardClass}>
           <CircleDollarSign className="h-5 w-5 shrink-0 text-green-500" />
 
           <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wide">
-              Sell on Limi
+            <h2 className="text-foreground text-xs font-semibold uppercase tracking-wide">
+              {text.sidebar.sellOnLimi}
             </h2>
             <p className="text-[0.65rem] text-muted-foreground">
-              Millions of visitors
+              {text.sidebar.visitors}
             </p>
           </div>
         </Link>
 
-        <div className="overflow-hidden rounded-2xl border border-white/10">
+        <div className="overflow-hidden rounded-2xl">
           <Image
             src={advert}
             alt="Advertisement"

@@ -103,7 +103,7 @@ export default function ImageInput<T extends FieldValues>({
 
       {/* Upload */}
       {!imageUrl && (
-        <div className="rounded-xl p-6 text-center">
+        <div className="rounded-2xl p-6 text-center">
           <UploadDropzone
             endpoint={endpoint}
             disabled={loading}
@@ -140,14 +140,14 @@ export default function ImageInput<T extends FieldValues>({
             src={imageUrl}
             alt="preview"
             fill
-            className="object-cover rounded"
+            className="object-cover rounded-2xl"
           />
 
           {/* Remove */}
           <button
             type="button"
             onClick={() => updateImageUrl("")}
-            className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded"
+            className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-2xl"
           >
             Remove
           </button>
@@ -167,7 +167,7 @@ export default function ImageInput<T extends FieldValues>({
           </div>
 
           {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-2xl">
               <Loader2 className="h-4 w-4 animate-spin text-white" />
             </div>
           )}

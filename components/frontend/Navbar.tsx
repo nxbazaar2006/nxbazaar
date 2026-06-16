@@ -16,6 +16,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useDispatch } from "react-redux";
 import { setLanguage } from "@/redux/slices/languageSlice";
+import { getFrontendText } from "@/lib/frontendI18n";
 import { useScroll } from "@/hooks/useScroll";
 
 type NavbarProps = {
@@ -25,38 +26,48 @@ type NavbarProps = {
 type Locale = "en" | "hi" | "mr";
 
 const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "Products", href: "/products" },
-  { label: "Blogs", href: "/blogs" },
-  { label: "Vlog", href: "/vlogs" },
-];
+  { labelKey: "home", href: "/" },
+  { labelKey: "products", href: "/products" },
+  { labelKey: "blogs", href: "/blogs" },
+  { labelKey: "vlog", href: "/vlogs" },
+] as const;
 
 const navLinkClass =
-  "rounded-2xl px-4 py-2 text-sm font-medium text-slate-950 transition-all duration-300 hover:scale-105 hover:bg-gradient-to-r hover:from-orange-500/15 hover:via-pink-500/15 hover:to-purple-500/15 dark:text-white";
+  "rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-all duration-300 hover:bg-white/20 hover:text-foreground";
 
 const mobileLinkClass =
-  "rounded-2xl px-4 py-3 text-sm font-medium text-slate-950 transition-all duration-300 hover:bg-gradient-to-r hover:from-orange-500/15 hover:via-pink-500/15 hover:to-purple-500/15 dark:text-white";
+  "rounded-2xl px-4 py-3 text-sm font-medium text-foreground/80 transition-all duration-300 hover:bg-white/20 hover:text-foreground";
 
 const glassButtonClass =
-  "apple-glass-soft rounded-2xl text-slate-950 transition-all duration-300 hover:scale-105 hover:bg-gradient-to-r hover:from-orange-500/15 hover:via-pink-500/15 hover:to-purple-500/15 dark:text-white";
+  "soft-button text-foreground";
 
 export default function Navbar({ className = "" }: NavbarProps) {
   const { data: session, status } = useSession();
 
   const [open, setOpen] = useState(false);
   const scrolled = useScroll(20);
-
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
 
   const selectedLocale = searchParams.get("lang");
+  const pathLocale = pathname.split("/")[1];
 
   const locale: Locale =
     selectedLocale === "hi" || selectedLocale === "mr"
       ? selectedLocale
+      : pathLocale === "hi" || pathLocale === "mr"
+      ? pathLocale
       : "en";
+  const text = getFrontendText(locale);
+
+  const localizedHref = (href: string) => {
+    if (locale === "en") return href;
+
+    const separator = href.includes("?") ? "&" : "?";
+    return `${href}${separator}lang=${locale}`;
+  };
 
   useEffect(() => {
     dispatch(setLanguage(locale));
@@ -66,6 +77,14 @@ export default function Navbar({ className = "" }: NavbarProps) {
     dispatch(setLanguage(lang));
 
     const params = new URLSearchParams(searchParams.toString());
+    const segments = pathname.split("/");
+    const hasLocalePrefix = segments[1] === "hi" || segments[1] === "mr";
+    let nextPath = pathname;
+
+    if (hasLocalePrefix) {
+      const pathWithoutLocale = `/${segments.slice(2).join("/")}`;
+      nextPath = lang === "en" ? pathWithoutLocale : `/${lang}${pathWithoutLocale}`;
+    }
 
     if (lang === "en") {
       params.delete("lang");
@@ -74,21 +93,13 @@ export default function Navbar({ className = "" }: NavbarProps) {
     }
 
     const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
+    router.push(query ? `${nextPath}?${query}` : nextPath);
+    router.refresh();
     setOpen(false);
   };
 
   if (status === "loading") {
-    return (
-      <div
-        className="
-          fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-center
-          border-b border-white/10 text-sm text-slate-950 dark:text-white
-        "
-      >
-        Loading...
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -97,16 +108,19 @@ export default function Navbar({ className = "" }: NavbarProps) {
         className={cn(
           `
           fixed inset-x-0 top-0 z-50
-          frontend-navbar border-b border-white/10
-          text-slate-950 dark:text-white
-          shadow-[0_14px_36px_rgba(2,6,23,0.32)]
-          transition-colors duration-300
+          text-foreground
+          p-3 transition-colors duration-300
           `,
-          scrolled ? "bg-white/90 backdrop-blur-xl dark:bg-slate-950" : "bg-transparent",
+          scrolled ? "backdrop-blur-xl" : "bg-transparent",
           className
         )}
       >
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 lg:px-6">
+        <div
+          className={cn(
+            "liquid-glass-nav raised-panel mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 rounded-full px-4 transition-all duration-300 sm:h-[4.5rem] sm:px-4 lg:px-5",
+            scrolled ? "shadow-[0_20px_60px_rgba(0,0,0,0.25)]" : "shadow-[0_12px_36px_rgba(0,0,0,0.16)]"
+          )}
+        >
           <Link href="/" className="flex shrink-0 items-center">
             <Image src={logo} alt="NXBazaar logo" width={110} height={40} priority />
           </Link>
@@ -117,13 +131,13 @@ export default function Navbar({ className = "" }: NavbarProps) {
 
           <nav className="hidden shrink-0 items-center gap-1 md:flex">
             {navLinks.map((item) => (
-              <Link key={item.href} href={item.href} className={navLinkClass}>
-                {item.label}
+              <Link key={item.href} href={localizedHref(item.href)} className={navLinkClass}>
+                {text.nav[item.labelKey]}
               </Link>
             ))}
           </nav>
 
-          <div className="hidden items-center gap-3 md:flex">
+          <div className="hidden items-center gap-4 md:flex">
             <DeliverToButton iconOnly />
 
             <select
@@ -131,13 +145,7 @@ export default function Navbar({ className = "" }: NavbarProps) {
               onChange={(e) => changeLanguage(e.target.value as Locale)}
               aria-label="Select language"
               className="
-                apple-glass-soft h-11 rounded-2xl
-                px-3 py-2 text-sm text-slate-950 dark:text-white
-                shadow-sm outline-none backdrop-blur-xl
-                transition-all duration-300
-                hover:bg-white/75 dark:hover:bg-white/15
-                focus:border-orange-500/40
-                focus:ring-2 focus:ring-orange-500/20
+                inset-input h-11 px-3 py-2 text-sm
               "
             >
               <option className="bg-slate-950 text-white" value="en">
@@ -160,10 +168,10 @@ export default function Navbar({ className = "" }: NavbarProps) {
                 )}
               >
                 <User size={18} />
-                Login
+                {text.nav.login}
               </Link>
             ) : (
-              <UserAvatar user={session?.user} />
+              <UserAvatar user={session?.user} profileHref={localizedHref("/profile")} />
             )}
 
             <HelpModal />
@@ -175,7 +183,7 @@ export default function Navbar({ className = "" }: NavbarProps) {
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Open menu"
-              className={cn(glassButtonClass, "flex h-11 w-11 items-center justify-center md:hidden")}
+            className={cn(glassButtonClass, "flex h-11 w-11 items-center justify-center md:hidden")}
           >
             <Menu />
           </button>
@@ -196,10 +204,8 @@ export default function Navbar({ className = "" }: NavbarProps) {
         <aside
           className={cn(
             `
-            absolute left-0 top-0 h-full w-80 max-w-[85vw]
-            border-r border-white/10
-            frontend-navbar bg-slate-950 text-white
-            shadow-2xl
+            neumorphic-card absolute left-0 top-0 h-full w-80 max-w-[85vw]
+            rounded-l-none rounded-r-3xl
             transition-transform duration-300
             `,
             open ? "translate-x-0" : "-translate-x-full"
@@ -228,15 +234,15 @@ export default function Navbar({ className = "" }: NavbarProps) {
             {navLinks.map((item) => (
               <Link
                 key={item.href}
-                href={item.href}
+                href={localizedHref(item.href)}
                 onClick={() => setOpen(false)}
                 className={mobileLinkClass}
               >
-                {item.label}
+                {text.nav[item.labelKey]}
               </Link>
             ))}
 
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur-xl">
+            <div className="neumorphic-card p-3">
               <DeliverToButton iconOnly />
             </div>
 
@@ -245,11 +251,7 @@ export default function Navbar({ className = "" }: NavbarProps) {
               onChange={(e) => changeLanguage(e.target.value as Locale)}
               aria-label="Select language"
               className="
-                rounded-2xl border border-white/10 bg-slate-900
-                px-4 py-3 text-sm text-white
-                shadow-sm outline-none backdrop-blur-xl
-                focus:border-orange-500/40
-                focus:ring-2 focus:ring-orange-500/20
+                inset-input rounded-2xl px-4 py-3 text-sm
               "
             >
               <option className="bg-slate-950 text-white" value="en">
@@ -273,24 +275,24 @@ export default function Navbar({ className = "" }: NavbarProps) {
                 )}
               >
                 <User size={18} />
-                Login
+                {text.nav.login}
               </Link>
             ) : (
-              <div className="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur-xl">
-                <UserAvatar user={session?.user} />
+              <div className="neumorphic-card p-3">
+                <UserAvatar user={session?.user} profileHref={localizedHref("/profile")} />
               </div>
             )}
 
             <div className="grid grid-cols-3 gap-3 pt-2">
-              <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur-xl">
+              <div className="neumorphic-card flex items-center justify-center p-3">
                 <HelpModal />
               </div>
 
-              <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur-xl">
+              <div className="neumorphic-card flex items-center justify-center p-3">
                 <CartCount />
               </div>
 
-              <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur-xl">
+              <div className="neumorphic-card flex items-center justify-center p-3">
                 <ThemeSwitcherBtn />
               </div>
             </div>

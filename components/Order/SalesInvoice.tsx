@@ -25,7 +25,7 @@ export default function SalesInvoice({ order }: Props) {
       <div className="flex justify-end mb-8">
         <button
           onClick={handlePrint}
-          className="px-4 py-3 text-xs font-bold bg-slate-800 text-white rounded-md"
+          className="px-4 py-3 text-xs font-bold bg-slate-800 text-white rounded-2xl"
         >
           Download / Print Invoice
         </button>
@@ -33,7 +33,7 @@ export default function SalesInvoice({ order }: Props) {
 
       <div ref={invoiceRef}>
 
-        <div className="max-w-4xl mx-auto border p-8 rounded-sm">
+        <div className="max-w-4xl mx-auto border p-8 rounded-2xl">
 
           <div className="flex justify-between border-b pb-8">
 
@@ -115,7 +115,7 @@ export default function SalesInvoice({ order }: Props) {
                         width={40}
                         height={40}
                         alt={itemTitle}
-                        className="rounded"
+                        className="rounded-2xl"
                       />
                     </td>
 
@@ -135,7 +135,7 @@ export default function SalesInvoice({ order }: Props) {
                           height={72}
                           alt={`QR for ${item.title}`}
                           unoptimized
-                          className="h-18 w-18 rounded border border-slate-200 bg-white p-1"
+                          className="h-18 w-18 rounded-2xl border border-slate-200 bg-white p-1"
                         />
                       ) : (
                         "-"

@@ -17,7 +17,7 @@ export default function Filters({
   onBrandChange,
 }: FiltersProps) {
   return (
-    <aside className="sticky top-24 space-y-6 rounded-3xl border border-white/10 bg-card/80 p-5 shadow-sm backdrop-blur-xl">
+    <aside className="neumorphic-card sticky top-24 space-y-6 p-5">
       <PriceFilter slug={slug} isSearch={isSearch} />
 
       {brands.length > 0 && onBrandChange && (

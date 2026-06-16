@@ -31,7 +31,7 @@ export default async function VerifyMailPage({
     <div className="max-w-2xl mx-auto min-h-screen mt-8 px-4">
       <div
         role="alert"
-        className="p-4 mb-4 text-red-800 border border-red-300 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 dark:border-red-800"
+        className="p-4 mb-4 text-red-800 border border-red-300 rounded-2xl bg-red-50 dark:bg-gray-800 dark:text-red-400 dark:border-red-800"
       >
         <div className="flex items-center">
           <Info className="w-4 h-4 me-2" />

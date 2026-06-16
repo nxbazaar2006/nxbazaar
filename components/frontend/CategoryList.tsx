@@ -25,25 +25,25 @@ export default function CategoryList({
   return (
     <section
       className="
-        apple-glass overflow-hidden text-foreground
+        border bg-card text-card-foreground shadow-sm min-w-0 overflow-hidden overflow-hidden rounded-3xl text-foreground
       "
     >
       <div
         className="
           flex flex-wrap items-center justify-between gap-3
-          border-b border-white/10 px-5 py-4 md:px-6
+          px-5 py-4 md:px-6
         "
       >
-        <h2 className="text-lg font-semibold tracking-tight">
+        <h2 className="text-base font-semibold tracking-tight text-foreground">
           {category.title}
         </h2>
 
         <Link
           href={categoryHref}
           className="
-            apple-glass-control px-4 py-2 text-sm font-medium
-            transition-all duration-300 hover:-translate-y-0.5 hover:bg-gradient-to-r
-            hover:from-orange-500/20 hover:via-pink-500/20 hover:to-purple-500/20
+            outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] rounded-full border border-slate-950/10 bg-white px-4 py-2 text-sm font-medium
+            text-slate-800 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-50
+            dark:border-white/10 dark:bg-white/10 dark:text-slate-100 dark:hover:bg-white/15
           "
         >
           See All

@@ -24,7 +24,10 @@ export async function createBanner(data: unknown): Promise<BannerResponse> {
     }
 
     const banner = await db.banner.create({
-      data: parsed.data,
+      data: {
+        ...parsed.data,
+        link: parsed.data.link ?? "",
+      },
     })
 
     revalidatePath("/dashboard/banners")
@@ -53,7 +56,10 @@ export async function updateBanner(
 
     const banner = await db.banner.update({
       where: { id },
-      data: parsed.data,
+      data: {
+        ...parsed.data,
+        link: parsed.data.link ?? "",
+      },
     })
 
     revalidatePath("/dashboard/banners")

@@ -32,7 +32,7 @@ export default function DataTableViewOptions<TData>({ table }: Props<TData>) {
           type="button"
           variant="outline"
           size="sm"
-          className="ml-auto h-9 rounded-xl border-white/10 bg-white/5 backdrop-blur-xl"
+          className="ml-auto h-9 rounded-2xl"
         >
           <Settings2 className="mr-2 h-4 w-4" />
           View

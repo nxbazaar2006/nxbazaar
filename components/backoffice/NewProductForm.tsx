@@ -13,7 +13,6 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import FormHeader from "@/components/backoffice/FormHeader";
-import GlassCard from "@/components/GlassCard";
 import ArrayItemsInput from "@/components/FormInputs/ArrayItemsInput";
 import MultipleImageInput from "@/components/FormInputs/MultipleImageInput";
 import SearchSelectInput from "@/components/FormInputs/SearchSelectInput";
@@ -23,7 +22,6 @@ import TextInput from "@/components/FormInputs/TextInput";
 import TextareaInput from "@/components/FormInputs/TextAreaInput";
 import ToggleInput from "@/components/FormInputs/ToggleInput";
 import {
-  LOCALES,
   productSchema,
   type ProductInput,
 } from "@/lib/validators/productSchema";
@@ -54,7 +52,6 @@ type Props = {
   vendorCode?: string | null;
   categories?: SelectOption[];
   subCategories?: SubCategoryOption[];
-  transparentBackground?: boolean;
   updateData?: Partial<ProductInput> & {
     id?: string;
     hsnCode?: HsnOption | null;
@@ -64,8 +61,6 @@ type Props = {
 type TranslationCardProps = {
   index: number;
   aiPromptBase: string;
-  canRemove: boolean;
-  onRemove: () => void;
 };
 
 type VariantCardProps = {
@@ -94,6 +89,7 @@ function defaultVariant(
   isDefault = true
 ): ProductInput["variants"][number] {
   return {
+    id: undefined,
     title: isDefault ? "Default Variant" : "",
     sku: "",
     barcode: "",
@@ -116,38 +112,36 @@ function defaultVariant(
 
 function defaultTranslations(updateData: Props["updateData"]) {
   const existing = updateData?.translations ?? [];
-
-  return LOCALES.map((locale) => {
-    const match = existing.find(
+  const english =
+    existing.find(
       (translation: ProductInput["translations"][number]) =>
-        translation.locale === locale
-    );
+        translation.locale === "EN"
+    ) ?? existing[0];
 
-    return {
-      locale,
-      title: match?.title ?? "",
-      slug: match?.slug ?? "",
-      description: match?.description ?? "",
-      metaTitle: match?.metaTitle ?? "",
-      metaDescription: match?.metaDescription ?? "",
-    };
-  });
+  return [
+    {
+      locale: "EN" as const,
+      title: english?.title ?? "",
+      slug: english?.slug ?? "",
+      description: english?.description ?? "",
+      metaTitle: english?.metaTitle ?? "",
+      metaDescription: english?.metaDescription ?? "",
+    },
+  ];
 }
 
 function TranslationCard({
   index,
   aiPromptBase,
-  canRemove,
-  onRemove,
 }: TranslationCardProps) {
   const { register } = useFormContext<ProductInput>();
 
   return (
-    <div className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-200 bg-transparent p-4 shadow-none dark:border-white/10 md:grid-cols-2">
+    <div className="border bg-card text-card-foreground shadow-sm grid grid-cols-1 gap-4 rounded-3xl p-4 md:grid-cols-2">
       <input type="hidden" {...register(`translations.${index}.locale` as const)} />
 
       <TextareaInput
-        label="English Description"
+        label="Description"
         name={`translations.${index}.description`}
         languageName={`translations.${index}.locale`}
         rows={6}
@@ -161,15 +155,6 @@ function TranslationCard({
         className="md:col-span-2"
       />
 
-      {canRemove && (
-        <button
-          type="button"
-          className="justify-self-start text-sm text-red-500"
-          onClick={onRemove}
-        >
-          Remove translation
-        </button>
-      )}
     </div>
   );
 }
@@ -201,7 +186,7 @@ function VariantCard({
   });
 
   return (
-    <div className="space-y-4 rounded-2xl border border-slate-200 bg-transparent p-4 shadow-none dark:border-white/10">
+    <div className="border bg-card text-card-foreground shadow-sm space-y-5 rounded-3xl p-4">
       <input type="hidden" {...register(`variants.${index}.sku` as const)} />
       <input type="hidden" {...register(`variants.${index}.id` as const)} />
       <input type="hidden" {...register(`variants.${index}.barcode` as const)} />
@@ -244,7 +229,7 @@ function VariantCard({
         <div className="flex items-end gap-3 md:col-span-3">
           <button
             type="button"
-            className="rounded border px-3 py-2 text-sm"
+            className="border bg-card text-card-foreground shadow-sm min-h-10 rounded-2xl px-4 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 dark:text-slate-200"
             onClick={onSetDefault}
           >
             {isDefault ? "Default Variant" : "Set Default"}
@@ -253,7 +238,7 @@ function VariantCard({
           {canRemove && (
             <button
               type="button"
-              className="rounded border border-red-200 px-3 py-2 text-sm text-red-500"
+              className="border bg-card text-card-foreground shadow-sm min-h-10 rounded-2xl px-4 text-sm font-medium text-red-500 transition hover:-translate-y-0.5"
               onClick={onRemove}
             >
               Remove
@@ -264,10 +249,10 @@ function VariantCard({
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground">Attributes</h3>
+          <h3 className="text-foreground text-sm font-semibold">Attributes</h3>
           <button
             type="button"
-            className="rounded-full bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-fuchsia-500/20 transition hover:from-orange-400 hover:via-fuchsia-400 hover:to-sky-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-300"
+            className="bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 rounded-2xl px-4 py-2 text-xs font-semibold text-white"
             onClick={() =>
               appendAttribute({
                 name: "",
@@ -292,7 +277,7 @@ function VariantCard({
             <div className="flex items-end">
               <button
                 type="button"
-                className="rounded border border-red-200 px-3 py-2 text-sm text-red-500"
+                className="border bg-card text-card-foreground shadow-sm min-h-10 rounded-2xl px-4 text-sm font-medium text-red-500 transition hover:-translate-y-0.5"
                 onClick={() => removeAttribute(attributeIndex)}
               >
                 Remove
@@ -304,10 +289,10 @@ function VariantCard({
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground">Wholesale Pricing</h3>
+          <h3 className="text-foreground text-sm font-semibold">Wholesale Pricing</h3>
           <button
             type="button"
-            className="rounded-full bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-fuchsia-500/20 transition hover:from-orange-400 hover:via-fuchsia-400 hover:to-sky-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-300"
+            className="bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 rounded-2xl px-4 py-2 text-xs font-semibold text-white"
             onClick={() =>
               appendWholesale({
                 minQty: 1,
@@ -334,7 +319,7 @@ function VariantCard({
             <div className="flex items-end">
               <button
                 type="button"
-                className="rounded border border-red-200 px-3 py-2 text-sm text-red-500"
+                className="border bg-card text-card-foreground shadow-sm min-h-10 rounded-2xl px-4 text-sm font-medium text-red-500 transition hover:-translate-y-0.5"
                 onClick={() => removeWholesale(tierIndex)}
               >
                 Remove
@@ -352,7 +337,6 @@ export default function NewProductForm({
   vendorCode,
   categories = [],
   subCategories = [],
-  transparentBackground = false,
   updateData = {},
 }: Props) {
   const router = useRouter();
@@ -420,7 +404,7 @@ export default function NewProductForm({
     keyName: "fieldId",
   });
 
-  const { fields: translationFields, remove: removeTranslation } = useFieldArray({
+  const { fields: translationFields } = useFieldArray({
     control,
     name: "translations",
     keyName: "fieldId",
@@ -506,13 +490,11 @@ export default function NewProductForm({
       shouldValidate: true,
     });
 
-    translationFields.forEach((_, index) => {
-      setValue(`translations.${index}.title`, productTitle, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+    setValue("translations.0.title", productTitle, {
+      shouldDirty: true,
+      shouldValidate: true,
     });
-  }, [autoSlug, productTitle, setValue, translationFields]);
+  }, [autoSlug, productTitle, setValue]);
 
   const setDefaultVariant = (defaultIndex: number) => {
     variantFields.forEach((_, index) => {
@@ -558,13 +540,7 @@ export default function NewProductForm({
     <div className="space-y-6">
       <FormHeader title={updateData.id ? "Update Product" : "Create Product"} />
 
-      <GlassCard
-        className={`mx-auto max-w-7xl space-y-6 ${
-          transparentBackground
-            ? "!border-slate-200 !bg-white/90 !shadow-xl !shadow-slate-200/60 hover:!bg-white/90 dark:!border-white/10 dark:!bg-slate-900/60 dark:!shadow-black/20"
-            : "!border-slate-200 !bg-white/90 !shadow-xl !shadow-slate-200/60 hover:!bg-white/90 dark:!border-white/10 dark:!bg-slate-900/60 dark:!shadow-black/20"
-        }`}
-      >
+      <div className="border bg-card text-card-foreground shadow-sm mx-auto max-w-7xl space-y-6 rounded-2xl p-4">
         <FormProvider {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           <input type="hidden" {...register("userId")} />
@@ -573,7 +549,7 @@ export default function NewProductForm({
           <input type="hidden" {...register("gstRate")} />
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <TextInput label="Product Title (English)" name="title" required />
+            <TextInput label="Product Title" name="title" required />
             <TextInput
               label="Slug"
               name="slug"
@@ -661,38 +637,21 @@ export default function NewProductForm({
           />
 
           <div className="space-y-4">
-            {translationFields.map((field, index) => {
-              const translationField = field as typeof field &
-                ProductInput["translations"][number];
-
-              if (translationField.locale !== "EN") {
-                return (
-                  <input
-                    key={field.fieldId}
-                    type="hidden"
-                    {...register(`translations.${index}.locale` as const)}
-                  />
-                );
-              }
-
-              return (
-                <TranslationCard
-                  key={field.fieldId}
-                  index={index}
-                  aiPromptBase={productTitle || "this product"}
-                  canRemove={false}
-                  onRemove={() => removeTranslation(index)}
-                />
-              );
-            })}
+            {translationFields.map((field, index) => (
+              <TranslationCard
+                key={field.fieldId}
+                index={index}
+                aiPromptBase={productTitle || "this product"}
+              />
+            ))}
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Variants</h2>
+              <h2 className="text-foreground text-lg font-semibold">Variants</h2>
               <button
                 type="button"
-                className="rounded-full bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 px-5 py-2 text-sm font-semibold text-white shadow-sm shadow-fuchsia-500/20 transition hover:from-orange-400 hover:via-fuchsia-400 hover:to-sky-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-300"
+                className="bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 rounded-2xl px-5 py-2 text-sm font-semibold text-white"
                 onClick={() =>
                   appendVariant(defaultVariant(selectedCurrency, false))
                 }
@@ -729,7 +688,7 @@ export default function NewProductForm({
           />
           </form>
         </FormProvider>
-      </GlassCard>
+      </div>
     </div>
   );
 }

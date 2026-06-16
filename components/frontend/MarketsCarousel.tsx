@@ -20,7 +20,12 @@ type Market = {
   logoUrl: string;
 };
 
-export default function MarketsCarousel({ markets }: { markets: Market[] }) {
+type Props = {
+  markets: Market[];
+  lang?: string;
+};
+
+export default function MarketsCarousel({ markets, lang }: Props) {
   if (!markets?.length) return null;
 
   return (
@@ -48,18 +53,18 @@ export default function MarketsCarousel({ markets }: { markets: Market[] }) {
             "
           >
             <Link
-              href={`/market/${market.slug}`}
-              className="apple-glass-soft block overflow-hidden p-2 transition hover:-translate-y-1 hover:bg-white/75 hover:shadow-lg dark:hover:bg-slate-950/45"
+              href={`/market/${market.slug}${lang ? `?lang=${lang}` : ""}`}
+              className="block overflow-hidden rounded-2xl bg-white/78 p-2 shadow-[0_1px_0_rgba(255,255,255,0.8)_inset] transition hover:-translate-y-1 dark:bg-white/5"
             >
              <Image
   src={market.logoUrl || "/placeholder.png"}
   alt={market.title}
   width={556}
   height={556}
-  className="w-full rounded-xl"
+  className="w-full rounded-2xl"
 />
 
-              <h2 className="text-center text-foreground mt-2">
+              <h2 className="mt-2 text-center text-sm font-medium text-foreground">
                 {market.title}
               </h2>
             </Link>

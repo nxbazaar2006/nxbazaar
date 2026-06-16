@@ -9,11 +9,11 @@ export default function Layout({
 }) {
   return (
     <DeliverWrapper>
-      <div className="frontend-shell relative flex min-h-screen flex-col overflow-hidden text-foreground">
+      <div className="relative flex min-h-screen flex-col overflow-hidden text-foreground">
         <Navbar />
 
-        <main className="relative z-10 flex-1 pt-28">
-          <div className="mx-auto max-w-7xl px-4 lg:px-16">
+        <main className="relative z-10 flex-1 pt-24 sm:pt-28">
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
             {children}
           </div>
         </main>

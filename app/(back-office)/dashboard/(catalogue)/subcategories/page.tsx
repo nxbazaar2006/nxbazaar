@@ -2,13 +2,14 @@ import { db } from "@/lib/db";
 import PageHeader from "@/components/backoffice/PageHeader";
 import SubCategoriesClient from "./SubCategoriesClient";
 import { SubCategory } from "@/types/subcategory";
+import { Language } from "@prisma/client";
 
 export default async function SubCategoryPage({
   searchParams,
 }: {
   searchParams: { locale?: string };
 }) {
-  const locale = searchParams?.locale?.toUpperCase() || "EN";
+  const locale = (searchParams?.locale?.toUpperCase() || "EN") as Language;
 
  
   const subCategories = await db.subCategory.findMany({
@@ -23,7 +24,7 @@ export default async function SubCategoryPage({
       translations: {
         where: {
           locale: {
-            in: [locale, "EN"], 
+            in: [locale, "EN"],
           },
         },
       },
@@ -44,14 +45,14 @@ export default async function SubCategoryPage({
 
     return {
       id: item.id,
-      slug: item.slug,
+      slug: translation?.slug ?? item.id,
       imageUrl: item.imageUrl,
       isActive: item.isActive,
       categoryId: item.categoryId,
       category: item.category
         ? {
             id: item.category.id,
-            title: categoryTranslation?.title ?? item.category.slug,
+            title: categoryTranslation?.title ?? "Category",
           }
         : null,
       hsnCodeId: item.hsnCodeId ?? null,

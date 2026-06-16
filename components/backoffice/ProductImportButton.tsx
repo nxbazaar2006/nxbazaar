@@ -84,14 +84,15 @@ export default function ProductImportButton() {
       <DialogTrigger asChild>
         <Button
           type="button"
-          className="rounded-xl bg-gradient-to-r from-emerald-500 via-sky-500 to-indigo-500 px-5 text-white shadow-sm hover:from-emerald-400 hover:via-sky-400 hover:to-indigo-400"
+          variant="dashboard"
+          className="rounded-2xl px-5 text-white shadow-sm"
         >
           <FileSpreadsheet />
           CSV / Excel Upload
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="border-slate-200 bg-white text-slate-950 dark:border-white/10 dark:bg-slate-950 dark:text-white">
+      <DialogContent className="text-slate-950 dark:text-white">
         <DialogHeader>
           <DialogTitle>Import Products</DialogTitle>
           <DialogDescription>
@@ -124,9 +125,10 @@ export default function ProductImportButton() {
 
           <Button
             type="button"
+            variant="dashboard"
             disabled={isPending}
             onClick={importProducts}
-            className="bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 text-white hover:from-orange-400 hover:via-fuchsia-400 hover:to-sky-400"
+            className="text-white"
           >
             <Upload />
             {isPending ? "Importing..." : "Import Products"}

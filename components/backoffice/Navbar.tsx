@@ -4,10 +4,8 @@ import { AlignJustify, Bell, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { motion } from "framer-motion";
 
 import { useMounted } from "@/hooks/useMounted";
-import { useScroll } from "@/hooks/useScroll";
 
 import logo from "../../public/limiLogo.webp";
 
@@ -22,133 +20,96 @@ export default function Navbar({ setShowSidebar }: Props) {
   const { data: session } = useSession();
 
   const mounted = useMounted();
-  const scrolled = useScroll(20);
 
   return (
-    <div
-      className={`
-        fixed inset-x-0 top-0 z-50
-        transition-colors duration-300
-        ${scrolled ? "bg-slate-950" : "bg-transparent"}
-      `}
+    <nav
+      className="
+        fixed left-1 right-1 top-0 z-20 mx-auto
+        flex h-18 items-center justify-between
+        liquid-glass-nav glass-navbar gap-4 rounded-full px-2 backdrop-blur-2xl
+        lg:left-2 lg:right-2 lg:px-10
+      "
     >
-      <div
-        className="
-          mx-auto flex h-20 max-w-7xl items-center justify-between
-          gap-4 px-4 lg:px-6
-        "
-      >
-        {/* LEFT */}
-        <div className="flex items-center gap-4">
-          {/* SIDEBAR BUTTON */}
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setShowSidebar((prev) => !prev)}
-            className="
-              flex h-11 w-11 items-center justify-center
-              rounded-2xl
-              bg-cyan-500
-              text-slate-950
-              shadow-lg shadow-cyan-500/20
-              transition-all duration-300
-              hover:scale-105
-              hover:bg-cyan-400
-            "
-          >
-            <AlignJustify className="h-6 w-6" />
-          </motion.button>
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => setShowSidebar((prev) => !prev)}
+          className="
+            soft-button soft-icon-btn
+          "
+        >
+          <AlignJustify className="h-6 w-6" />
+        </button>
 
-          {/* LOGO */}
-          <Link href="/dashboard" prefetch={false}>
-            <Image
-              src={logo}
-              alt="logo"
-              className="w-24 object-contain"
-              style={{ height: "auto" }}
-            />
-          </Link>
+        <Link href="/dashboard" prefetch={false}>
+          <Image
+            src={logo}
+            alt="logo"
+            className="w-24 object-contain"
+            style={{ height: "auto" }}
+          />
+        </Link>
 
-          {/* SEARCH */}
-          <div
-            className="
-              hidden lg:flex
-              h-12 w-80
-              items-center gap-3
-              rounded-xl
-              bg-white/70
-              px-4
-              text-slate-500
-              shadow-sm
-              backdrop-blur-xl
-              dark:bg-slate-800/80
-              dark:text-slate-400
-            "
-          >
-            <Search className="h-5 w-5" />
+        <div
+          className="
+            inset-input hidden h-12 w-96
+            items-center gap-3 px-4
+            lg:flex
+          "
+        >
+          <Search className="h-5 w-5" />
 
-            <span className="text-sm">
-              Search products, orders...
-            </span>
-          </div>
-        </div>
-
-        {/* RIGHT */}
-        <div className="flex items-center gap-3">
-          {/* THEME */}
-          <div
-            className="
-              flex h-11 items-center justify-center
-            "
-          >
-            {mounted && <ThemeSwitcherBtn />}
-          </div>
-
-          {/* NOTIFICATION */}
-          <button
-            className="
-              relative flex h-11 w-11 items-center justify-center
-              rounded-2xl
-              bg-amber-500
-              text-slate-950
-              shadow-lg shadow-amber-500/20
-              transition-all duration-300
-              hover:scale-105
-              hover:bg-amber-400
-            "
-          >
-            <Bell className="h-6 w-6" />
-
-            <span
-              className="
-                absolute -right-1 -top-1
-                flex h-5 min-w-[20px]
-                items-center justify-center
-                rounded-full
-                bg-rose-500
-                px-1
-                text-[10px]
-                font-bold text-white
-                ring-2 ring-white dark:ring-[#0B1120]
-              "
-            >
-              3
-            </span>
-          </button>
-
-          {/* USER */}
-          {session?.user && (
-            <div
-              className="
-                rounded-2xl
-                p-1
-                bg-transparent
-              "
-            >
-              <UserAvatar user={session.user} />
-            </div>
-          )}
+          <span className="text-sm font-medium text-muted-foreground">
+            Search 
+          </span>
         </div>
       </div>
-    </div>
+
+      <div className="flex items-center gap-3">
+        <div
+          className="
+            flex h-11 items-center justify-center
+          "
+        >
+          {mounted && <ThemeSwitcherBtn />}
+        </div>
+
+        <button
+          className="
+            soft-button soft-icon-btn relative
+          "
+        >
+          <Bell className="h-6 w-6" />
+
+          <span
+            className="
+              absolute -right-1 -top-1
+              flex h-5 min-w-[20px]
+              items-center justify-center
+              rounded-full
+              bg-rose-500
+              px-1
+              text-[10px]
+              font-bold text-white
+              ring-2 ring-white dark:ring-[#0B1120]
+            "
+          >
+            3
+          </span>
+        </button>
+
+        {session?.user && (
+          <div
+            className="
+              rounded-2xl
+              p-1
+              bg-transparent
+            "
+          >
+            <UserAvatar user={session.user} />
+          </div>
+        )}
+      </div>
+    </nav>
   );
 }

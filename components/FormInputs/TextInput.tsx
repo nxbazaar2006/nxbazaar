@@ -69,7 +69,7 @@ export default function TextInput<T extends FieldValues>({
           readOnly={readOnly}
           {...register(name, rules)}
           className={`
-            w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-foreground shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-orange-400 focus:ring-[3px] focus:ring-orange-500/20 dark:border-white/10 dark:focus:border-orange-400
+            w-full rounded-2xl border border-slate-200 bg-transparent px-3 py-2 text-foreground shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-orange-400 focus:ring-[3px] focus:ring-orange-500/20 dark:border-white/10 dark:focus:border-orange-400
             ${icon ? "pl-10" : ""}
             ${error ? "border-destructive focus:ring-red-500/20" : ""}
             ${(disabled || readOnly) ? "opacity-70 cursor-default" : ""}

@@ -7,6 +7,7 @@ import {
   LOCALES,
   type ProductInput,
 } from "@/lib/validators/productSchema";
+import { translateProductContent } from "@/lib/openai/productTranslation";
 import { generateUniqueSlug } from "@/lib/slug/translationSlug";
 import { generateSlug } from "@/lib/generateSlug";
 import {
@@ -59,8 +60,6 @@ type ProductLabelData = {
   salePrice: number | null;
   stock: number | null;
 };
-
-type ProductLocale = (typeof LOCALES)[number];
 
 export type ProductHistoryItem = {
   id: string;
@@ -157,12 +156,7 @@ const HISTORY_VARIANT_FIELDS = [
   "isDefault",
 ] as const;
 
-const TRANSLATION_LOCALE_NAMES = {
-  EN: "English",
-  HI: "Hindi",
-  MR: "Marathi",
-} satisfies Record<ProductLocale, string>;
-
+type ProductLocale = (typeof LOCALES)[number];
 type ProductTranslationInput = ProductInput["translations"][number];
 
 function cleanText(value: unknown) {
@@ -206,131 +200,27 @@ function normalizeProductTranslations(input: ProductInput): ProductInput["transl
   });
 }
 
-function shouldTranslateField(
-  translation: ProductTranslationInput,
-  english: ProductTranslationInput,
-  field: "title" | "description" | "metaTitle" | "metaDescription"
-) {
-  const targetValue = cleanText(translation[field]);
-  const sourceValue = cleanText(english[field]);
-
-  return Boolean(sourceValue) && (!targetValue || targetValue === sourceValue);
-}
-
-async function translateWithOpenAI({
-  text,
-  targetLocale,
-  field,
-  productTitle,
-}: {
-  text: string;
-  targetLocale: Exclude<ProductLocale, "EN">;
-  field: "title" | "description" | "metaTitle" | "metaDescription";
-  productTitle: string;
-}) {
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  if (!apiKey || !text.trim()) {
-    return text;
-  }
-
-  try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
-        input: [
-          {
-            role: "system",
-            content:
-              "Translate ecommerce product content. Preserve meaning, numbers, units, brand names, and HTML/markdown if present. Return only translated text.",
-          },
-          {
-            role: "user",
-            content: `Target language: ${TRANSLATION_LOCALE_NAMES[targetLocale]}. Field: ${field}. Product title: ${productTitle}. Text: ${text}`,
-          },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      return text;
-    }
-
-    const payload = await response.json();
-    const outputText =
-      typeof payload.output_text === "string"
-        ? payload.output_text
-        : payload.output?.[0]?.content?.[0]?.text;
-
-    return typeof outputText === "string" && outputText.trim()
-      ? outputText.trim()
-      : text;
-  } catch (error) {
-    console.error("PRODUCT_TRANSLATION_ERROR", error);
-    return text;
-  }
-}
-
 async function autoTranslateProductInput(input: ProductInput): Promise<ProductInput> {
   const translations = normalizeProductTranslations(input);
   const english = pickEnglishTranslation(translations);
   const productTitle = cleanText(english.title) || cleanText(input.title);
-  const translated = await Promise.all(
-    translations.map(async (translation: ProductTranslationInput) => {
-      if (translation.locale === "EN") {
-        return translation;
-      }
+  const translatedContent = await translateProductContent({
+    title: productTitle,
+    description: cleanText(english.description) || undefined,
+  });
+  const translated = translations.map((translation: ProductTranslationInput) => {
+    const locale = translation.locale as ProductLocale;
 
-      const next = { ...translation };
-
-      if (shouldTranslateField(next, english, "title")) {
-        next.title = await translateWithOpenAI({
-          text: english.title,
-          targetLocale: next.locale,
-          field: "title",
-          productTitle,
-        });
-      }
-
-      if (shouldTranslateField(next, english, "description")) {
-        next.description = await translateWithOpenAI({
-          text: english.description ?? "",
-          targetLocale: next.locale,
-          field: "description",
-          productTitle,
-        });
-      }
-
-      if (shouldTranslateField(next, english, "metaTitle")) {
-        next.metaTitle = await translateWithOpenAI({
-          text: english.metaTitle ?? "",
-          targetLocale: next.locale,
-          field: "metaTitle",
-          productTitle,
-        });
-      }
-
-      if (shouldTranslateField(next, english, "metaDescription")) {
-        next.metaDescription = await translateWithOpenAI({
-          text: english.metaDescription ?? "",
-          targetLocale: next.locale,
-          field: "metaDescription",
-          productTitle,
-        });
-      }
-
-      return next;
-    })
-  );
+    return {
+      ...translation,
+      title: translatedContent[locale].title,
+      description: translatedContent[locale].description,
+    };
+  });
 
   return {
     ...input,
-    title: cleanText(input.title) || productTitle,
+    title: productTitle,
     translations: translated,
   };
 }
@@ -1263,7 +1153,7 @@ export async function createProduct(
       data.productCode || (await generateUniqueProductCode(skuContext));
     const reservedSkus = new Set<string>();
     const reservedBarcodes = new Set<string>();
-    const variantsWithSku = [];
+    const variantsWithSku: Awaited<ReturnType<typeof toVariantCreateInput>>[] = [];
 
     for (const [index, variant] of variants.entries()) {
       variantsWithSku.push(
@@ -1278,19 +1168,21 @@ export async function createProduct(
       );
     }
 
-    const product = await db.product.create({
-      data: {
-        ...productData,
-        imageUrl,
-        productCode,
-        images: { create: images },
-        variants: {
-          create: variantsWithSku,
-        },
-        translations: { create: translationsWithSlug },
-      } as never,
-      include: productInclude,
-    });
+    const product = await db.$transaction((tx) =>
+      tx.product.create({
+        data: {
+          ...productData,
+          imageUrl,
+          productCode,
+          images: { create: images },
+          variants: {
+            create: variantsWithSku,
+          },
+          translations: { create: translationsWithSlug },
+        } as never,
+        include: productInclude,
+      })
+    );
 
     await createProductBlogAndVlog(product as ProductWithRelations);
     await recordProductCreated(product as ProductWithRelations, historyActor);

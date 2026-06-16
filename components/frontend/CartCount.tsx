@@ -13,12 +13,9 @@ export default function CartCount() {
       href="/cart"
       aria-label={`Cart items: ${count}`}
       className="
-        group relative inline-flex h-11 w-11 items-center justify-center
-        apple-glass-control
-        transition-all duration-300
+        soft-button soft-icon-btn group relative
         hover:scale-105 hover:bg-gradient-to-br
         hover:from-pink-500/20 hover:via-purple-500/20 hover:to-orange-500/20
-        hover:shadow-lg
       "
     >
       <ShoppingCart className="h-5 w-5 text-foreground transition-transform duration-300 group-hover:scale-110" />

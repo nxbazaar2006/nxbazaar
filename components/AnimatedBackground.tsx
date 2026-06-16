@@ -19,7 +19,7 @@ export default function CommandMenu() {
 
   return (
     <Command.Dialog open={open} onOpenChange={setOpen} className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-      <Command className="bg-zinc-900 text-white rounded-xl w-[500px] p-4">
+      <Command className="bg-zinc-900 text-white rounded-2xl w-[500px] p-4">
         <Command.Input placeholder="Search..." className="mb-3 bg-transparent outline-none" />
         <Command.List>
           <Command.Item onSelect={() => window.location.assign("/dashboard")}>Dashboard</Command.Item>

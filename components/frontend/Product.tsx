@@ -51,30 +51,30 @@ export default function Product({ product }: ProductProps) {
   }
 
   return (
-    <div className="apple-glass-soft mr-3 overflow-hidden p-0 text-card-foreground transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-      <Link href={productHref}>
+    <div className="liquid-glass-card skeuo-product-card group mr-3 p-0 transition-all duration-300 hover:-translate-y-1">
+      <Link href={productHref} className="liquid-glass-media block overflow-hidden">
         <Image
           src={product.imageUrl}
           alt={product.title}
           width={556}
           height={556}
-          className="h-48 w-full object-cover"
+          className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </Link>
 
       <div className="px-4 pb-4 pt-3">
         <Link href={productHref}>
-          <h2 className="my-2 line-clamp-2 text-center font-semibold text-foreground">
+          <h2 className="my-2 line-clamp-2 min-h-11 text-center text-sm font-semibold leading-snug text-foreground">
             {product.title}
           </h2>
         </Link>
 
         <div className="flex items-center justify-between gap-2 pb-3 text-foreground">
-          <p className="font-semibold">UGX {product.salePrice}</p>
+          <p className="text-sm font-semibold tracking-tight">UGX {product.salePrice}</p>
 
           <button
             onClick={handleAddToCart}
-            className="flex items-center space-x-1.5 rounded-full bg-gradient-to-r from-orange-500 via-fuchsia-500 to-sky-500 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-fuchsia-500/20 transition hover:from-orange-400 hover:via-fuchsia-400 hover:to-sky-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-300 focus:ring-offset-2 active:scale-[0.98] dark:shadow-sky-950/40 dark:focus:ring-sky-400 dark:focus:ring-offset-slate-950"
+            className="liquid-glass-button soft-button flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
           >
             <BaggageClaim className="h-4 w-4" />
             <span>Add</span>

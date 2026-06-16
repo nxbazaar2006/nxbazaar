@@ -80,8 +80,8 @@ export default function Sorting({ title, slug, isSearch }: SortingProps) {
                 href={link.href}
                 className={`rounded-full border px-3 py-1.5 transition ${
                   active
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-black/10 bg-white/60 text-slate-700 hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-white/70 dark:hover:bg-white/15"
+                    ? "border-white/70 bg-white/70 text-foreground shadow-sm dark:border-white/15 dark:bg-white/20"
+                    : "border-white/60 bg-white/40 text-muted-foreground hover:bg-white/60 hover:text-foreground dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/20"
                 }`}
               >
                 {link.title}

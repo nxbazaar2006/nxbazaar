@@ -1,10 +1,16 @@
 import bwipjs from "bwip-js/node";
 
+const CODE128_SAFE_TEXT = /^[\x20-\x7E]+$/;
+
 export function barcodeValueFromSku(sku: string) {
   const barcode = sku.trim();
 
   if (!barcode) {
     throw new Error("SKU is required to generate a barcode.");
+  }
+
+  if (!CODE128_SAFE_TEXT.test(barcode)) {
+    throw new Error("Code128 barcode text must contain printable ASCII only.");
   }
 
   return barcode;
@@ -27,3 +33,6 @@ export async function generateCode128Barcode(barcode: string) {
   });
 }
 
+export function barcodePngDataUri(buffer: Buffer | Uint8Array) {
+  return `data:image/png;base64,${Buffer.from(buffer).toString("base64")}`;
+}

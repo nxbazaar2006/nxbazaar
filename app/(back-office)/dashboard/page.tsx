@@ -17,42 +17,60 @@ export default async function Page() {
   const orders = await getOrders();
   const sales = await getSales();
 
-  const dashboardOrders = orders as unknown as Order[];
-  const dashboardSales = sales as unknown as Sale[];
+  const dashboardOrders = Array.isArray(orders)
+    ? (orders as unknown as Order[])
+    : [];
+
+  const dashboardSales = Array.isArray(sales)
+    ? (sales as unknown as Sale[])
+    : [];
 
   if (role === "USER") return <UserDashboard />;
   if (role === "SELLER") return <SellerDashboard />;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* HEADER */}
-      <div className="rounded-2xl border border-slate-200 bg-transparent p-5 shadow-none dark:border-white/10">
-        <Heading title="Dashboard Overview" />
+    <div className="min-h-[calc(100vh-9rem)] space-y-5 animate-in fade-in duration-500">
+      {/* Header */}
+      <div
+        className="
+          relative overflow-hidden
+          rounded-[28px]
+          border bg-card text-card-foreground shadow-sm
+          p-4
+          sm:p-6
+        "
+      >
+        <div className="relative z-10">
+          <Heading
+            title="Dashboard Overview"
+           
+          />
+        </div>
       </div>
 
-      {/* DASHBOARD GRID */}
-      <div className="grid grid-cols-12 gap-6">
-        {/* MAIN CHART */}
-        <div className="col-span-12 rounded-2xl border border-slate-200 bg-transparent p-5 shadow-none transition-all duration-300 hover:-translate-y-0.5 dark:border-white/10 lg:col-span-7">
-          <DashboardCharts sales={dashboardSales} />
-        </div>
+      {/* Cards */}
+      <div className="relative overflow-hidden rounded-[28px]">
+        <LargeCards sales={dashboardSales} />
+      </div>
 
-        {/* SALES CARDS */}
-        <div className="col-span-12 rounded-2xl border border-slate-200 bg-transparent p-5 shadow-none transition-all duration-300 hover:-translate-y-0.5 dark:border-white/10 lg:col-span-5">
-          <LargeCards sales={dashboardSales} />
+      {/* Charts */}
+      <div
+        className="
+          relative overflow-hidden
+          rounded-[28px]
+          border bg-card text-card-foreground shadow-sm
+          p-3
+          sm:p-4
+        "
+      >
+        <div className="relative z-10">
+          <DashboardCharts orders={dashboardOrders} sales={dashboardSales} />
         </div>
+      </div>
 
-        {/* ORDER CARDS */}
-        <div className="col-span-12 rounded-2xl border border-slate-200 bg-transparent p-5 shadow-none transition-all duration-300 hover:-translate-y-0.5 dark:border-white/10 lg:col-span-5">
-          <SmallCards orders={dashboardOrders} />
-        </div>
-
-        {/* EMPTY PREMIUM SPACE */}
-        <div className="hidden rounded-2xl border border-slate-200 bg-transparent p-5 transition-all duration-300 dark:border-white/10 lg:col-span-7 lg:block">
-          <div className="flex h-full min-h-64 items-center justify-center text-slate-600 dark:text-slate-400">
-            Premium analytics section
-          </div>
-        </div>
+      {/* Small Cards */}
+      <div className="relative overflow-hidden rounded-[28px]">
+        <SmallCards orders={dashboardOrders} />
       </div>
     </div>
   );

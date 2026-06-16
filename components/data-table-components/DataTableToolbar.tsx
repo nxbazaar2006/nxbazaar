@@ -105,19 +105,9 @@ export function DataTableToolbar<TData extends { id: string }>({
         onClick={handleBulkDelete}
         disabled={bulkDelete.isPending}
         className="
-          rounded-xl
-          border border-white/10
-          bg-gradient-to-r
-          from-red-500
-          via-orange-500
-          to-pink-500
-          text-white
+          rounded-2xl
           shadow-sm
           transition-all
-          hover:scale-[1.02]
-          hover:from-red-400
-          hover:via-orange-400
-          hover:to-pink-400
           disabled:opacity-50
         "
       >

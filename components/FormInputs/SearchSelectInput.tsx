@@ -90,7 +90,7 @@ export default function SearchSelectInput<T extends FieldValues>({
 
       <PopoverContent
         align="start"
-        className="w-[--radix-popover-trigger-width] rounded-md border border-slate-200 bg-white/95 p-0 shadow-xl shadow-slate-200/60 dark:border-white/10 dark:bg-slate-900/95 dark:shadow-black/20"
+        className="w-[--radix-popover-trigger-width] rounded-2xl border border-slate-200 bg-white/95 p-0 shadow-xl shadow-slate-200/60 dark:border-white/10 dark:bg-slate-900/95 dark:shadow-black/20"
       >
         <Command className="bg-transparent text-foreground">
           <CommandInput

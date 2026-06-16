@@ -15,6 +15,13 @@ enum UserRole {
   MODERATOR
 }
 
+enum SellerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
 enum OrderStatus {
   PENDING
   PROCESSING
@@ -48,6 +55,7 @@ model User {
   coupons           Coupon[]
   orders            Order[]
   sales             Sale[]
+  vendorOrderItems  OrderItem[] @relation("VendorOrderItems")
 
   sellerProfile SellerProfile?
   profile       UserProfile?
@@ -56,6 +64,8 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([email])
+  @@index([role])
+  @@index([status])
 }
 
 // ================= PROFILE =================
@@ -66,7 +76,7 @@ model UserProfile {
 
   firstName String?
   lastName  String?
-  username  String?
+  username  String? @unique
   phone     String?
 
   streetAddress String?
@@ -80,6 +90,13 @@ model UserProfile {
   profileImage String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phone])
+  @@index([city])
+  @@index([state])
 }
 
 // ================= SELLER =================
@@ -89,12 +106,29 @@ model SellerProfile {
   userId String @unique
 
   code String? @unique
+  approvalStatus SellerStatus @default(PENDING)
 
   contactPerson      String?
   contactPersonPhone String?
 
   phone           String?
   physicalAddress String?
+  pickupAddress   String?
+  city            String?
+  state           String?
+  country         String? @default("India")
+  zip             String?
+
+  businessName String?
+  legalName    String?
+  businessType String?
+  gstNumber    String? @unique
+  panNumber    String? @unique
+
+  bankAccountName   String?
+  bankAccountNumber String?
+  bankIfscCode      String?
+  bankName          String?
 
   profileImageUrl String?
   notes           String?
@@ -103,11 +137,18 @@ model SellerProfile {
 
   turnover    Float?
   mainProduct String?
+  verifiedAt  DateTime?
+  rejectedReason String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([approvalStatus])
+  @@index([isActive])
+  @@index([businessName])
+  @@index([phone])
 }
 
 // ================= CATEGORY =================
@@ -276,6 +317,7 @@ model Product {
   @@index([categoryId])
   @@index([subCategoryId])
   @@index([userId])
+  @@index([userId, isActive])
 }
 
 model ProductHistory {
@@ -476,6 +518,12 @@ model Order {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([orderStatus])
+  @@index([createdAt])
+  @@index([email])
+  @@index([phone])
 }
 
 // ================= ORDER ITEM =================
@@ -490,6 +538,7 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
 
   vendorId         String
+  vendor           User           @relation("VendorOrderItems", fields: [vendorId], references: [id])
   productVariantId String
   productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
   title            String?
@@ -503,6 +552,12 @@ model OrderItem {
   qrData    String?
 
   createdAt DateTime @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([vendorId])
+  @@index([productVariantId])
+  @@index([createdAt])
 }
 
 // ================= SALE =================
@@ -522,6 +577,12 @@ model Sale {
   productVariantId String?
   productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id])
   createdAt        DateTime        @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([vendorId])
+  @@index([productVariantId])
+  @@index([createdAt])
 }
 
 // ================= COUPON =================
@@ -535,6 +596,10 @@ model Coupon {
 
   vendorId String
   vendor   User   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+  @@index([expiryDate])
+  @@index([isActive])
 }
 
 // ================= BANNER =================

@@ -2,14 +2,28 @@
 
 import { Checkbox } from "@/components/ui/checkbox";
 import DateColumn from "@/components/DataTableColumns/DateColumn";
-import ImageColumn from "@/components/DataTableColumns/ImageColumn";
 import SortableColumn from "@/components/DataTableColumns/SortableColumn";
 import ActionColumn from "@/components/DataTableColumns/ActionColumn";
 import { ColumnDef } from "@tanstack/react-table";
-import { User, UserProfile } from "@prisma/client";
+import { User } from "@prisma/client";
+
+type CustomerProfile = {
+  firstName?: string | null;
+  lastName?: string | null;
+  username?: string | null;
+  phone?: string | null;
+  streetAddress?: string | null;
+  city?: string | null;
+  district?: string | null;
+  state?: string | null;
+  country?: string | null;
+  zip?: string | null;
+  dateOfBirth?: Date | null;
+  profileImage?: string | null;
+};
 
 export type CustomerRow = User & {
-  profile: UserProfile | null;
+  profile: CustomerProfile | null;
 };
 
 export const columns: ColumnDef<CustomerRow>[] = [

@@ -110,13 +110,12 @@ export default async function NewProduct() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <NewProductForm
         userId={formUser.id}
         vendorCode={formUser.sellerProfile?.code}
         categories={categories}
         subCategories={subCategories}
-        transparentBackground
       />
     </div>
   );

@@ -111,14 +111,14 @@ export default function StepForm() {
         <Input label="Country" value={formData.country} onChange={(value) => updateField("country", value)} />
       </div>
 
-      <div className="rounded-md border p-4">
+      <div className="neumorphic-card rounded-2xl p-4">
         <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
           Payment method
         </label>
         <select
           value={formData.paymentMethod}
           onChange={(event) => updateField("paymentMethod", event.target.value)}
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:bg-gray-900"
+          className="inset-input w-full px-3 py-2 text-sm"
         >
           <option value="COD">Cash on delivery</option>
           <option value="UPI">UPI</option>
@@ -126,7 +126,7 @@ export default function StepForm() {
         </select>
       </div>
 
-      <div className="rounded-md border p-4 text-sm">
+      <div className="neumorphic-card rounded-2xl p-4 text-sm">
         <div className="flex justify-between py-1">
           <span>Subtotal</span>
           <span>₹{subtotal.toFixed(2)}</span>
@@ -144,7 +144,7 @@ export default function StepForm() {
       <button
         type="submit"
         disabled={isSubmitting || cartItems.length === 0}
-        className="w-full rounded-md bg-black px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="soft-button w-full px-4 py-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSubmitting ? "Creating order..." : "Create order"}
       </button>
@@ -175,7 +175,7 @@ function Input({
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:bg-gray-900"
+        className="inset-input w-full px-3 py-2 text-sm"
       />
     </label>
   );

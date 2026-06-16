@@ -45,6 +45,6 @@ export default function VlogForm({ initialData, vlogId }: { initialData?: VlogIn
     <div className="flex gap-2">{locales.map((l)=><button type="button" key={l} onClick={()=>setActive(l)} className="border px-2 py-1">{l}</button>)}</div>
     <input className="border p-2 w-full" placeholder={`Translation title (${active})`} value={current?.title ?? ""} onChange={(e)=>updateTrans(active,"title",e.target.value)} />
     <input className="border p-2 w-full" placeholder={`Translation slug (${active})`} value={current?.slug ?? ""} onChange={(e)=>updateTrans(active,"slug",e.target.value)} />
-    <button type="button" onClick={submit} className="bg-blue-600 text-white px-4 py-2 rounded">{isEdit ? "Update Vlog" : "Create Vlog"}</button>
+    <button type="button" onClick={submit} className="bg-blue-600 text-white px-4 py-2 rounded-2xl">{isEdit ? "Update Vlog" : "Create Vlog"}</button>
   </div>;
 }

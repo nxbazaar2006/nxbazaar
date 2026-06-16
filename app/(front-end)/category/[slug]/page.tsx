@@ -8,6 +8,7 @@ type PageProps = {
     slug: string;
   }>;
   searchParams?: Promise<{
+    lang?: string;
     sort?: string;
     min?: string;
     max?: string;
@@ -16,15 +17,16 @@ type PageProps = {
   }>;
 };
 
-function getEnglishTranslation<
+function getTranslation<
   T extends {
     locale: string;
     title: string;
     slug: string | null;
     description?: string | null;
   }
->(translations: T[]) {
+>(translations: T[], locale = "EN") {
   return (
+    translations.find((translation) => translation.locale === locale) ??
     translations.find((translation) => translation.locale === "EN") ??
     translations[0] ??
     null
@@ -40,8 +42,8 @@ function mapProduct(product: {
   translations: { locale: string; title: string; slug: string | null }[];
   variants: { price: number; salePrice: number | null; image: string | null; isDefault: boolean }[];
   images: { url: string; isPrimary: boolean }[];
-}) {
-  const translation = getEnglishTranslation(product.translations);
+}, locale = "EN") {
+  const translation = getTranslation(product.translations, locale);
   const variant =
     product.variants.find((item) => item.isDefault) ?? product.variants[0];
 
@@ -60,9 +62,14 @@ function mapProduct(product: {
   };
 }
 
+function normalizeLocale(locale?: string) {
+  return ["hi", "mr"].includes(locale ?? "") ? locale!.toUpperCase() : "EN";
+}
+
 export default async function Page({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const query = (await searchParams) ?? {};
+  const locale = normalizeLocale(query.lang);
 
   // ✅ Default values with type safety
   const sort = query.sort ?? "asc";
@@ -71,7 +78,10 @@ export default async function Page({ params, searchParams }: PageProps) {
   const page = Number(query.page ?? 1);
 
   // ✅ Fetch category
-  const category = await getCategories(`/filter/${slug}`);
+  const categoryResult = await getCategories(`/filter/${slug}`, locale);
+  const category = Array.isArray(categoryResult)
+    ? categoryResult[0]
+    : categoryResult;
 
   if (!category) {
     return <div>Category not found</div>;
@@ -128,7 +138,7 @@ export default async function Page({ params, searchParams }: PageProps) {
   const currentPage = Math.max(page, 1);
   const pageSize = 3;
   const products = productsData
-    .map(mapProduct)
+    .map((product) => mapProduct(product, locale))
     .filter((product) => product.salePrice >= min)
     .filter((product) => (max === undefined ? true : product.salePrice <= max))
     .sort((a, b) =>

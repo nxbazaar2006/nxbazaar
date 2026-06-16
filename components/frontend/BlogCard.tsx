@@ -40,7 +40,7 @@ export default function BlogCard({ blog, locale = "en" }: Props) {
     <Link href={href} className="block h-full">
       <article
         className="
-          group relative h-full overflow-hidden rounded-3xl border border-white/10
+          group relative h-full overflow-hidden rounded-2xl border border-white/10
           bg-white/55 shadow-[0_18px_60px_rgba(15,23,42,0.10)]
           backdrop-blur-2xl transition-all duration-500 ease-out
           before:pointer-events-none before:absolute before:inset-0

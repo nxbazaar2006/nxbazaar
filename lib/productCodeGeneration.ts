@@ -61,7 +61,6 @@ export function generateSKU(input: GenerateSkuInput) {
 
   return [
     input.vendorCode,
-    input.productTitle,
     input.subCategory,
     input.color,
     input.size,

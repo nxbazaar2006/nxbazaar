@@ -98,7 +98,7 @@ export default async function UpdateProductPage({ params }: Props) {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-xl font-semibold">Update Product</h1>
+      <h1 className="text-foreground text-xl font-semibold">Update Product</h1>
 
       <NewProductForm
         userId={product.userId}

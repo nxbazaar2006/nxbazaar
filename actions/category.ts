@@ -3,7 +3,6 @@
 import { db } from "@/lib/db";
 import { CategorySchema } from "@/lib/validators/category.schema";
 import {
-  generateUniqueSlug,
   createTranslationWithSlug,
 } from "@/lib/slug/translationSlug";
 import { revalidatePath } from "next/cache";
@@ -22,13 +21,9 @@ export async function createCategory(data: unknown) {
 
   const { imageUrl, isActive, translations } = parsed.data;
 
-  const baseTitle = translations[0].title;
-  const slug = await generateUniqueSlug("category", "EN", baseTitle);
-
   // ✅ पहले category create करो
   const category = await db.category.create({
     data: {
-      slug,
       imageUrl,
       isActive,
     },
@@ -76,23 +71,10 @@ export async function updateCategory(id: string, data: unknown) {
     return { error: "Category not found" };
   }
 
-  // ✅ slug logic (EN based)
-  const newTitle = translations.find((t) => t.locale === "EN")?.title;
-  let slug = existing.slug;
-
-  if (
-    newTitle &&
-    newTitle !==
-      existing.translations.find((t) => t.locale === "EN")?.title
-  ) {
-    slug = await generateUniqueSlug("category", "EN", newTitle);
-  }
-
   // ✅ update category
   await db.category.update({
     where: { id },
     data: {
-      slug,
       imageUrl,
       isActive,
       translations: {

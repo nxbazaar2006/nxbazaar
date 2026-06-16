@@ -30,7 +30,7 @@ export default async function Page({
           translations: vlog.translations.map((t) => ({
             locale: t.locale as VlogInput["translations"][number]["locale"],
             title: t.title,
-            slug: t.slug,
+            slug: t.slug ?? undefined,
           })),
         }}
       />

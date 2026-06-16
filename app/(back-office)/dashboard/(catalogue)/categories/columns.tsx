@@ -81,7 +81,7 @@ export const columns: ColumnDef<CategoryColumn>[] = [
     header: "Active",
     cell: ({ row }) => (
       <span
-        className={`px-2 py-1 rounded text-xs ${
+        className={`px-2 py-1 rounded-2xl text-xs ${
           row.original.isActive
             ? "bg-green-100 text-green-700"
             : "bg-red-100 text-red-700"

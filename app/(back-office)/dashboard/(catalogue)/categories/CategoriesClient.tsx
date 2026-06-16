@@ -1,6 +1,5 @@
 "use client";
 
-import GlassCard from "@/components/GlassCard";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "@/components/data-table-components/DataTable";
@@ -31,13 +30,16 @@ export default function CategoriesClient({ initialData }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <LanguageSwitcher locale={locale} setLocale={setLocale} />
+        <LanguageSwitcher
+          locale={locale}
+          setLocale={(value) => setLocale(value as Locale)}
+        />
       </div>
 
       {error && (
-        <GlassCard className="border-red-400">
+        <div className="border bg-card text-card-foreground shadow-sm rounded-2xl border-red-400 p-4">
           <p className="text-red-400">Failed to load categories</p>
-        </GlassCard>
+        </div>
       )}
 
       <DataTable

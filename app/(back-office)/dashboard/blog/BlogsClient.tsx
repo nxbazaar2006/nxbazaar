@@ -23,7 +23,10 @@ export default function BlogsClient({
 
   return (
     <div className="p-6 space-y-4">
-      <LanguageSwitcher locale={locale} setLocale={setLocale} />
+      <LanguageSwitcher
+        locale={locale}
+        setLocale={(value) => setLocale(value as typeof locale)}
+      />
 
       <DataTable
         columns={columns}

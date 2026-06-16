@@ -74,19 +74,16 @@ export default async function WalletPage() {
       title: "Available Balance",
       value: formatCurrency(availableBalance),
       icon: CircleDollarSign,
-      tone: "from-emerald-500 to-sky-500",
     },
     {
       title: "Pending Clearance",
       value: formatCurrency(pendingEarnings),
       icon: Clock3,
-      tone: "from-orange-500 to-amber-500",
     },
     {
       title: "Total Earnings",
       value: formatCurrency(totalEarnings),
       icon: ReceiptText,
-      tone: "from-sky-500 to-indigo-500",
     },
   ];
 
@@ -94,10 +91,10 @@ export default async function WalletPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <p className="text-sm font-medium text-sky-700 dark:text-cyan-200">
+          <p className="text-sm font-medium text-muted-foreground">
             Finance
           </p>
-          <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">
+          <h1 className="text-2xl font-semibold text-foreground">
             Wallet
           </h1>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
@@ -124,15 +121,13 @@ export default async function WalletPage() {
               key={card.title}
               className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm shadow-slate-200/60 dark:border-white/10 dark:bg-slate-900/60 dark:shadow-black/20"
             >
-              <div
-                className={`mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-r ${card.tone} text-white`}
-              >
+              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full border bg-card text-card-foreground shadow-sm text-foreground">
                 <Icon className="h-5 w-5" />
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 {card.title}
               </p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
+              <h2 className="mt-2 text-2xl font-semibold text-foreground">
                 {card.value}
               </h2>
             </section>
@@ -142,21 +137,21 @@ export default async function WalletPage() {
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white/90 shadow-sm shadow-slate-200/60 dark:border-white/10 dark:bg-slate-900/60 dark:shadow-black/20">
         <div className="border-b border-slate-200 px-5 py-4 dark:border-white/10">
-          <h2 className="text-base font-semibold text-slate-950 dark:text-white">
+          <h2 className="text-base font-semibold text-foreground">
             Recent Earnings
           </h2>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-white/5 dark:text-slate-400">
+            <thead className="bg-slate-50 text-xs uppercase dark:bg-white/5">
               <tr>
-                <th className="px-5 py-3 font-medium">Order</th>
-                <th className="px-5 py-3 font-medium">Product</th>
-                {isAdmin && <th className="px-5 py-3 font-medium">Seller</th>}
-                <th className="px-5 py-3 font-medium">Status</th>
-                <th className="px-5 py-3 font-medium">Date</th>
-                <th className="px-5 py-3 text-right font-medium">Amount</th>
+                <th className="px-5 py-3 font-medium text-muted-foreground">Order</th>
+                <th className="px-5 py-3 font-medium text-muted-foreground">Product</th>
+                {isAdmin && <th className="px-5 py-3 font-medium text-muted-foreground">Seller</th>}
+                <th className="px-5 py-3 font-medium text-muted-foreground">Status</th>
+                <th className="px-5 py-3 font-medium text-muted-foreground">Date</th>
+                <th className="px-5 py-3 text-right font-medium text-muted-foreground">Amount</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-white/10">
@@ -186,7 +181,7 @@ export default async function WalletPage() {
                       </td>
                     )}
                     <td className="px-5 py-4">
-                      <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-medium text-sky-700 dark:bg-cyan-500/10 dark:text-cyan-200">
+                      <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-foreground">
                         {sale.order?.orderStatus ?? "PENDING"}
                       </span>
                     </td>

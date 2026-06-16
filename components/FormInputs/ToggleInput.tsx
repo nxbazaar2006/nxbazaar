@@ -40,7 +40,7 @@ export default function ToggleInput<T extends FieldValues>({
   const error = errors ? get(errors, name) : undefined;
 
   return (
-    <div className="space-y-1 rounded-md border border-slate-200 bg-transparent px-3 py-2 shadow-sm dark:border-white/10">
+    <div className="space-y-1 rounded-2xl border border-slate-200 bg-transparent px-3 py-2 shadow-sm dark:border-white/10">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">{label}</span>
 

@@ -53,7 +53,7 @@ export default function LoginForm() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="glass-card space-y-5 p-6"
+      className="space-y-5"
     >
       
       {/* Email */}
@@ -66,7 +66,7 @@ export default function LoginForm() {
           type="email"
           placeholder="name@company.com"
           {...register("email", { required: "Email is required" })}
-          className="w-full rounded-full border border-white/40 bg-white/70 p-3 text-foreground outline-none placeholder:text-muted-foreground backdrop-blur-xl focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 dark:border-white/10 dark:bg-white/10"
+          className="border bg-background text-foreground shadow-xs w-full rounded-full p-3 text-foreground outline-none placeholder:text-muted-foreground focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20"
         />
 
         {errors.email && (
@@ -86,7 +86,7 @@ export default function LoginForm() {
           type="password"
           placeholder="••••••••"
           {...register("password", { required: "Password is required" })}
-          className="w-full rounded-full border border-white/40 bg-white/70 p-3 text-foreground outline-none placeholder:text-muted-foreground backdrop-blur-xl focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 dark:border-white/10 dark:bg-white/10"
+          className="border bg-background text-foreground shadow-xs w-full rounded-full p-3 text-foreground outline-none placeholder:text-muted-foreground focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20"
         />
 
         {errors.password && (

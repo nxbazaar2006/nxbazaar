@@ -13,7 +13,7 @@ export default function Steps({ steps }: StepsProps) {
       {steps.map((step) => (
         <div
           key={step.number}
-          className="flex items-center gap-2 rounded-md border bg-white px-3 py-2 text-sm dark:bg-gray-900"
+          className="flex items-center gap-2 rounded-2xl border bg-white px-3 py-2 text-sm dark:bg-gray-900"
         >
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-lime-600 text-xs font-semibold text-white">
             {step.number}

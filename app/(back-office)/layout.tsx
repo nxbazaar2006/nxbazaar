@@ -2,7 +2,7 @@
 
 import Navbar from "@/components/backoffice/Navbar";
 import Sidebar from "@/components/backoffice/Sidebar";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 export default function Layout({
   children,
@@ -13,18 +13,8 @@ export default function Layout({
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const contentExpanded = showSidebar || sidebarExpanded;
 
-  useEffect(() => {
-    const previousClassName = document.body.className;
-
-    document.body.className = `${previousClassName} backoffice-plain-bg`;
-
-    return () => {
-      document.body.className = previousClassName;
-    };
-  }, []);
-
   return (
-    <div className="relative flex min-h-screen overflow-hidden bg-transparent text-slate-950 dark:text-white">
+    <div className="relative flex min-h-screen overflow-hidden text-foreground">
       {/* SIDEBAR */}
       <Sidebar
         showSidebar={showSidebar}
@@ -38,20 +28,21 @@ export default function Layout({
         <Navbar setShowSidebar={setShowSidebar} />
 
         {/* CONTENT */}
-      <main
-  className={`
-    min-h-screen min-w-0 flex-1
-    px-2 pb-2 pt-20
-    transition-all duration-300 ease-in-out
-    ${contentExpanded ? "sm:pl-[188px]" : "sm:pl-16"}
-  `}
->
+        <main
+          className={`
+            min-h-screen min-w-0 flex-1
+            px-3 pb-4 pt-20
+            transition-all duration-300 ease-in-out
+            sm:px-5
+            ${contentExpanded ? "sm:pl-[196px]" : "sm:pl-20"}
+          `}
+        >
           <section
             className="
               min-h-[calc(100vh-7rem)]
               min-w-0
-              rounded-[32px]
-              p-4
+              rounded-2xl
+              p-2 sm:p-4
             "
           >
             {children}

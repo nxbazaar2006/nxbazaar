@@ -13,11 +13,14 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
-    const category = await db.category.findUnique({
+    const category = await db.category.findFirst({
       where: {
-        slug,
+        translations: {
+          some: { slug },
+        },
       },
       include: {
+        translations: true,
         products: {
           where: { isActive: true },
         },

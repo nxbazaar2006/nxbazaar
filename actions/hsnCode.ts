@@ -3,7 +3,6 @@
 import { db } from "@/lib/db";
 import {
   successResponse,
-  errorResponse,
   ApiResponse,
 } from "@/lib/response";
 import { handleError } from "@/lib/error-handler";
@@ -47,6 +46,6 @@ export async function getHsnCodes(): Promise<
     return successResponse(formatted);
   } catch (error: unknown) {
     const err = handleError(error);
-    return errorResponse(err.message);
+    return { success: false, message: err.message };
   }
 }

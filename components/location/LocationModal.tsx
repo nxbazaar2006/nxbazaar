@@ -85,7 +85,7 @@ export default function LocationModal({ open, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-xl bg-background p-6 text-foreground shadow-2xl">
+      <div className="w-full max-w-md rounded-2xl bg-background p-6 text-foreground shadow-2xl">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Select Location</h2>
 
@@ -103,7 +103,7 @@ export default function LocationModal({ open, onClose }: Props) {
           type="button"
           onClick={detectLocation}
           disabled={detecting}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <LocateFixed className="h-4 w-4" />
           {detecting ? "Detecting..." : "Detect My Location"}
@@ -114,26 +114,26 @@ export default function LocationModal({ open, onClose }: Props) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Enter city or pincode"
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+            className="w-full rounded-2xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
           />
 
           <button
             type="button"
             onClick={handleManual}
-            className="w-full rounded-lg border border-border px-4 py-2.5 text-sm font-medium transition hover:bg-muted"
+            className="w-full rounded-2xl border border-border px-4 py-2.5 text-sm font-medium transition hover:bg-muted"
           >
             Save Location
           </button>
         </div>
 
         {error ? (
-          <p className="mt-3 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          <p className="mt-3 rounded-2xl bg-destructive/10 p-3 text-sm text-destructive">
             {error}
           </p>
         ) : null}
 
         {location && (
-          <div className="mt-4 rounded-lg border border-border p-3 text-sm">
+          <div className="mt-4 rounded-2xl border border-border p-3 text-sm">
             <p className="font-semibold">Selected:</p>
             <p>{[location.pincode, location.city, location.state, location.country].filter(Boolean).join(", ")}</p>
           </div>

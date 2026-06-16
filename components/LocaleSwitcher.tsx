@@ -11,12 +11,12 @@ export default function LocaleSwitcher() {
   const locale = useSelector((state: RootState) => state.language.locale);
 
   return (
-    <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl">
+    <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-2xl">
       {locales.map((l) => (
         <button
           key={l}
           onClick={() => dispatch(setLanguage(l))}
-          className={`px-3 py-1 text-sm rounded-lg transition-all ${
+          className={`px-3 py-1 text-sm rounded-2xl transition-all ${
             locale === l
               ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
               : "text-neutral-600 hover:bg-neutral-200 dark:text-neutral-300 dark:hover:bg-neutral-700"

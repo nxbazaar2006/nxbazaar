@@ -2,7 +2,10 @@
 
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
-import { setLanguage, Locale } from "@/redux/slices/languageSlice";
+import { setLanguage } from "@/redux/slices/languageSlice";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
+type Locale = "en" | "hi" | "mr";
 
 const languages = [
   { code: "en", label: "🇬🇧 EN" },
@@ -12,12 +15,27 @@ const languages = [
 
 export default function LanguageSwitcher() {
   const dispatch = useDispatch();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const locale = useSelector(
     (state: RootState) => state.language.locale
   );
 
   const changeLanguage = (lang: Locale) => {
     dispatch(setLanguage(lang));
+
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (lang === "en") {
+      params.delete("lang");
+    } else {
+      params.set("lang", lang);
+    }
+
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+    router.refresh();
   };
 
   return (
@@ -38,7 +56,7 @@ export default function LanguageSwitcher() {
             onClick={() => changeLanguage(lang.code as Locale)}
             aria-pressed={isActive}
             className={`
-              rounded-xl px-4 py-2
+              rounded-2xl px-4 py-2
               text-sm font-medium
               transition-all duration-300
               hover:scale-105

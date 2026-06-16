@@ -24,13 +24,14 @@ export default async function CheckoutPage() {
   ];
 
   return (
-    <div className="bg-slate-200 dark:bg-slate-950 min-h-screen">
-      <div className="max-w-3xl my-6 mx-auto border border-slate-700 p-6 rounded-lg">
+    <div className="bg-background text-foreground min-h-screen py-6">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="border bg-card text-card-foreground shadow-sm mx-auto max-w-3xl rounded-2xl p-6">
         
         {/* Steps */}
         <Steps steps={steps} />
 
-        <div className="w-full p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-6 md:p-8 dark:bg-gray-800 dark:border-gray-700">
+        <div className="border bg-card text-card-foreground shadow-sm w-full rounded-2xl p-4 sm:p-6 md:p-8">
           
           {/* Banner */}
           <CartBanner />
@@ -38,6 +39,7 @@ export default async function CheckoutPage() {
           {/* Multi Step Form */}
           <StepForm />
 
+        </div>
         </div>
       </div>
     </div>

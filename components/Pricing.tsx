@@ -59,8 +59,8 @@ export default function Pricing() {
       
       {/* Heading */}
       <div className="flex flex-col items-center">
-        <div className="relative bg-slate-200 dark:bg-slate-900 rounded-lg p-1">
-          <span className="rounded-md py-2 text-sm font-medium px-4 sm:px-8 bg-slate-50 text-slate-900 shadow-sm">
+        <div className="relative bg-slate-200 dark:bg-slate-900 rounded-2xl p-1">
+          <span className="rounded-2xl py-2 text-sm font-medium px-4 sm:px-8 bg-slate-50 text-slate-900 shadow-sm">
             Choose a plan which suits you!
           </span>
         </div>
@@ -77,7 +77,7 @@ export default function Pricing() {
         {plans.map((plan) => (
           <div
             key={plan.title}
-            className="border border-slate-200 rounded-lg shadow-sm divide-y"
+            className="border border-slate-200 rounded-2xl shadow-sm divide-y"
           >
             {/* Plan Header */}
             <div className="p-6">

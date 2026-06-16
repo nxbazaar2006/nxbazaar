@@ -146,7 +146,7 @@ export default async function BlogDetailPage({
         <img
           src={blog.imageUrl}
           alt={t?.title}
-          className="w-full h-[400px] object-cover rounded"
+          className="w-full h-[400px] object-cover rounded-2xl"
         />
       )}
 
@@ -195,7 +195,7 @@ export default async function BlogDetailPage({
               return (
                 <article
                   key={product.id}
-                  className="overflow-hidden rounded-xl border border-border bg-background shadow-sm transition hover:-translate-y-0.5"
+                  className="overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition hover:-translate-y-0.5"
                 >
                   <Link href={`/products/${productSlug}`} className="block">
                     <Image

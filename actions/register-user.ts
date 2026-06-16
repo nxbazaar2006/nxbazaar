@@ -1,6 +1,6 @@
 "use server";
 
-import {db} from "@/lib/db";
+import { db } from "@/lib/db";
 import bcrypt from "bcrypt";
 import { registerSchema } from "@/lib/validators/registerSchema";
 
@@ -23,6 +23,21 @@ export async function registerUser(data: unknown) {
       email: validated.email,
       password: hashedPassword,
       role: validated.role,
+      plan: validated.plan,
+      profile: {
+        create: {},
+      },
+      ...(validated.role === "SELLER"
+        ? {
+            sellerProfile: {
+              create: {},
+            },
+          }
+        : {}),
+    },
+    include: {
+      profile: true,
+      sellerProfile: true,
     },
   });
 

@@ -9,6 +9,7 @@ type Props = {
     page?: string;
     limit?: string;
     search?: string;
+    report?: string;
   };
 };
 
@@ -17,6 +18,7 @@ export default async function ProductsPage({ searchParams }: Props) {
   const page = Number(searchParams?.page ?? "1");
   const limit = Number(searchParams?.limit ?? "10");
   const search = searchParams?.search ?? "";
+  const isReportView = searchParams?.report === "1";
 
   /* ================= FETCH ================= */
   const res = await getProducts({ page, limit, search });
@@ -37,18 +39,24 @@ export default async function ProductsPage({ searchParams }: Props) {
   if (data.length === 0) {
     return (
       <div className="min-w-0 space-y-4">
-        <PageHeader
-          heading="Products"
-          href="/dashboard/products/new"
-          linkTitle="Add Product"
-        />
-        <div className="flex justify-end">
-          <ProductImportButton />
-        </div>
+        {isReportView ? (
+          <PageHeader heading="Products" />
+        ) : (
+          <>
+            <PageHeader
+              heading="Products"
+              href="/dashboard/products/new"
+              linkTitle="Add Product"
+            />
+            <div className="flex justify-end">
+              <ProductImportButton />
+            </div>
+          </>
+        )}
 
         <div className="rounded-2xl border border-slate-200 bg-white/90 p-6 text-center text-sm text-slate-600 shadow-sm shadow-slate-200/60 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-400 dark:shadow-black/20">
-          No products found 🚀 <br />
-          Try changing search or add a new product.
+          No products found. <br />
+          Try changing search.
         </div>
       </div>
     );
@@ -57,14 +65,20 @@ export default async function ProductsPage({ searchParams }: Props) {
   /* ================= UI ================= */
   return (
     <div className="min-w-0 space-y-4">
-      <PageHeader
-        heading="Products"
-        href="/dashboard/products/new"
-        linkTitle="Add Product"
-      />
-      <div className="flex justify-end">
-        <ProductImportButton />
-      </div>
+      {isReportView ? (
+        <PageHeader heading="Products" />
+      ) : (
+        <>
+          <PageHeader
+            heading="Products"
+            href="/dashboard/products/new"
+            linkTitle="Add Product"
+          />
+          <div className="flex justify-end">
+            <ProductImportButton />
+          </div>
+        </>
+      )}
 
       <DataTable
         columns={columns}

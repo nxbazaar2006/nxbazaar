@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 
 import {
   Boxes,
@@ -52,6 +51,7 @@ type SidebarItemProps = {
   label: string;
   active: boolean;
   expanded: boolean;
+  featured?: boolean;
 };
 
 export default function Sidebar({
@@ -107,6 +107,7 @@ export default function Sidebar({
       icon: HeartHandshake,
       href: "/dashboard/seller-support",
     },
+    { title: "Seller Profile", icon: Store, href: "/dashboard/seller-profile" },
     { title: "Profile Settings", icon: Settings, href: "/dashboard/profile" },
     { title: "Online Store", icon: ExternalLink, href: "/" },
   ];
@@ -122,11 +123,11 @@ export default function Sidebar({
       {showSidebar && (
         <div
           onClick={() => setShowSidebar(false)}
-          className="fixed inset-0 bg-black/50 z-30 sm:hidden"
+          className="fixed inset-0 z-30 bg-slate-950/35 backdrop-blur-3xl sm:hidden"
         />
       )}
 
-      <motion.aside
+      <aside
         onMouseEnter={() => {
           setHovered(true);
           setSidebarExpanded(true);
@@ -135,16 +136,17 @@ export default function Sidebar({
           setHovered(false);
           setSidebarExpanded(false);
         }}
-        animate={{ width: isExpanded ? 180 : 56 }}
-        transition={{ duration: 0.25, ease: "easeInOut" }}
         className={`
           ${showSidebar ? "block" : "hidden"} sm:block
-          fixed left-0 top-24 z-35
-          h-[calc(100vh-6rem)]
-          overflow-y-auto no-scrollbar
+          fixed left-3 top-24 z-35
+          h-[calc(100vh-7rem)]
+          overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden
+          glass-sidebar transition-[width] duration-300
+          p-1.5
+          ${isExpanded ? "w-[180px]" : "w-14"}
         `}
       >
-        <div className="p-2 space-y-2">
+        <div className="space-y-2 p-1">
           {/* DASHBOARD */}
           <SidebarItem
             href="/dashboard"
@@ -159,19 +161,19 @@ export default function Sidebar({
             <CollapsibleTrigger asChild>
               <div className={`${getSidebarButtonClass(false)} cursor-pointer justify-between`}>
                 <div className="flex items-center gap-2">
-                  <Store className="w-4 h-4" />
-                  {isExpanded && <span>Catalogue</span>}
+                  <Store className="h-3.5 w-3.5" />
+                  {isExpanded && <SidebarLabel label="Catalogue" />}
                 </div>
                 {isExpanded &&
                   (openMenu ? (
-                    <ChevronDown className="w-4 h-4" />
+                    <ChevronDown className="h-3.5 w-3.5" />
                   ) : (
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="h-3.5 w-3.5" />
                   ))}
               </div>
             </CollapsibleTrigger>
 
-            <CollapsibleContent className="pl-4 space-y-1">
+            <CollapsibleContent className="space-y-2 pl-4 pt-2">
               {catalogueLinks.map((item) => (
                 <SidebarItem
                   key={item.href}
@@ -211,20 +213,36 @@ export default function Sidebar({
             />
           </button>
         </div>
-      </motion.aside>
+      </aside>
     </>
   );
 }
 
-function getSidebarButtonClass(active: boolean) {
+function getSidebarButtonClass(active: boolean, featured = false) {
   const base =
-    "flex items-center px-2 py-2 transition-colors duration-200 hover:text-cyan-700 dark:hover:text-cyan-300";
+    "flex items-center rounded-2xl text-sm text-foreground/80 outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-white/30";
+  const size = active || featured ? "px-2 py-1.5" : "px-2.5 py-2";
 
-  const state = active
-    ? "text-sky-700 dark:text-cyan-200"
-    : "text-slate-700 dark:text-slate-300";
+  const state = featured
+    ? "bg-white/20 font-semibold text-foreground shadow-sm"
+    : active
+    ? "bg-white/20 font-semibold text-foreground shadow-sm"
+    : "font-medium hover:-translate-y-0.5 hover:bg-white/20 hover:text-foreground";
 
-  return `${base} ${state}`;
+  return `${base} ${size} ${state}`;
+}
+
+function SidebarLabel({
+  label,
+}: {
+  label: string;
+  active?: boolean;
+}) {
+  return (
+    <span className="text-foreground font-medium">
+      {label}
+    </span>
+  );
 }
 
 function SidebarItem({
@@ -233,19 +251,19 @@ function SidebarItem({
   label,
   active,
   expanded,
+  featured,
 }: SidebarItemProps) {
   return (
     <Link href={href} prefetch={false}>
-      <motion.div
-        whileHover={{ scale: 1.02 }}
+      <div
         className={`
-          ${getSidebarButtonClass(active)}
-          ${expanded ? "gap-2 px-2" : "justify-center"}
+          ${getSidebarButtonClass(active, featured)}
+          ${expanded ? "gap-2" : "justify-center"}
         `}
-      >
-        <Icon className="w-4 h-4" />
-        {expanded && <span>{label}</span>}
-      </motion.div>
+        >
+        <Icon className={active || featured ? "h-3.5 w-3.5" : "h-4 w-4"} />
+        {expanded && <SidebarLabel label={label} active={active || featured} />}
+      </div>
     </Link>
   );
 }
@@ -257,15 +275,14 @@ function SidebarButton({
   expanded,
 }: Omit<SidebarItemProps, "href">) {
   return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
+    <div
       className={`
         ${getSidebarButtonClass(active)}
-        ${expanded ? "gap-2 px-2" : "justify-center"}
+        ${expanded ? "gap-2" : "justify-center"}
       `}
     >
-      <Icon className="w-4 h-4" />
-      {expanded && <span>{label}</span>}
-    </motion.div>
+      <Icon className="h-4 w-4" />
+      {expanded && <SidebarLabel label={label} active={active} />}
+    </div>
   );
 }

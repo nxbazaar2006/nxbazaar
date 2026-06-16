@@ -1,11 +1,11 @@
 "use client"
 
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  DoubleArrowLeftIcon,
-  DoubleArrowRightIcon,
-} from "@radix-ui/react-icons"
+  ChevronsLeft,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsRight,
+} from "lucide-react"
 import { Table } from "@tanstack/react-table"
 
 import {
@@ -22,7 +22,7 @@ interface DataTablePaginationProps<TData> {
 }
 
 const navBtn =
-  "h-9 w-9 rounded-2xl border border-white/10 bg-white/70 p-0 text-slate-700 shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-gradient-to-r hover:from-pink-500/10 hover:via-purple-500/10 hover:to-orange-500/10 hover:text-sky-700 hover:shadow-lg disabled:pointer-events-none disabled:opacity-40 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:text-sky-200"
+  "h-9 w-9 rounded-2xl p-0 text-foreground disabled:pointer-events-none disabled:opacity-40"
 
 export function DataTablePagination<TData>({
   table,
@@ -32,9 +32,9 @@ export function DataTablePagination<TData>({
   const pageCount = table.getPageCount()
 
   return (
-    <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10 bg-white/60 px-3 py-3 shadow-sm backdrop-blur-xl dark:bg-slate-950/50">
-      <div className="flex min-w-[720px] items-center justify-between gap-4 text-slate-700 dark:text-slate-300">
-        <div className="text-sm text-slate-600 dark:text-slate-400">
+    <div className="mt-4 overflow-x-auto rounded-2xl border border-border bg-card px-3 py-3 shadow-sm">
+      <div className="flex min-w-[720px] items-center justify-between gap-4 text-foreground">
+        <div className="text-muted-foreground text-sm">
           <span className="font-semibold">
             {table.getFilteredSelectedRowModel().rows.length}
           </span>{" "}
@@ -47,7 +47,7 @@ export function DataTablePagination<TData>({
 
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <p className="whitespace-nowrap text-sm font-medium">
+            <p className="text-foreground whitespace-nowrap text-sm font-medium">
               Rows per page
             </p>
 
@@ -55,7 +55,7 @@ export function DataTablePagination<TData>({
               value={`${pageSize}`}
               onValueChange={(value) => table.setPageSize(Number(value))}
             >
-              <SelectTrigger className="h-9 w-[80px] rounded-2xl border border-white/10 bg-white/70 text-slate-700 shadow-sm backdrop-blur-xl dark:bg-slate-950/60 dark:text-slate-200">
+              <SelectTrigger className="h-9 w-[80px] rounded-2xl text-foreground">
                 <SelectValue placeholder={pageSize} />
               </SelectTrigger>
 
@@ -69,9 +69,9 @@ export function DataTablePagination<TData>({
             </Select>
           </div>
 
-          <div className="flex min-w-[130px] items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-r from-orange-500/10 via-blue-500/10 to-purple-500/10 px-4 py-2 text-sm font-semibold">
+          <div className="flex min-w-[130px] items-center justify-center rounded-2xl border border-border bg-muted px-4 py-2 text-sm font-semibold">
             Page&nbsp;
-            <span className="bg-gradient-to-r from-orange-500 via-sky-500 to-purple-500 bg-clip-text text-transparent">
+            <span className="text-foreground">
               {pageIndex + 1}
             </span>
             &nbsp;of&nbsp;{pageCount || 1}
@@ -85,7 +85,7 @@ export function DataTablePagination<TData>({
               disabled={!table.getCanPreviousPage()}
             >
               <span className="sr-only">Go to first page</span>
-              <DoubleArrowLeftIcon className="h-4 w-4" />
+              <ChevronsLeft className="h-4 w-4" />
             </Button>
 
             <Button
@@ -95,7 +95,7 @@ export function DataTablePagination<TData>({
               disabled={!table.getCanPreviousPage()}
             >
               <span className="sr-only">Go to previous page</span>
-              <ChevronLeftIcon className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" />
             </Button>
 
             <Button
@@ -105,7 +105,7 @@ export function DataTablePagination<TData>({
               disabled={!table.getCanNextPage()}
             >
               <span className="sr-only">Go to next page</span>
-              <ChevronRightIcon className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" />
             </Button>
 
             <Button
@@ -115,7 +115,7 @@ export function DataTablePagination<TData>({
               disabled={!table.getCanNextPage()}
             >
               <span className="sr-only">Go to last page</span>
-              <DoubleArrowRightIcon className="h-4 w-4" />
+              <ChevronsRight className="h-4 w-4" />
             </Button>
           </div>
         </div>

@@ -126,14 +126,14 @@ export async function GET(req: NextRequest) {
 
     return {
       id: item.id,
-      slug: item.slug,
+      slug: translation?.slug ?? item.id,
       imageUrl: item.imageUrl,
       isActive: item.isActive,
       categoryId: item.categoryId,
       category: item.category
         ? {
             id: item.category.id,
-            title: categoryTranslation?.title ?? item.category.slug,
+            title: categoryTranslation?.title ?? item.category.id,
           }
         : null,
       hsnCodeId: item.hsnCodeId ?? null,

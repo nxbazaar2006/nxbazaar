@@ -1,6 +1,5 @@
 "use client";
 
-import GlassCard from "@/components/GlassCard";
 import FormHeader from "@/components/backoffice/FormHeader";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -121,7 +120,7 @@ export default function CategoryForm({ initialData }: Props) {
         title={id ? "Update Category" : "Create Category"}
       />
 
-      <GlassCard className="max-w-7xl mx-auto space-y-6">
+      <div className="border bg-card text-card-foreground shadow-sm mx-auto max-w-7xl space-y-6 rounded-3xl p-4 sm:p-6">
         <FormProvider {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
@@ -161,7 +160,7 @@ export default function CategoryForm({ initialData }: Props) {
             {/* LOCALE */}
             <select
               {...form.register("locale")}
-              className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white"
+              className="border bg-background text-foreground shadow-xs w-full px-4 py-2"
             >
               <option value="EN">English</option>
               <option value="HI">Hindi</option>
@@ -188,7 +187,7 @@ export default function CategoryForm({ initialData }: Props) {
             />
           </form>
         </FormProvider>
-      </GlassCard>
+      </div>
     </div>
   );
 }

@@ -7,11 +7,16 @@ import { auth } from "@/auth";
 
 interface Product {
   id: string;
+  title: string;
+  slug: string;
+  imageUrl: string;
+  salePrice: number;
 }
 
 interface Category {
   id: string;
   title: string;
+  slug: string;
   products: Product[];
 }
 
@@ -35,10 +40,9 @@ export default async function Home({
     auth(),
   ]);
 
-  // ✅ Normalize data (handles object / array दोनों cases)
   const categoriesArray: Category[] = Array.isArray(categoriesData)
     ? categoriesData
-    : categoriesData?.data || categoriesData?.categories || [];
+    : [];
 
   // ✅ Filter safely
   const categories = categoriesArray.filter(
@@ -49,9 +53,9 @@ export default async function Home({
 
   return (
     <div className="min-h-screen bg-transparent">
-      <Hero />
+      <Hero lang={lang} />
 
-      <MarketList />
+      <MarketList lang={lang} />
 
       <HomeCategoryFilter categories={categories} lang={lang} />
     </div>

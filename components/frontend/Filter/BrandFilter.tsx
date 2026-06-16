@@ -25,7 +25,7 @@ export default function BrandFilter({
 
       <div className="space-y-2">
         {brands.map((brand) => (
-          <label key={brand} className="flex cursor-pointer items-center gap-2 text-sm">
+          <label key={brand} className="flex cursor-pointer items-center gap-2 rounded-2xl px-2 py-1.5 text-sm transition hover:bg-white/20">
             <input
               type="checkbox"
               checked={selectedBrands.includes(brand)}

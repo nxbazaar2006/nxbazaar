@@ -91,7 +91,7 @@ export default function MultipleImageInput<T extends FieldValues>({
               width={100}
               height={100}
               alt="product"
-              className="w-24 h-24 object-cover rounded-md border-4 border-white"
+              className="w-24 h-24 object-cover rounded-2xl border-4 border-white"
             />
 
             <button
@@ -103,7 +103,7 @@ export default function MultipleImageInput<T extends FieldValues>({
             </button>
 
             {img.isPrimary && (
-              <span className="absolute bottom-1 left-1 text-[10px] bg-black text-white px-1 rounded">
+              <span className="absolute bottom-1 left-1 text-[10px] bg-black text-white px-1 rounded-2xl">
                 Primary
               </span>
             )}

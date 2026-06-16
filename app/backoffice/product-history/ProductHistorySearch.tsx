@@ -70,38 +70,38 @@ export default function ProductHistorySearch() {
   const displayVariant = result?.matchedVariant ?? result?.variants[0] ?? null;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-6 text-slate-950 dark:text-white">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 text-slate-950 dark:text-white sm:p-6">
       <div>
-        <h1 className="text-2xl font-semibold">Product History</h1>
+        <h1 className="text-foreground text-2xl font-semibold">Product History</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row">
+      <form onSubmit={handleSubmit} className="border bg-card text-card-foreground shadow-sm flex flex-col gap-3 rounded-3xl p-3 sm:flex-row">
         <input
           ref={inputRef}
           autoFocus
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Scan SKU / Barcode / Product Code"
-          className="min-h-11 flex-1 rounded-md border border-slate-300 bg-white/80 px-4 text-sm text-slate-950 outline-none placeholder:text-slate-500 focus:border-slate-500 dark:border-white/15 dark:bg-white/10 dark:text-white dark:placeholder:text-white/45 dark:focus:border-white/50"
+          className="border bg-background text-foreground shadow-xs min-h-11 flex-1 px-4 text-sm placeholder:text-slate-500 dark:placeholder:text-white/45"
         />
         <button
           type="submit"
           disabled={isPending}
-          className="min-h-11 rounded-md bg-slate-950 px-5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-slate-950"
+          className="bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 min-h-11 rounded-2xl px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isPending ? "Searching..." : "Search"}
         </button>
       </form>
 
       {error ? (
-        <div className="rounded-md border border-red-400/40 bg-red-50 p-4 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-100">
+        <div className="rounded-2xl border border-red-400/40 bg-red-50 p-4 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-100">
           {error}
         </div>
       ) : null}
 
       {result ? (
         <>
-          <section className="grid gap-4 rounded-lg border border-slate-200 bg-white/70 p-4 md:grid-cols-3 dark:border-white/10 dark:bg-white/5">
+          <section className="border bg-card text-card-foreground shadow-sm grid gap-4 rounded-3xl p-4 md:grid-cols-3">
             <div>
               <div className="text-xs uppercase text-slate-500 dark:text-white/50">Product</div>
               <div className="mt-1 font-medium">{result.product.title}</div>
@@ -122,7 +122,7 @@ export default function ProductHistorySearch() {
             {barcodeImageUrl ? (
               <div className="md:col-span-2">
                 <div className="text-xs uppercase text-slate-500 dark:text-white/50">Scannable Barcode</div>
-                <div className="mt-2 rounded-md border border-slate-200 bg-white p-3 dark:border-white/10">
+                <div className="border bg-card text-card-foreground shadow-sm mt-2 rounded-3xl bg-white p-3">
                   <Image
                     src={barcodeImageUrl}
                     alt={barcodeText}
@@ -139,7 +139,7 @@ export default function ProductHistorySearch() {
                 type="button"
                 onClick={handlePrintBarcode}
                 disabled={!barcodeText}
-                className="min-h-11 rounded-md bg-slate-950 px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-950"
+                className="bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 min-h-11 rounded-2xl px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Print Barcode
               </button>
@@ -147,7 +147,7 @@ export default function ProductHistorySearch() {
           </section>
 
           <div className="sr-only print:block">
-            <div ref={barcodePrintRef} className="w-[320px] rounded-lg border border-black p-4 text-center">
+            <div ref={barcodePrintRef} className="w-[320px] rounded-2xl border border-black p-4 text-center">
               <div className="text-lg font-semibold">{result.product.title}</div>
               <div className="mt-1 text-sm text-slate-700">
                 {barcodeText}
@@ -165,9 +165,9 @@ export default function ProductHistorySearch() {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-white/10">
+          <div className="border bg-card shadow-sm overflow-x-auto rounded-3xl">
             <table className="w-full min-w-[960px] border-collapse text-sm">
-              <thead className="bg-slate-100 text-left text-xs uppercase text-slate-600 dark:bg-white/10 dark:text-white/60">
+              <thead className="bg-white/45 text-left text-xs uppercase text-slate-600 backdrop-blur-xl dark:bg-white/10 dark:text-white/60">
                 <tr>
                   <th className="p-3">Date</th>
                   <th className="p-3">Action</th>
@@ -188,7 +188,7 @@ export default function ProductHistorySearch() {
                   </tr>
                 ) : (
                   result.history.map((entry) => (
-                    <tr key={entry.id} className="border-t border-slate-200 align-top dark:border-white/10">
+                    <tr key={entry.id} className="border-t border-white/50 align-top transition hover:bg-white/35 dark:border-white/10 dark:hover:bg-white/5">
                       <td className="p-3 text-xs text-slate-600 dark:text-white/70">
                         {formatDate(entry.createdAt)}
                       </td>

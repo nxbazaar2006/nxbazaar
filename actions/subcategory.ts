@@ -139,7 +139,7 @@ export async function deleteSubCategory(
     return successResponse(true);
   } catch (error: unknown) {
     const err = handleError(error);
-    return errorResponse(err.message);
+    return { success: false, message: err.message };
   }
 }
 

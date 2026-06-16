@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import ProductDetailView from "@/components/frontend/ProductDetailView";
 
+export const dynamic = "force-dynamic";
+
 /* ================= TYPES ================= */
 
 type PageProps = {

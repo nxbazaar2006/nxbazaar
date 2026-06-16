@@ -6,20 +6,14 @@ export default function EmptyCart() {
     <div className="flex min-h-[450px] items-center justify-center">
       <div
         className="
-          max-w-md text-center
-          rounded-3xl border border-white/10
-          bg-white/10 p-8
-          shadow-sm backdrop-blur-xl
+          neumorphic-card max-w-md rounded-3xl p-8 text-center
         "
       >
         <div
           className="
             mx-auto mb-5 flex h-20 w-20 items-center justify-center
             rounded-full
-            bg-gradient-to-br
-            from-orange-500/20
-            via-pink-500/20
-            to-purple-500/20
+            bg-white/70 shadow-inner dark:bg-white/10
           "
         >
           <ShoppingCart className="h-10 w-10 text-muted-foreground" />
@@ -37,16 +31,9 @@ export default function EmptyCart() {
         <Link
           href="/"
           className="
-            inline-flex items-center justify-center
-            rounded-2xl px-6 py-3
-            font-semibold text-white
-            bg-gradient-to-r
-            from-orange-500
-            via-pink-500
-            to-purple-500
-            shadow-md
-            transition-all duration-300
-            hover:scale-105 hover:shadow-xl
+            soft-button inline-flex items-center justify-center
+            rounded-full px-6 py-3
+            font-semibold
           "
         >
           Start Shopping

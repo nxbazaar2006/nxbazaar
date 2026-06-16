@@ -30,10 +30,11 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+    const userId = data.userId;
 
     // ✅ Check user exists
     const existingUser = await db.user.findUnique({
-      where: { id: data.userId },
+      where: { id: userId },
       include: { sellerProfile: true },
     });
 
@@ -44,33 +45,54 @@ export async function POST(req: Request) {
       );
     }
 
-    // ❌ prevent duplicate seller
-    if (existingUser.sellerProfile) {
-      return NextResponse.json(
-        { message: "Seller already exists" },
-        { status: 400 }
-      );
-    }
-
     // ✅ TRANSACTION (correct use)
     const sellerProfile = await db.$transaction(async (tx) => {
       // update user role
       await tx.user.update({
-        where: { id: data.userId },
+        where: { id: userId },
         data: {
           role: UserRole.SELLER,
           emailVerified: true,
         },
       });
 
-      // create profile
-      return await tx.sellerProfile.create({
-        data: {
-          ...data,
-          turnover: data.turnover
-            ? parseFloat(data.turnover)
-            : null,
+      const profileData = {
+        code: data.code,
+        businessName: data.businessName,
+        legalName: data.legalName,
+        businessType: data.businessType,
+        gstNumber: data.gstNumber,
+        panNumber: data.panNumber,
+        contactPerson: data.contactPerson,
+        contactPersonPhone: data.contactPersonPhone,
+        phone: data.phone,
+        physicalAddress: data.physicalAddress,
+        pickupAddress: data.pickupAddress,
+        city: data.city,
+        state: data.state,
+        country: data.country,
+        zip: data.zip,
+        bankAccountName: data.bankAccountName,
+        bankAccountNumber: data.bankAccountNumber,
+        bankIfscCode: data.bankIfscCode,
+        bankName: data.bankName,
+        profileImageUrl: data.profileImageUrl,
+        notes: data.notes,
+        isActive: data.isActive,
+        turnover: data.turnover,
+        mainProduct: data.mainProduct,
+      };
+
+      // create or complete pending profile
+      return await tx.sellerProfile.upsert({
+        where: { userId },
+        create: {
+          ...profileData,
+          user: {
+            connect: { id: userId },
+          },
         },
+        update: profileData,
       });
     });
 

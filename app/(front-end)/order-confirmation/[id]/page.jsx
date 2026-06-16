@@ -29,7 +29,7 @@ export default async function page({ params }) {
     <section className="py-12 sm:py-16 lg:py-20">
       <div className="px-4 mx-auto sm:px-6 lg:px-8 max-w-5xl">
         <div className="max-w-2xl mx-auto">
-          <div className="glass-card relative mt-6 overflow-hidden md:mt-10">
+          <div className="border bg-card text-card-foreground shadow-sm relative mt-6 overflow-hidden md:mt-10">
             <div className="absolute top-4 right-4">
               <Link
                 href={`/dashboard/orders/${id}/invoice`}

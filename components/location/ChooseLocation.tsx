@@ -62,7 +62,7 @@ export default function ChooseLocation() {
             setState("");
             setCity("");
           }}
-          className="w-full rounded-md border border-input bg-background px-3 py-2"
+          className="w-full rounded-2xl border border-input bg-background px-3 py-2"
         >
           {countries.map((item) => (
             <option key={item.isoCode} value={item.isoCode}>
@@ -77,7 +77,7 @@ export default function ChooseLocation() {
             setState(event.target.value);
             setCity("");
           }}
-          className="w-full rounded-md border border-input bg-background px-3 py-2"
+          className="w-full rounded-2xl border border-input bg-background px-3 py-2"
         >
           <option value="">Select state</option>
           {states.map((item) => (
@@ -90,7 +90,7 @@ export default function ChooseLocation() {
         <select
           value={city}
           onChange={(event) => setCity(event.target.value)}
-          className="w-full rounded-md border border-input bg-background px-3 py-2"
+          className="w-full rounded-2xl border border-input bg-background px-3 py-2"
         >
           <option value="">Select city</option>
           {cities.map((item) => (
@@ -102,7 +102,7 @@ export default function ChooseLocation() {
 
         <button
           onClick={handleSave}
-          className="w-full bg-green-500 text-white py-2 rounded"
+          className="w-full bg-green-500 text-white py-2 rounded-2xl"
         >
           Save Location
         </button>

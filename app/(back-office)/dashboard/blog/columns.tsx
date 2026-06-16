@@ -57,7 +57,7 @@ export const columns: ColumnDef<BlogType>[] = [
 
       return (
         <span
-          className={`px-2 py-1 rounded ${
+          className={`px-2 py-1 rounded-2xl ${
             blog.isActive
               ? "bg-green-500 text-white"
               : "bg-gray-400 text-white"

@@ -24,7 +24,7 @@ export default function ImageColumn<TData extends object>({
   if (!imageUrl) {
     return (
       <div
-        className="flex items-center justify-center rounded-md border border-border bg-muted text-xs text-muted-foreground"
+        className="flex items-center justify-center rounded-2xl border bg-card text-card-foreground shadow-sm text-xs text-muted-foreground"
         style={{ width: size, height: size }}
       >
         —
@@ -34,7 +34,7 @@ export default function ImageColumn<TData extends object>({
 
   return (
     <div
-      className="relative overflow-hidden rounded-md border border-border bg-card shadow-sm"
+      className="relative overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm"
       style={{ width: size, height: size }}
     >
       <Image

@@ -15,7 +15,7 @@ export default function OrderCard({ order }: Props) {
   if (order.orderItems.length === 0) return null;
 
   return (
-    <li className="overflow-hidden bg-white border border-gray-200 rounded-md">
+    <li className="overflow-hidden bg-white border border-gray-200 rounded-2xl">
       <div className="lg:flex">
 
         <div className="w-full border-b border-gray-200 lg:max-w-xs lg:border-b-0 lg:border-r bg-gray-50">
@@ -90,7 +90,7 @@ export default function OrderCard({ order }: Props) {
 
                   <div className="flex-shrink-0">
                     <img
-                      className="object-cover rounded-lg w-28 h-28"
+                      className="object-cover rounded-2xl w-28 h-28"
                       src={itemImageUrl}
                       alt={itemTitle}
                     />
